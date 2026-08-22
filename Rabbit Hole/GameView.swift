@@ -82,8 +82,6 @@ struct GameView: View {
     /// After the card, the King gets the stage to himself while he climbs out
     /// of the sand. The first round only opens when that is finished.
     @State private var playsKingEntrance = false
-    @State private var showsStreakBanner = false
-    @State private var streakBannerToken = 0
     /// Measured from the real HUD layout so the flying currency glyph can land
     /// pixel-for-pixel over its stationary twin on every device and score width.
     @State private var scoreIconCenter: CGPoint?
@@ -338,25 +336,8 @@ struct GameView: View {
                     .allowsHitTesting(false)
                     .id(tutorial.step)
             }
-
-            if showsStreakBanner {
-                StreakBoostBanner(character: character, isPad: isPad)
-                    // Steps down below the walkthrough's own note for as long as
-                    // the run keeps that strip reserved — the streak starts on a
-                    // tutorial step, and the note is still there when it does.
-                    .padding(.top, tutorialMessageTop(topInset: topInset)
-                             + (reservesTutorialMessage
-                                ? TutorialMessageCard.height(isPad: isPad) + (isPad ? 12 : 8)
-                                : 0))
-                    .transition(.scale(scale: 0.65).combined(with: .opacity))
-                    .allowsHitTesting(false)
-            }
         }
         .ignoresSafeArea()
-        .onChange(of: model.streakAnnouncementID) { id in
-            guard id > 0 else { return }
-            showStreakBanner(for: id)
-        }
         .onPreferenceChange(ScoreIconCenterPreferenceKey.self) { center in
             scoreIconCenter = center
         }
@@ -383,19 +364,6 @@ struct GameView: View {
     /// Where the walkthrough's note sits: flush under the HUD row.
     private func tutorialMessageTop(topInset: CGFloat) -> CGFloat {
         playfieldTopReserve(topInset: topInset) + (isPad ? 8 : 6)
-    }
-
-    private func showStreakBanner(for token: Int) {
-        streakBannerToken = token
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.68)) {
-            showsStreakBanner = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
-            guard streakBannerToken == token else { return }
-            withAnimation(.easeOut(duration: 0.25)) {
-                showsStreakBanner = false
-            }
-        }
     }
 
     private func finishLevelCompletion() {
