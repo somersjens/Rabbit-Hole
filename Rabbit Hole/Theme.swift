@@ -9,16 +9,16 @@
 
 import SwiftUI
 
-/// The game's currency. A player collects shells: on the sea floor, on the menu
+/// The game's currency. A player collects carrots: underground, on the menu
 /// totals, on the level cards and in the shop. One glyph, used everywhere, so
 /// the same thing is never drawn two ways.
 enum Currency {
     /// Identifies the currency glyph where a view has to tell it apart from an
     /// SF Symbol. It is drawn by `CurrencyIcon`, not loaded from the catalog.
-    static let icon = "shell"
+    static let icon = "carrot"
 }
 
-/// The glyph used anywhere a shell count is shown. It is drawn rather than
+/// The glyph used anywhere a carrot count is shown. It is drawn rather than
 /// loaded, so it stays crisp from the 9-point level card up to the flying
 /// reward, and it takes the surrounding foreground style exactly as the old
 /// template image did.
@@ -26,16 +26,46 @@ struct CurrencyIcon: View {
     let size: CGFloat
 
     var body: some View {
-        ShellShape()
+        CarrotShape()
             .fill(.foreground, style: FillStyle(eoFill: true))
             .frame(width: size, height: size)
     }
 }
 
-/// A scallop shell: a ribbed fan hinged at the bottom. The ribs are cut out of
-/// the same path, so the whole glyph is one silhouette in one colour.
+/// A cartoon carrot: a tapered root with three leaves, one silhouette so it
+/// colours with whatever foreground the counter is using.
+struct CarrotShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        func point(_ x: Double, _ y: Double) -> CGPoint {
+            CGPoint(x: rect.minX + w * x, y: rect.minY + h * y)
+        }
+
+        var path = Path()
+        // Leaves.
+        path.move(to: point(0.50, 0.22))
+        path.addQuadCurve(to: point(0.22, 0.02), control: point(0.28, 0.20))
+        path.addQuadCurve(to: point(0.50, 0.22), control: point(0.40, 0.08))
+        path.move(to: point(0.50, 0.22))
+        path.addQuadCurve(to: point(0.50, 0.00), control: point(0.42, 0.10))
+        path.addQuadCurve(to: point(0.50, 0.22), control: point(0.58, 0.10))
+        path.move(to: point(0.50, 0.22))
+        path.addQuadCurve(to: point(0.78, 0.02), control: point(0.72, 0.20))
+        path.addQuadCurve(to: point(0.50, 0.22), control: point(0.60, 0.08))
+
+        // Root.
+        path.move(to: point(0.32, 0.26))
+        path.addQuadCurve(to: point(0.50, 0.98), control: point(0.18, 0.62))
+        path.addQuadCurve(to: point(0.68, 0.26), control: point(0.82, 0.62))
+        path.addQuadCurve(to: point(0.32, 0.26), control: point(0.50, 0.20))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// Kept for the old King-Krab finale specks, which still draw a scallop.
 struct ShellShape: Shape {
-    /// Bumps along the top edge.
     private static let scallops = 5
 
     func path(in rect: CGRect) -> Path {
@@ -46,7 +76,6 @@ struct ShellShape: Shape {
         }
 
         let hinge = point(0.5, 0.97)
-        // The fan's top edge: a dome from the left corner to the right one.
         let rim: [CGPoint] = (0...Self.scallops).map { index in
             let t = Double(index) / Double(Self.scallops)
             return point(0.05 + 0.90 * t, 0.44 - 0.36 * sin(.pi * t))
@@ -59,8 +88,6 @@ struct ShellShape: Shape {
             let previous = rim[index - 1]
             let next = rim[index]
             let mid = CGPoint(x: (previous.x + next.x) / 2, y: (previous.y + next.y) / 2)
-            // Push each scallop's control point away from the hinge, which is
-            // what turns a plain dome into a fluted edge.
             let dx = mid.x - hinge.x
             let dy = mid.y - hinge.y
             let length = max(0.001, (dx * dx + dy * dy).squareRoot())
@@ -71,7 +98,6 @@ struct ShellShape: Shape {
         path.addQuadCurve(to: hinge, control: point(0.90, 0.82))
         path.closeSubpath()
 
-        // The ribs, cut out by the even-odd rule.
         for index in 1..<Self.scallops {
             let tip = rim[index]
             let dx = tip.x - hinge.x
@@ -113,11 +139,27 @@ struct AnimalCharacter: Identifiable, Equatable {
     var skyColor: Color { Color(red: skyRGB.0, green: skyRGB.1, blue: skyRGB.2) }
     var tintColor: Color { Color(red: tintRGB.0, green: tintRGB.1, blue: tintRGB.2) }
 
-    /// Position in the catalog, 1-based. Both pictures below and the rig's
-    /// separate limbs are all exported under this number, so a character can
-    /// never be paired with someone else's artwork.
+    /// Position in the catalog, 1-based.
     var catalogOrder: Int {
         (CharacterUnlocks.orderedCharacterIDs.firstIndex(of: id) ?? 0) + 1
+    }
+
+    /// Artwork export index. The PNGs were numbered in the original crab-first
+    /// catalog, so this stays fixed when unlock order changes.
+    var artNumber: Int {
+        switch id {
+        case "crab": return 1
+        case "elephant": return 2
+        case "bear": return 3
+        case "fox": return 4
+        case "frog": return 5
+        case "penguin": return 6
+        case "bunny": return 7
+        case "dog": return 8
+        case "lion": return 9
+        case "octopus": return 10
+        default: return 7
+        }
     }
 
     /// Facing the player: menus, cards, the shop and every portrait slot. It is
@@ -125,7 +167,7 @@ struct AnimalCharacter: Identifiable, Equatable {
     /// ten are centred and optically equalised, so one square frame renders any
     /// character at the same apparent size. The King keeps the picture he has
     /// always had: he is the app's mascot and wears his crown in it.
-    var imageName: String { catalogOrder == 1 ? "1_main" : "\(catalogOrder)_full" }
+    var imageName: String { artNumber == 1 ? "1_main" : "\(artNumber)_full" }
     var artwork: Image { Image(imageName) }
 
     /// The same animal at chip size, for the slots that draw him no bigger than
@@ -134,7 +176,7 @@ struct AnimalCharacter: Identifiable, Equatable {
     /// those the full-size picture makes the renderer unpack a 640-pixel square
     /// to paint forty points of it, and ten of those is most of what opening
     /// the shop costs.
-    var thumbImageName: String { "\(catalogOrder)_thumb" }
+    var thumbImageName: String { "\(artNumber)_thumb" }
     var thumbArtwork: Image { Image(thumbImageName) }
 
     /// The separate limbs the arena animates this character from, when the
@@ -166,6 +208,18 @@ enum CharacterCatalog {
     /// the menu and the motion trail behind a portrait all carry the colours
     /// the player is actually looking at.
     static let all: [AnimalCharacter] = [
+        AnimalCharacter(id: "bunny", name: "Bunny", emoji: "🐰",
+                        primaryRGB: (0.94, 0.45, 0.62), deepRGB: (0.72, 0.22, 0.40),
+                        skyRGB: (1.00, 0.90, 0.93), tintRGB: (0.99, 0.78, 0.84)),
+        AnimalCharacter(id: "dog", name: "Dog", emoji: "🐶",
+                        primaryRGB: (0.20, 0.66, 0.69), deepRGB: (0.06, 0.42, 0.46),
+                        skyRGB: (0.89, 0.97, 0.98), tintRGB: (0.81, 0.95, 0.96)),
+        AnimalCharacter(id: "lion", name: "Lion", emoji: "🦁",
+                        primaryRGB: (0.95, 0.74, 0.20), deepRGB: (0.68, 0.45, 0.08),
+                        skyRGB: (1.00, 0.96, 0.87), tintRGB: (1.00, 0.94, 0.77)),
+        AnimalCharacter(id: "octopus", name: "Octopus", emoji: "🐙",
+                        primaryRGB: (0.62, 0.40, 0.87), deepRGB: (0.35, 0.18, 0.60),
+                        skyRGB: (0.93, 0.88, 0.99), tintRGB: (0.88, 0.79, 0.98)),
         AnimalCharacter(id: "crab", name: "Crab", emoji: "🦀",
                         primaryRGB: (0.90, 0.27, 0.10), deepRGB: (0.62, 0.13, 0.03),
                         skyRGB: (1.00, 0.90, 0.87), tintRGB: (1.00, 0.82, 0.77)),
@@ -183,19 +237,7 @@ enum CharacterCatalog {
                         skyRGB: (0.93, 0.99, 0.88), tintRGB: (0.88, 0.97, 0.80)),
         AnimalCharacter(id: "penguin", name: "Penguin", emoji: "🐧",
                         primaryRGB: (0.22, 0.36, 0.68), deepRGB: (0.08, 0.16, 0.38),
-                        skyRGB: (0.89, 0.92, 0.98), tintRGB: (0.81, 0.86, 0.96)),
-        AnimalCharacter(id: "bunny", name: "Bunny", emoji: "🐰",
-                        primaryRGB: (0.94, 0.56, 0.60), deepRGB: (0.72, 0.29, 0.37),
-                        skyRGB: (1.00, 0.87, 0.89), tintRGB: (0.99, 0.78, 0.80)),
-        AnimalCharacter(id: "dog", name: "Dog", emoji: "🐶",
-                        primaryRGB: (0.20, 0.66, 0.69), deepRGB: (0.06, 0.42, 0.46),
-                        skyRGB: (0.89, 0.97, 0.98), tintRGB: (0.81, 0.95, 0.96)),
-        AnimalCharacter(id: "lion", name: "Lion", emoji: "🦁",
-                        primaryRGB: (0.95, 0.74, 0.20), deepRGB: (0.68, 0.45, 0.08),
-                        skyRGB: (1.00, 0.96, 0.87), tintRGB: (1.00, 0.94, 0.77)),
-        AnimalCharacter(id: "octopus", name: "Octopus", emoji: "🐙",
-                        primaryRGB: (0.62, 0.40, 0.87), deepRGB: (0.35, 0.18, 0.60),
-                        skyRGB: (0.93, 0.88, 0.99), tintRGB: (0.88, 0.79, 0.98))
+                        skyRGB: (0.89, 0.92, 0.98), tintRGB: (0.81, 0.86, 0.96))
     ]
 
     static func character(id: String) -> AnimalCharacter {

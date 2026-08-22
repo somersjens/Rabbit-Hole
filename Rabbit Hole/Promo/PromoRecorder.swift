@@ -173,7 +173,7 @@ final class PromoCaptureController {
         if !AppAudio.shared.gameSoundsEnabled { AppAudio.shared.toggleGameSounds() }
         if !AppAudio.shared.musicEnabled { AppAudio.shared.toggleMusic() }
         if AppAudio.shared.spokenSumsEnabled { AppAudio.shared.toggleSpokenSums() }
-        UIApplication.shared.isStatusBarHidden = true
+        // Status bar is hidden by `.statusBarHidden(true)` on PromoTrailerView.
     }
 
     func markReady() {
@@ -254,9 +254,9 @@ enum PromoAudioMux {
     static func mix(video: URL, cues: [[String: Any]], output: URL) async -> Bool {
         try? FileManager.default.removeItem(at: output)
         let videoAsset = AVURLAsset(url: video)
-        let duration = videoAsset.duration
-        guard duration.isNumeric, CMTimeGetSeconds(duration) > 0.2 else { return false }
-        guard let videoTrack = videoAsset.tracks(withMediaType: .video).first else { return false }
+        guard let duration = try? await videoAsset.load(.duration),
+              duration.isNumeric, CMTimeGetSeconds(duration) > 0.2 else { return false }
+        guard let videoTrack = try? await videoAsset.loadTracks(withMediaType: .video).first else { return false }
 
         let composition = AVMutableComposition()
         guard let compositionVideo = composition.addMutableTrack(withMediaType: .video,
@@ -276,9 +276,9 @@ enum PromoAudioMux {
            let musicTrack = composition.addMutableTrack(withMediaType: .audio,
                                                         preferredTrackID: kCMPersistentTrackID_Invalid) {
             let musicAsset = AVURLAsset(url: musicURL)
-            if let source = musicAsset.tracks(withMediaType: .audio).first {
+            if let source = try? await musicAsset.loadTracks(withMediaType: .audio).first {
                 var cursor = CMTime.zero
-                let musicDuration = musicAsset.duration
+                let musicDuration = (try? await musicAsset.load(.duration)) ?? .zero
                 while cursor < duration, musicDuration.isNumeric, CMTimeGetSeconds(musicDuration) > 0 {
                     let remaining = CMTimeSubtract(duration, cursor)
                     let slice = CMTimeMinimum(musicDuration, remaining)
@@ -302,11 +302,12 @@ enum PromoAudioMux {
                                                              preferredTrackID: kCMPersistentTrackID_Invalid)
             else { continue }
             let asset = AVURLAsset(url: url)
-            guard let source = asset.tracks(withMediaType: .audio).first else { continue }
+            guard let source = try? await asset.loadTracks(withMediaType: .audio).first else { continue }
             let start = CMTime(seconds: max(0, time), preferredTimescale: 600)
             guard start < duration else { continue }
             let available = CMTimeSubtract(duration, start)
-            let slice = CMTimeMinimum(asset.duration, available)
+            let sfxDuration = (try? await asset.load(.duration)) ?? .zero
+            let slice = CMTimeMinimum(sfxDuration, available)
             try? sfxTrack.insertTimeRange(CMTimeRange(start: .zero, duration: slice),
                                           of: source,
                                           at: start)

@@ -101,6 +101,10 @@ nonisolated public final class MemoryGame {
     /// The round after this one, built ahead of time so a transition never
     /// waits on generation.
     private var preparedRound: GameRound?
+    /// Every remaining sum, generated up front so the underground floors can
+    /// be planned as one campaign rather than one question at a time.
+    private var plannedRounds: [GameRound] = []
+    private var plannedIndex = 0
 
     public private(set) var roundNumber = 0
     public private(set) var cards = 0
@@ -156,6 +160,18 @@ nonisolated public final class MemoryGame {
     public var acceptsInput: Bool { state == .answering }
     public var isStreakBoostActive: Bool { correctStreak >= GameConfig.streakThreshold }
 
+    /// The current sum and every one still to come, in order. The playfield
+    /// uses this to stock each floor so a later answer can sit on a carrot now.
+    public var remainingQuestions: [MathQuestion] {
+        if !plannedRounds.isEmpty, plannedIndex >= 0, plannedIndex < plannedRounds.count {
+            return Array(plannedRounds[plannedIndex...].map(\.question))
+        }
+        var questions: [MathQuestion] = []
+        if let round { questions.append(round.question) }
+        if let preparedRound { questions.append(preparedRound.question) }
+        return questions
+    }
+
     /// Whether the answer values are readable. They are during the memorising
     /// beat, and again while the round resolves so the player can see what they
     /// picked and where the right card was.
@@ -206,6 +222,8 @@ nonisolated public final class MemoryGame {
         correctStreak = max(0, streak)
         result.cardsEarned = self.cards
         roundNumber = 1
+        plannedRounds = rounds
+        plannedIndex = 0
         round = rounds[0]
         preparedRound = rounds.count > 1 ? rounds[1] : nil
         state = .memorising
@@ -219,8 +237,10 @@ nonisolated public final class MemoryGame {
     public func start() -> Bool {
         guard state == .intro else { return false }
         roundNumber = 1
-        round = factory.makeRound(number: 1)
-        preparedRound = factory.makeRound(number: 2)
+        plannedRounds = (1...maximumRounds).map { factory.makeRound(number: $0) }
+        plannedIndex = 0
+        round = plannedRounds[0]
+        preparedRound = plannedRounds.count > 1 ? plannedRounds[1] : nil
         state = .memorising
         return true
     }
@@ -246,8 +266,11 @@ nonisolated public final class MemoryGame {
         // A run resumed on its last life keeps counting toward the comeback
         // rather than waiting for a drop that already happened.
         isCounting = lifeHalves <= GameConfig.lifeCrabCriticalHalves
-        round = factory.makeRound(number: roundNumber)
-        preparedRound = factory.makeRound(number: roundNumber + 1)
+        let remainingCount = max(1, maximumRounds - roundNumber + 1)
+        plannedRounds = (0..<remainingCount).map { factory.makeRound(number: roundNumber + $0) }
+        plannedIndex = 0
+        round = plannedRounds[0]
+        preparedRound = plannedRounds.count > 1 ? plannedRounds[1] : nil
         state = .memorising
         return true
     }
@@ -490,6 +513,7 @@ nonisolated public final class MemoryGame {
 #if DEBUG
         if promoFinishesAfterLast, !promoRounds.isEmpty {
             promoRoundIndex += 1
+            plannedIndex = promoRoundIndex
             round = promoRounds[promoRoundIndex]
             preparedRound = promoRoundIndex + 1 < promoRounds.count
                 ? promoRounds[promoRoundIndex + 1]
@@ -500,13 +524,28 @@ nonisolated public final class MemoryGame {
             return state
         }
 #endif
-        round = preparedRound ?? factory.makeRound(number: roundNumber)
-        // Build the round after next while the player is looking at this one.
-        preparedRound = factory.makeRound(number: roundNumber + 1)
+        if plannedIndex + 1 < plannedRounds.count {
+            plannedIndex += 1
+            round = plannedRounds[plannedIndex]
+            preparedRound = plannedIndex + 1 < plannedRounds.count
+                ? plannedRounds[plannedIndex + 1]
+                : nil
+        } else {
+            round = preparedRound ?? factory.makeRound(number: roundNumber)
+            preparedRound = factory.makeRound(number: roundNumber + 1)
+        }
         selectedOptionID = nil
         lastOutcome = nil
         state = .memorising
         return state
+    }
+
+    /// The last fuse ran out, or the player grabbed the super-dynamite. The
+    /// board is over without a full score, which is the same card as running
+    /// out of lives.
+    public func endByTimeout() {
+        guard state != .intro, state != .gameOver else { return }
+        finish(reason: .outOfLives)
     }
 
     /// Ends the session early (the player left the game screen).

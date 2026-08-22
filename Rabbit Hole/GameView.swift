@@ -285,36 +285,34 @@ struct GameView: View {
         let topInset = max(screenInsets.top, isPad ? 24 : 16)
 
         return ZStack(alignment: .top) {
-            KingCrabPlayfield(round: model.round,
-                              missedSum: model.missedSum,
-                              maximumRounds: model.maximumRounds,
-                              character: character,
-                              isPad: isPad,
-                              isLive: model.acceptsInput,
-                              isRunning: isArenaRunning,
-                              playsKingEntrance: playsKingEntrance,
-                              hasBonusPower: model.hasBonusFishPower,
-                              isLifeCrabAvailable: model.isLifeCrabAvailable,
-                              isStreakBoostActive: model.isStreakBoostActive,
-                              playsLevelCompletion: playsLevelCompletion,
-                              reduceMotion: reduceMotion,
-                              tutorialPlan: tutorial.plan,
-                              reservesTutorialMessage: reservesTutorialMessage,
-                              topReserve: playfieldTopReserve(topInset: topInset),
-                              bottomReserve: screenInsets.bottom,
-                              scoreTarget: scoreIconCenter,
-                              onGuardedArrival: { model.select(optionID: $0) },
-                              onSmashedGuard: model.smashGuardedAnswer,
-                              onBreach: { model.absorbBreach() },
-                              onSmash: { _ in model.crabSmashed() },
-                              onSweep: model.kingSweeps,
-                              onShellArrived: model.scoreBubbleArrived,
-                              onBonusCrabCaught: model.catchBonusFish,
-                              onLifeCrabArrived: model.catchLifeCrab,
-                              onKingEntranceComplete: finishKingEntrance,
-                              onLevelCompletionStarted: { showsFinale = true },
-                              onLevelCompletionFinished: finishLevelCompletion,
-                              onTutorialEvent: tutorial.handle)
+            RabbitHolePlayfield(round: model.round,
+                                remainingQuestions: model.remainingQuestions,
+                                missedSum: model.missedSum,
+                                maximumRounds: model.maximumRounds,
+                                character: character,
+                                isPad: isPad,
+                                isLive: model.acceptsInput,
+                                isRunning: isArenaRunning,
+                                playsKingEntrance: playsKingEntrance,
+                                hasBonusPower: model.hasBonusFishPower,
+                                isLifeCrabAvailable: model.isLifeCrabAvailable,
+                                isStreakBoostActive: model.isStreakBoostActive,
+                                playsLevelCompletion: playsLevelCompletion,
+                                reduceMotion: reduceMotion,
+                                tutorialPlan: tutorial.plan,
+                                reservesTutorialMessage: reservesTutorialMessage,
+                                topReserve: playfieldTopReserve(topInset: topInset),
+                                bottomReserve: screenInsets.bottom,
+                                scoreTarget: scoreIconCenter,
+                                onCorrect: { model.select(optionID: $0) },
+                                onWrong: model.missCarrot,
+                                onTimeout: model.endByTimeout,
+                                onSmash: { model.crabSmashed() },
+                                onShellArrived: model.scoreBubbleArrived,
+                                onKingEntranceComplete: finishKingEntrance,
+                                onLevelCompletionStarted: { showsFinale = true },
+                                onLevelCompletionFinished: finishLevelCompletion,
+                                onTutorialEvent: tutorial.handle)
 
             hud
                 .padding(.leading, max(isPad ? 28 : 16, screenInsets.leading + 12))
@@ -375,18 +373,16 @@ struct GameView: View {
         isTutorialArmed || tutorial.reservesMessageArea
     }
 
-    /// The room the arena leaves for the HUD above it, which is also where the
-    /// sum's banner is measured from.
+    /// The room the arena leaves for the HUD above it.
     private func playfieldTopReserve(topInset: CGFloat) -> CGFloat {
-        topInset + (isPad ? 54 : 42)
+        topInset + hudStackHeight + (isPad ? 10 : 6)
     }
 
-    /// Where the walkthrough's note sits: flush under the sum's banner, in the
-    /// same geometry `KingCrabPlayfield` places that banner with, so the note
-    /// lands under the question however the safe area works out.
+    private var hudStackHeight: CGFloat { hudControlSize * 2 + (isPad ? 8 : 6) }
+
+    /// Where the walkthrough's note sits: flush under the HUD row.
     private func tutorialMessageTop(topInset: CGFloat) -> CGFloat {
-        playfieldTopReserve(topInset: topInset) + (isPad ? 12 : 8)
-            + ArenaConfig.bannerHeight(isPad: isPad) + (isPad ? 8 : 6)
+        playfieldTopReserve(topInset: topInset) + (isPad ? 8 : 6)
     }
 
     private func showStreakBanner(for token: Int) {
@@ -417,18 +413,19 @@ struct GameView: View {
     // MARK: - HUD
 
     private var hud: some View {
-        ZStack {
-            progressCounter
-
-            HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: isPad ? 12 : 8) {
+            VStack(alignment: .leading, spacing: isPad ? 8 : 6) {
                 pauseButton
-                Spacer(minLength: 0)
-                LivesView(lives: model.livesRemaining,
-                          character: character,
-                          isPad: isPad,
-                          glyphSize: hudSymbolSize,
-                          rowHeight: hudControlSize)
+                progressCounter
             }
+            RabbitHoleQuestionBanner(prompt: model.round?.question.prompt ?? "",
+                                     roundID: model.round?.id,
+                                     accent: character.color,
+                                     deep: character.deepColor,
+                                     isPad: isPad)
+                .frame(maxWidth: .infinity)
+                .frame(height: hudStackHeight)
+                .allowsHitTesting(false)
         }
     }
 

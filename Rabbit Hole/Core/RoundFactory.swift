@@ -73,7 +73,9 @@ nonisolated public final class RoundFactory {
 
     /// Builds the round for a given 1-based round number.
     public func makeRound(number: Int) -> GameRound {
-        let question = generator.next(requiredDistractors: GameConfig.distractorCount)
+        // Extra distractors feed the underground floor (seven carrots) without
+        // changing how many options a round still lays on the scoreboard.
+        let question = generator.next(requiredDistractors: max(GameConfig.distractorCount, 6))
         return GameRound(number: number,
                          question: question,
                          options: makeOptions(for: question))

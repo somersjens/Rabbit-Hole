@@ -42,6 +42,32 @@ nonisolated public enum GameConfig {
 
     // MARK: King Crab
 
+    // MARK: Rabbit Hole
+
+    /// Carrots sitting on each underground floor, plus one dynamite stick.
+    public static let rabbitHoleCarrotCount = 7
+    /// Fuse on every floor. Hitting zero blows the floor open.
+    public static let rabbitHoleDynamiteSeconds = 60.0
+    /// How many of the seven carrots should be real upcoming answers.
+    public static let rabbitHoleUsefulPerFloor = 4...6
+    /// A 20-point board is four floors; bigger boards scale at five answers each.
+    public static let rabbitHoleFloorsForTwenty = 4
+    public static func rabbitHoleFloorCount(maximum: Int) -> Int {
+        max(rabbitHoleFloorsForTwenty,
+            Int((Double(maximum) / 5.0).rounded(.up)))
+    }
+    /// Full left–right–left cycle of the crane hook.
+    public static let rabbitHoleSwingPeriod = 5.4
+    public static let rabbitHoleDropDuration = 0.18
+    public static let rabbitHoleWriggleDuration = 0.30
+    public static let rabbitHoleRaiseDuration = 0.22
+    public static let rabbitHoleCorrectTossDuration = 0.50
+    public static let rabbitHoleWrongTossDuration = 0.36
+    public static let rabbitHoleExplosionDuration = 0.50
+    public static let rabbitHoleFallDuration = 0.78
+    public static let rabbitHoleEntranceDuration = 0.90
+    public static let rabbitHoleYayDuration = 1.60
+
     /// How long a crab needs from its corner to the King. The whole round is
     /// read, judged and acted on inside this window, so it is the single most
     /// important number of the game.
@@ -144,12 +170,12 @@ nonisolated public enum GameConfig {
     /// The second half of the catalog is Premium-exclusive: `nil` means the
     /// character cannot be earned with cards at all, no matter the total.
     public static let characterUnlockRequirements: [Int?] = [
-        0,          // crab — from the start
-        500,        // elephant
-        1_500,      // bear
-        3_000,      // fox
-        5_000,      // frog
-        nil, nil, nil, nil, nil   // penguin, bunny, dog, lion, octopus — Premium
+        0,          // bunny — from the start
+        500,        // dog
+        1_500,      // lion
+        3_000,      // octopus
+        5_000,      // crab
+        nil, nil, nil, nil, nil   // elephant, bear, fox, frog, penguin — Premium
     ]
 
     // MARK: Level progress

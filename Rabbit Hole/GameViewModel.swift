@@ -61,6 +61,9 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var correctStreak = 0
     @Published private(set) var isStreakBoostActive = false
     @Published private(set) var isLifeCrabAvailable = false
+    /// Upcoming sums, current first. The playfield stocks each underground
+    /// floor from this list so a later answer can already be sitting there.
+    @Published private(set) var remainingQuestions: [MathQuestion] = []
     /// The sum the player just lost, held under the one that replaced it so a
     /// mistake is never silent. Nil whenever there is nothing to own up to.
     @Published private(set) var missedSum: MissedSum?
@@ -406,6 +409,24 @@ final class GameViewModel: ObservableObject {
         }
     }
 
+    /// A carrot that was not the current answer. The floor keeps going and
+    /// nothing is scored: the hook just threw it away.
+    func missCarrot() {
+        PlaytimeTracker.shared.registerInteraction()
+        AppAudio.shared.playWrong()
+        haptic(.error)
+    }
+
+    /// The last dynamite went off, or its fuse ran out. The session ends on
+    /// whatever has been banked so far.
+    func endByTimeout() {
+        guard !isGameOver else { return }
+        PlaytimeTracker.shared.registerInteraction()
+        engine.endByTimeout()
+        finishSession()
+        sync()
+    }
+
     /// A crab was knocked off the sea floor. The blow is pure feedback: what it
     /// cost, if anything, is decided by the engine through the calls above.
     func crabSmashed() {
@@ -556,6 +577,7 @@ final class GameViewModel: ObservableObject {
         correctStreak = engine.correctStreak
         isStreakBoostActive = engine.isStreakBoostActive
         isLifeCrabAvailable = engine.isLifeCrabAvailable
+        remainingQuestions = engine.remainingQuestions
         syncMissedSum()
         AppAudio.shared.setGameplayRate(isStreakBoostActive
                                         ? Float(GameConfig.streakSpeedMultiplier) : 1)

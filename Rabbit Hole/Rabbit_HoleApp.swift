@@ -7,11 +7,7 @@
 
 import SwiftUI
 
-@main
-struct Rabbit_HoleApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
+/// Project template leftover. The live app entry is `ElephantChallengeApp`.
+struct Rabbit_HoleAppPlaceholder {
+    private init() {}
 }
