@@ -48,7 +48,8 @@ nonisolated public enum GameConfig {
     public static let rabbitHoleCarrotCount = 7
     /// Fuse on every floor. Hitting zero blows the floor open.
     public static let rabbitHoleDynamiteSeconds = 60.0
-    /// How many of the seven carrots should be real upcoming answers.
+    /// How many of the seven carrots should be the next upcoming answers,
+    /// taken in order so the current sum is always among them.
     public static let rabbitHoleUsefulPerFloor = 4...6
     /// A 20-point board is four floors; bigger boards scale at five answers each.
     public static let rabbitHoleFloorsForTwenty = 4
@@ -56,14 +57,50 @@ nonisolated public enum GameConfig {
         max(rabbitHoleFloorsForTwenty,
             Int((Double(maximum) / 5.0).rounded(.up)))
     }
-    /// Full left–right–left cycle of the crane hook.
-    public static let rabbitHoleSwingPeriod = 5.4
+    /// Full left–right–left cycle of the crane hook. Slow enough that a
+    /// tighter grab window is still hittable.
+    public static let rabbitHoleSwingPeriod = 6.2
+    /// Peak swing, in radians.
+    public static let rabbitHoleSwingAmplitude = 0.92
+    /// Share of the peak swing that item lanes may use, so the outer carrots
+    /// are not hanging on the last degree of the arc.
+    public static let rabbitHoleLaneFill = 0.86
+    /// Placement fan as a share of peak swing. Wide enough that some carrots
+    /// sit near the sides; the hook still overshoots them.
+    public static let rabbitHolePlaceFill = 0.82
+    /// Carrots plus the dynamite stick: one swing lane each.
+    public static var rabbitHoleLaneCount: Int { rabbitHoleCarrotCount + 1 }
+    public static var rabbitHoleLaneSpan: Double { rabbitHoleSwingAmplitude * rabbitHoleLaneFill }
+    /// Equal angle between neighbouring lanes across the usable swing.
+    public static var rabbitHoleLaneGap: Double {
+        (2 * rabbitHoleLaneSpan) / Double(max(1, rabbitHoleLaneCount - 1))
+    }
+    /// A tap locks the lane the hook is in. Slightly inside half a gap, so a
+    /// near miss still counts without stealing the neighbour.
+    public static var rabbitHoleGrabAngle: Double { rabbitHoleLaneGap * 0.48 }
+    /// Where the dirt begins, as a share of the screen height. The grass sits
+    /// on that lip; the rabbit stands on the grass.
+    public static let rabbitHoleGrassShare = 0.50
+    /// On-screen size of a carrot (and the dynamite bundle).
+    public static func rabbitHoleCarrotSize(isPad: Bool) -> CGFloat { isPad ? 99 : 77 }
+    /// Full drawn height of a carrot, leaves included.
+    public static func rabbitHoleCarrotLength(isPad: Bool) -> CGFloat {
+        rabbitHoleCarrotSize(isPad: isPad) * 1.35
+    }
+    /// Rest-centre offset so the leafy top sits a quarter carrot-length under the grass.
+    public static let rabbitHoleBurialFactor: CGFloat = 0.80
+    /// Closest two pocket centres may sit, as a share of carrot length.
+    public static let rabbitHoleMinSeparationFactor: CGFloat = 1.18
+    /// Half-width used to keep neighbouring swing rays clear of a carrot body.
+    public static func rabbitHoleItemRadius(isPad: Bool) -> CGFloat {
+        rabbitHoleCarrotSize(isPad: isPad) * 0.42
+    }
     public static let rabbitHoleDropDuration = 0.18
     public static let rabbitHoleWriggleDuration = 0.30
     public static let rabbitHoleRaiseDuration = 0.22
     public static let rabbitHoleCorrectTossDuration = 0.50
     public static let rabbitHoleWrongTossDuration = 0.36
-    public static let rabbitHoleExplosionDuration = 0.50
+    public static let rabbitHoleExplosionDuration = 0.80
     public static let rabbitHoleFallDuration = 0.78
     public static let rabbitHoleEntranceDuration = 0.90
     public static let rabbitHoleYayDuration = 1.60
@@ -107,23 +144,15 @@ nonisolated public enum GameConfig {
 
     // MARK: Bonuses
 
-    /// Five correct answers in a row turn the crabs gold: the streak mode
-    /// pays double and lasts until the next mistake. Five rather than three
-    /// makes it a run the player has to actually string together, which is
-    /// what earns the King his celebration when it lands.
+    /// Retired King Crab leftovers. Rabbit Hole has no streak speed boost and
+    /// no 2× crab: the crane keeps one swing pace, and every correct carrot
+    /// pays `normalCardReward` unless the streak itself doubles it.
     public static let streakThreshold = 5
     public static let streakMultiplier = 2
-    /// The gold crabs march a little faster, so the doubled points are earned
-    /// under real pressure rather than handed over.
-    public static let streakSpeedMultiplier = 1.3
-    /// The first mistake while the streak boost is active breaks the streak,
-    /// but only costs half a life instead of a full one.
+    public static let streakSpeedMultiplier = 1.0
     public static let streakWrongAnswerCostHalves = 1
-
-    /// A 2x crab scuttles across the level this many times. Tapping it doubles
-    /// the next correct answer; a missed one simply leaves the screen.
-    public static let bonusFishCount = 1...3
-    public static let bonusFishMultiplier = 2
+    public static let bonusFishCount = 0...0
+    public static let bonusFishMultiplier = 1
 
     // MARK: Timing (seconds)
     //

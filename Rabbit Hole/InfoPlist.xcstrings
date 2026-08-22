@@ -8,13 +8,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "King Crab"
+            "value" : "Rabbit Hole"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koningkrab"
+            "value" : "Konijnenspel"
           }
         }
       }
@@ -26,13 +26,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "King Crab"
+            "value" : "Rabbit Hole"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koningkrab"
+            "value" : "Konijnenspel"
           }
         }
       }

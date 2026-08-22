@@ -148,7 +148,7 @@ final class GameViewModel: ObservableObject {
         PlaytimeTracker.shared.challengeStarted()
         AppAudio.shared.setGameplayActive(true, questionText: nil)
         AppAudio.shared.playSessionStart()
-        hasBonusFishPower = prepared.pausedSession?.hasBonusFishPower ?? false
+        hasBonusFishPower = false
         openRound()
         announceRound()
         sync()
@@ -242,7 +242,7 @@ final class GameViewModel: ObservableObject {
         if skipsPersistence { return }
 #endif
         guard !hasRecordedResult,
-              let paused = engine.pausedSession(hasBonusFishPower: hasBonusFishPower)
+              let paused = engine.pausedSession(hasBonusFishPower: false)
         else { return }
         guard paused.cards > 0 else {
             PausedSessionStore.shared.clear(request.board)
@@ -287,7 +287,7 @@ final class GameViewModel: ObservableObject {
     /// tells the arena whether the King's sweep actually scored.
     @discardableResult
     func select(optionID: UUID) -> Bool {
-        resolve(engine.select(optionID: optionID, usesBonusFish: hasBonusFishPower))
+        resolve(engine.select(optionID: optionID, usesBonusFish: false))
     }
 
     /// The player smashed the crab carrying the right answer. It costs a whole
@@ -449,14 +449,9 @@ final class GameViewModel: ObservableObject {
         haptic(.light)
     }
 
-    /// Called by the arena when the player taps the passing 2x crab. Multiple
-    /// catches do not stack: one aura always represents one doubled answer.
-    func catchBonusFish() {
-        guard !hasBonusFishPower else { return }
-        hasBonusFishPower = true
-        AppAudio.shared.playDoubleCardAppear()
-        haptic(.rigid)
-    }
+    /// Rabbit Hole has no 2× crab. Kept so leftover arena wiring can still call
+    /// in without handing the player a doubling power.
+    func catchBonusFish() {}
 
     /// The life crab is a direct life reward, not a power held for the next
     /// answer, so the engine applies it the moment it reaches the King.
