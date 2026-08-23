@@ -342,8 +342,7 @@ nonisolated public final class MemoryGame {
         if option.isCorrect {
             let streakWasActive = isStreakBoostActive
             let fishMultiplier = usesBonusFish ? GameConfig.bonusFishMultiplier : 1
-            let streakMultiplier = streakWasActive ? GameConfig.streakMultiplier : 1
-            let earned = GameConfig.normalCardReward * fishMultiplier * streakMultiplier
+            let earned = GameConfig.normalCardReward * fishMultiplier
             cards += earned
             result.correctAnswers += 1
             result.cardsEarned += earned

@@ -53,7 +53,7 @@ struct OnboardingView: View {
                         let portrait: CGFloat = isPad
                             ? (step == 1 ? 160 : 210)
                             : (step == 1 ? 112 : 150)
-                        welcomeCharacter.artwork
+                        welcomeCharacter.menuPortrait
                             .resizable()
                             .scaledToFit()
                             .frame(width: portrait, height: portrait)

@@ -98,7 +98,7 @@ nonisolated public enum GameConfig {
     public static let rabbitHoleDropDuration = 0.18
     public static let rabbitHoleWriggleDuration = 0.30
     public static let rabbitHoleRaiseDuration = 0.22
-    public static let rabbitHoleCorrectTossDuration = 0.50
+    public static let rabbitHoleCorrectTossDuration = 0.62
     public static let rabbitHoleWrongTossDuration = 0.36
     public static let rabbitHoleExplosionDuration = 0.80
     public static let rabbitHoleFallDuration = 0.78
@@ -144,11 +144,11 @@ nonisolated public enum GameConfig {
 
     // MARK: Bonuses
 
-    /// Retired King Crab leftovers. Rabbit Hole has no streak speed boost and
-    /// no 2× crab: the crane keeps one swing pace, and every correct carrot
-    /// pays `normalCardReward` unless the streak itself doubles it.
+    /// Retired King Crab leftovers. Rabbit Hole has no streak speed boost,
+    /// no 2× crab, and no double points on a streak: the crane keeps one
+    /// swing pace, and every correct carrot pays `normalCardReward`.
     public static let streakThreshold = 5
-    public static let streakMultiplier = 2
+    public static let streakMultiplier = 1
     public static let streakSpeedMultiplier = 1.0
     public static let streakWrongAnswerCostHalves = 1
     public static let bonusFishCount = 0...0

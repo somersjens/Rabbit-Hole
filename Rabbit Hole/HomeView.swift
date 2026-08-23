@@ -364,10 +364,14 @@ struct HomeView: View {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .stroke(.white.opacity(0.9), lineWidth: 2)
                 }
-            character.artwork
+            character.menuIcon
                 .resizable()
                 .scaledToFit()
-                .padding(box * 0.08)
+                .padding(character.id == "bunny"
+                         ? EdgeInsets(top: box * 0.10, leading: box * 0.05,
+                                      bottom: 0, trailing: box * 0.05)
+                         : EdgeInsets(top: box * 0.08, leading: box * 0.08,
+                                      bottom: box * 0.08, trailing: box * 0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .frame(width: box, height: box)

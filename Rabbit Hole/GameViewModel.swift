@@ -335,7 +335,6 @@ final class GameViewModel: ObservableObject {
             }
             if startedStreak {
                 streakAnnouncementID &+= 1
-                AppAudio.shared.playDoubleScore()
             }
             haptic(.success)
             delay = GameConfig.nextRoundDelay.correct

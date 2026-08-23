@@ -170,6 +170,29 @@ struct AnimalCharacter: Identifiable, Equatable {
     var imageName: String { artNumber == 1 ? "1_main" : "\(artNumber)_full" }
     var artwork: Image { Image(imageName) }
 
+    /// Rest-pose in the excavator for the welcome screen and the shop hero:
+    /// `main_no_arm`, `joystick_pre`, `arm_pre`, then the centre `top_part` and
+    /// `claw` with no extension. Only the bunny is assembled so far; the other
+    /// animals keep `artwork` until their machines are layered too.
+    var menuPortraitName: String {
+        id == "bunny" ? "bunny_excavator_full" : imageName
+    }
+    var menuPortrait: Image { Image(menuPortraitName) }
+
+    /// Tight crop of the same rest-pose, framed like the app icon. The home
+    /// character button uses this so that slot matches the icon on the springboard.
+    var menuIconName: String {
+        id == "bunny" ? "bunny_excavator_icon" : imageName
+    }
+    var menuIcon: Image { Image(menuIconName) }
+
+    /// Shop-grid size of the excavator portrait. Same framing as `menuPortrait`,
+    /// small enough that five-across cells do not unpack a 1024-pixel image.
+    var menuThumbName: String {
+        id == "bunny" ? "bunny_excavator_thumb" : thumbImageName
+    }
+    var menuThumb: Image { Image(menuThumbName) }
+
     /// The same animal at chip size, for the slots that draw him no bigger than
     /// a stamp: the shop's grid, the row of animals just earned, the line
     /// counting down to the next one, and the small talking heads. Handing

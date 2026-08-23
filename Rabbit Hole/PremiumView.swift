@@ -148,7 +148,7 @@ struct PremiumView: View {
                     Circle()
                         .stroke(character.color.opacity(0.30), lineWidth: 2)
                         .frame(width: heroSize * 0.92, height: heroSize * 0.92)
-                    character.artwork
+                    character.menuPortrait
                         .resizable()
                         .scaledToFit()
                         .frame(width: heroSize * 0.88, height: heroSize * 0.88)
@@ -333,13 +333,13 @@ struct PremiumView: View {
             Color.clear
                 .aspectRatio(1, contentMode: .fit)
                 .overlay {
-                    animal.thumbArtwork
+                    animal.menuThumb
                         .resizable()
                         .scaledToFit()
                 }
                 .padding(.horizontal, 11)
         } else {
-            animal.thumbArtwork
+            animal.menuThumb
                 .resizable()
                 .scaledToFit()
                 .frame(width: 44, height: 44)
@@ -535,7 +535,7 @@ struct PremiumView: View {
                         }
                         .rotationEffect(.degrees(unlockBurstRotation))
 
-                        animal.artwork
+                        animal.menuPortrait
                             .resizable()
                             .scaledToFit()
                             .frame(width: stageSize * 0.72, height: stageSize * 0.72)
