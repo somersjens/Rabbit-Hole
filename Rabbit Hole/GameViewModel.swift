@@ -64,6 +64,9 @@ final class GameViewModel: ObservableObject {
     /// Upcoming sums, current first. The playfield stocks each underground
     /// floor from this list so a later answer can already be sitting there.
     @Published private(set) var remainingQuestions: [MathQuestion] = []
+    /// Wrong carrots plus premature dynamite explosions. The arena uses this
+    /// to remove only the still-unused correction carrots on the final floor.
+    @Published private(set) var rabbitHoleMistakes = 0
     /// The sum the player just lost, held under the one that replaced it so a
     /// mistake is never silent. Nil whenever there is nothing to own up to.
     @Published private(set) var missedSum: MissedSum?
@@ -367,7 +370,8 @@ final class GameViewModel: ObservableObject {
             self.engine.advance()
             if self.engine.state == .gameOver {
                 self.finishSession()
-            } else if self.engine.round?.id != previousRoundID {
+            } else if let nextRoundID = self.engine.round?.id,
+                      nextRoundID != previousRoundID {
                 // A new sum is announced and opened. A wrong answer leaves the
                 // same sum in place, and play simply resumes.
                 self.announceRound()
@@ -410,9 +414,21 @@ final class GameViewModel: ObservableObject {
 
     /// A carrot that was not the current answer. The floor keeps going and
     /// nothing is scored: the hook just threw it away.
-    func missCarrot() {
+    func missCarrot(answer: String) {
         PlaytimeTracker.shared.registerInteraction()
+        engine.discardUpcomingQuestion(answer: answer)
+        engine.recordRabbitHoleMistake()
+        sync()
         AppAudio.shared.playWrong()
+        haptic(.error)
+    }
+
+    /// Grabbing the bomb or allowing its fuse to expire while carrots remain
+    /// spends one of the same two correction opportunities as a wrong carrot.
+    func missDynamite() {
+        PlaytimeTracker.shared.registerInteraction()
+        engine.recordRabbitHoleMistake()
+        sync()
         haptic(.error)
     }
 
@@ -572,6 +588,7 @@ final class GameViewModel: ObservableObject {
         isStreakBoostActive = engine.isStreakBoostActive
         isLifeCrabAvailable = engine.isLifeCrabAvailable
         remainingQuestions = engine.remainingQuestions
+        rabbitHoleMistakes = engine.rabbitHoleMistakeCount
         syncMissedSum()
         AppAudio.shared.setGameplayRate(isStreakBoostActive
                                         ? Float(GameConfig.streakSpeedMultiplier) : 1)

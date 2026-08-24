@@ -285,6 +285,7 @@ struct GameView: View {
         return ZStack(alignment: .top) {
             RabbitHolePlayfield(round: model.round,
                                 remainingQuestions: model.remainingQuestions,
+                                mistakeCount: model.rabbitHoleMistakes,
                                 missedSum: model.missedSum,
                                 maximumRounds: model.maximumRounds,
                                 character: character,
@@ -304,6 +305,7 @@ struct GameView: View {
                                 scoreTarget: scoreIconCenter,
                                 onCorrect: { model.select(optionID: $0) },
                                 onWrong: model.missCarrot,
+                                onDynamiteMistake: model.missDynamite,
                                 onTimeout: model.endByTimeout,
                                 onSmash: { model.crabSmashed() },
                                 onShellArrived: model.scoreBubbleArrived,

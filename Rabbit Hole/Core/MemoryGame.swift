@@ -105,6 +105,13 @@ nonisolated public final class MemoryGame {
     /// be planned as one campaign rather than one question at a time.
     private var plannedRounds: [GameRound] = []
     private var plannedIndex = 0
+    /// Each early carrot removes its matching future sum. Two such removals are
+    /// covered by the campaign's two extra planned questions.
+    public private(set) var discardedQuestionCount = 0
+    /// Wrong carrots and premature dynamite explosions. Kept separate from
+    /// discarded questions because one explosion is one mistake regardless of
+    /// how many carrots were still on that floor.
+    public private(set) var rabbitHoleMistakeCount = 0
 
     public private(set) var roundNumber = 0
     public private(set) var cards = 0
@@ -155,6 +162,12 @@ nonisolated public final class MemoryGame {
     /// Rounds this board can run to. Every round pays at least one bubble, so
     /// the target is always reachable inside this many.
     public var maximumRounds: Int { board.maximum }
+
+    /// The two correction carrots are real answer opportunities. A flawless
+    /// run stops at the score maximum before it needs them.
+    private var plannedQuestionCount: Int {
+        board.maximum + GameConfig.rabbitHoleCorrectionCarrots
+    }
 
     /// Whether a tap on an answer card can be accepted right now.
     public var acceptsInput: Bool { state == .answering }
@@ -237,7 +250,7 @@ nonisolated public final class MemoryGame {
     public func start() -> Bool {
         guard state == .intro else { return false }
         roundNumber = 1
-        plannedRounds = (1...maximumRounds).map { factory.makeRound(number: $0) }
+        plannedRounds = (1...plannedQuestionCount).map { factory.makeRound(number: $0) }
         plannedIndex = 0
         round = plannedRounds[0]
         preparedRound = plannedRounds.count > 1 ? plannedRounds[1] : nil
@@ -263,10 +276,15 @@ nonisolated public final class MemoryGame {
         lifeCrabTarget = session.heartFishTarget ?? GameConfig.lifeCrabCorrectAnswers
         isLifeCrabAvailable = session.isHeartFishAvailable ?? false
         hasSpentLifeCrab = session.hasSpentLifeCrab ?? false
+        discardedQuestionCount = session.discardedQuestions ?? 0
+        rabbitHoleMistakeCount = session.rabbitHoleMistakes
+            ?? session.discardedQuestions
+            ?? 0
         // A run resumed on its last life keeps counting toward the comeback
         // rather than waiting for a drop that already happened.
         isCounting = lifeHalves <= GameConfig.lifeCrabCriticalHalves
-        let remainingCount = max(1, maximumRounds - roundNumber + 1)
+        let answeredCount = max(0, roundNumber - 1)
+        let remainingCount = max(1, plannedQuestionCount - answeredCount - discardedQuestionCount)
         plannedRounds = (0..<remainingCount).map { factory.makeRound(number: roundNumber + $0) }
         plannedIndex = 0
         round = plannedRounds[0]
@@ -296,7 +314,9 @@ nonisolated public final class MemoryGame {
                              heartFishProgress: lifeCrabProgress,
                              heartFishTarget: lifeCrabTarget,
                              isHeartFishAvailable: isLifeCrabAvailable,
-                             hasSpentLifeCrab: hasSpentLifeCrab)
+                             hasSpentLifeCrab: hasSpentLifeCrab,
+                             discardedQuestions: discardedQuestionCount,
+                             rabbitHoleMistakes: rabbitHoleMistakeCount)
     }
 
     /// The tap that turns the answer cards face down and brings the question
@@ -426,6 +446,33 @@ nonisolated public final class MemoryGame {
         return .absorbed(endsSession: false)
     }
 
+    /// Removes the first future sum carried by a carrot that was collected as
+    /// a wrong answer. The current sum is deliberately excluded: if its value
+    /// matched, the arena would have counted the carrot as correct.
+    @discardableResult
+    public func discardUpcomingQuestion(answer: String) -> Bool {
+        guard state != .intro, state != .gameOver,
+              plannedIndex + 1 < plannedRounds.count else { return false }
+        let wanted = AnswerValue(answer)
+        guard let index = ((plannedIndex + 1)..<plannedRounds.count).first(where: {
+            AnswerValue(plannedRounds[$0].question.correctAnswer) == wanted
+        }) else { return false }
+
+        plannedRounds.remove(at: index)
+        discardedQuestionCount += 1
+        preparedRound = plannedIndex + 1 < plannedRounds.count
+            ? plannedRounds[plannedIndex + 1]
+            : nil
+        return true
+    }
+
+    /// Records one Rabbit Hole mistake. This is deliberately independent of
+    /// lives and of how many future questions a blast may leave untouched.
+    public func recordRabbitHoleMistake() {
+        guard state != .intro, state != .gameOver else { return }
+        rabbitHoleMistakeCount += 1
+    }
+
     /// Restores a whole life when the comeback crab reaches the King. The
     /// return value is the number of half-hearts restored, or zero when the
     /// arrival was stale.
@@ -523,16 +570,23 @@ nonisolated public final class MemoryGame {
             return state
         }
 #endif
-        if plannedIndex + 1 < plannedRounds.count {
-            plannedIndex += 1
-            round = plannedRounds[plannedIndex]
-            preparedRound = plannedIndex + 1 < plannedRounds.count
-                ? plannedRounds[plannedIndex + 1]
-                : nil
-        } else {
-            round = preparedRound ?? factory.makeRound(number: roundNumber)
-            preparedRound = factory.makeRound(number: roundNumber + 1)
+        guard plannedIndex + 1 < plannedRounds.count else {
+            // More than two early carrots can exhaust the campaign below the
+            // score target. Leave no question on screen while the now-empty
+            // final floor automatically detonates its bomb; that explosion
+            // supplies the ordinary timeout ending.
+            plannedIndex = plannedRounds.count
+            round = nil
+            preparedRound = nil
+            selectedOptionID = nil
+            lastOutcome = nil
+            return state
         }
+        plannedIndex += 1
+        round = plannedRounds[plannedIndex]
+        preparedRound = plannedIndex + 1 < plannedRounds.count
+            ? plannedRounds[plannedIndex + 1]
+            : nil
         selectedOptionID = nil
         lastOutcome = nil
         state = .memorising

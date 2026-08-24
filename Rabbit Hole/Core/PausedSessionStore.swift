@@ -39,6 +39,11 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
     public let isHeartFishAvailable: Bool?
     /// Whether this run has already had its one comeback.
     public let hasSpentLifeCrab: Bool?
+    /// Future questions removed because their carrot was collected early.
+    /// Optional so saves made before variable Rabbit Hole floors still decode.
+    public let discardedQuestions: Int?
+    /// Wrong carrots plus player/timer-triggered dynamite explosions.
+    public let rabbitHoleMistakes: Int?
 
     public init(boardID: String,
                 roundNumber: Int,
@@ -54,7 +59,9 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
                 heartFishProgress: Int? = nil,
                 heartFishTarget: Int? = nil,
                 isHeartFishAvailable: Bool? = nil,
-                hasSpentLifeCrab: Bool? = nil) {
+                hasSpentLifeCrab: Bool? = nil,
+                discardedQuestions: Int? = nil,
+                rabbitHoleMistakes: Int? = nil) {
         self.boardID = boardID
         self.roundNumber = roundNumber
         self.cards = cards
@@ -70,6 +77,8 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
         self.heartFishTarget = heartFishTarget
         self.isHeartFishAvailable = isHeartFishAvailable
         self.hasSpentLifeCrab = hasSpentLifeCrab
+        self.discardedQuestions = discardedQuestions
+        self.rabbitHoleMistakes = rabbitHoleMistakes
     }
 
     /// A record is only usable if it describes a session that can still be
@@ -82,6 +91,8 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
             && cards >= 0
             && correctAnswers >= 0
             && wrongAnswers >= 0
+            && (discardedQuestions ?? 0) >= 0
+            && (rabbitHoleMistakes ?? 0) >= 0
             && (correctStreak ?? 0) >= 0
             && (heartFishProgress ?? 0) >= 0
             && (heartFishTarget ?? GameConfig.lifeCrabCorrectAnswers) >= 1

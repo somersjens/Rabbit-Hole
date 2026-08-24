@@ -44,18 +44,27 @@ nonisolated public enum GameConfig {
 
     // MARK: Rabbit Hole
 
-    /// Carrots sitting on each underground floor, plus one dynamite stick.
+    /// A floor has between four and seven carrots, plus one dynamite stick.
+    /// Seven is the physical maximum: the eighth pocket belongs to the bomb.
+    public static let rabbitHoleMinimumCarrotCount = 4
     public static let rabbitHoleCarrotCount = 7
+    /// Two extra carrots are the complete correction budget for wrong carrots
+    /// and premature bomb explosions. Unused extras disappear on the final floor.
+    public static let rabbitHoleCorrectionCarrots = 2
     /// Fuse on every floor. Hitting zero blows the floor open.
     public static let rabbitHoleDynamiteSeconds = 60.0
-    /// How many of the seven carrots should be the next upcoming answers,
-    /// taken in order so the current sum is always among them.
-    public static let rabbitHoleUsefulPerFloor = 4...6
-    /// A 20-point board is four floors; bigger boards scale at five answers each.
-    public static let rabbitHoleFloorsForTwenty = 4
+    /// Floor counts are deliberately not a single points-per-floor formula.
+    /// Together with a shuffled carrot distribution this keeps the descent
+    /// from becoming predictable while retaining the requested campaign size.
     public static func rabbitHoleFloorCount(maximum: Int) -> Int {
-        max(rabbitHoleFloorsForTwenty,
-            Int((Double(maximum) / 5.0).rounded(.up)))
+        switch maximum {
+        case orderLevelMaximum: return 4
+        case randomLevelMaximum: return 6
+        case mixedLevelMaximum: return 7
+        case supermixLevelMaximum: return 8
+        default:
+            return max(1, Int((Double(maximum + rabbitHoleCorrectionCarrots) / 6.0).rounded(.up)))
+        }
     }
     /// Full left–right–left cycle of the crane hook. Slow enough that a
     /// tighter grab window is still hittable.
@@ -67,7 +76,7 @@ nonisolated public enum GameConfig {
     public static let rabbitHoleLaneFill = 0.86
     /// Placement fan as a share of peak swing. Wide enough that some carrots
     /// sit near the sides; the hook still overshoots them.
-    public static let rabbitHolePlaceFill = 0.82
+    public static let rabbitHolePlaceFill = 0.86
     /// Carrots plus the dynamite stick: one swing lane each.
     public static var rabbitHoleLaneCount: Int { rabbitHoleCarrotCount + 1 }
     public static var rabbitHoleLaneSpan: Double { rabbitHoleSwingAmplitude * rabbitHoleLaneFill }
@@ -75,17 +84,28 @@ nonisolated public enum GameConfig {
     public static var rabbitHoleLaneGap: Double {
         (2 * rabbitHoleLaneSpan) / Double(max(1, rabbitHoleLaneCount - 1))
     }
-    /// A tap locks the lane the hook is in. Slightly inside half a gap, so a
-    /// near miss still counts without stealing the neighbour.
-    public static var rabbitHoleGrabAngle: Double { rabbitHoleLaneGap * 0.48 }
+    /// A carrot owns almost its complete half-lane on either side. A tiny dead
+    /// zone at the midpoint keeps an exactly ambiguous tap from stealing a
+    /// neighbour, while still leaving every carrot a generous catch window.
+    public static var rabbitHoleGrabAngle: Double { rabbitHoleLaneGap * 0.55 }
+    /// Dynamite deliberately has a smaller intentional catch window. Its body
+    /// can still be touched by a genuinely off-target claw, but it should not
+    /// claim the edge of a neighbouring carrot's lane.
+    public static var rabbitHoleDynamiteGrabAngle: Double { rabbitHoleLaneGap * 0.32 }
     /// Where the dirt begins, as a share of the screen height. The grass sits
     /// on that lip; the rabbit stands on the grass.
     public static let rabbitHoleGrassShare = 0.50
     /// On-screen size of a carrot (and the dynamite bundle).
     public static func rabbitHoleCarrotSize(isPad: Bool) -> CGFloat { isPad ? 99 : 77 }
+    /// The illustrated floor items leave a little more dirt visible between
+    /// lanes than the original drawn placeholders did.
+    public static let rabbitHoleItemDisplayScale: CGFloat = 0.90
     /// Full drawn height of a carrot, leaves included.
     public static func rabbitHoleCarrotLength(isPad: Bool) -> CGFloat {
         rabbitHoleCarrotSize(isPad: isPad) * 1.35
+    }
+    public static func rabbitHoleDisplayedItemLength(isPad: Bool) -> CGFloat {
+        rabbitHoleCarrotLength(isPad: isPad) * rabbitHoleItemDisplayScale
     }
     /// Rest-centre offset so the leafy top sits a quarter carrot-length under the grass.
     public static let rabbitHoleBurialFactor: CGFloat = 0.80
