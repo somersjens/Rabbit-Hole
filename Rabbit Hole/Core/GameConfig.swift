@@ -101,7 +101,7 @@ nonisolated public enum GameConfig {
     public static let rabbitHoleCorrectTossDuration = 0.62
     public static let rabbitHoleWrongTossDuration = 0.36
     public static let rabbitHoleExplosionDuration = 0.80
-    public static let rabbitHoleFallDuration = 0.78
+    public static let rabbitHoleFallDuration = 1.00
     public static let rabbitHoleEntranceDuration = 0.90
     public static let rabbitHoleYayDuration = 1.60
 
