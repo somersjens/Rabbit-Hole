@@ -263,6 +263,9 @@ final class RabbitHoleArena: ObservableObject {
     /// Screen shake in points during the blast.
     private(set) var shake: CGFloat = 0
     private(set) var isCelebrating = false
+    /// Remains true after the motion finishes so the result card stays over
+    /// the right-hand landing world instead of snapping back to the shaft.
+    private(set) var finaleSceneActive = false
     /// 1 = surface daylight. It decreases per floor but keeps a non-zero
     /// minimum because the shaft remains open to the sky above.
     private(set) var skyAmount: CGFloat = 1
@@ -504,6 +507,7 @@ final class RabbitHoleArena: ObservableObject {
         finaleFlip = 0
         finaleSurfaceReveal = 0
         isCelebrating = false
+        finaleSceneActive = false
         celebrationLanded = false
         celebrationFinished = false
         pendingCompletion = false
@@ -554,6 +558,7 @@ final class RabbitHoleArena: ObservableObject {
     private func startCelebrationAfterExplosion() {
         guard pendingCompletion else { return }
         pendingCompletion = false
+        finaleSceneActive = true
         celebrationStartShaftScroll = shaftScroll
         celebrationStartFloorIndex = floorIndex
         celebrationLanded = false
@@ -584,6 +589,7 @@ final class RabbitHoleArena: ObservableObject {
     func endCelebration() {
         pendingCompletion = false
         isCelebrating = false
+        if !celebrationFinished { finaleSceneActive = false }
         if mode == .celebrating { mode = .swinging }
         objectWillChange.send()
     }
@@ -929,6 +935,12 @@ final class RabbitHoleArena: ObservableObject {
         }
 
         if isLastFloor {
+            if pendingCompletion, actionProgress >= 0.58 {
+                // Launch while the fireball is still large, so the machine's
+                // first upward frame reads as a direct reaction to the blast.
+                startCelebrationAfterExplosion()
+                return
+            }
             if actionProgress >= 1 {
                 if pendingCompletion {
                     // The blast is the first beat of the finale. Start the
@@ -1062,7 +1074,7 @@ final class RabbitHoleArena: ObservableObject {
         // completed at touchdown. This avoids the old upright ascent followed
         // by a disconnected, mechanical-looking spin above ground.
         let spinT = min(1, max(0, u / jumpEnd))
-        let spinProgress = spinT * spinT * (2 - spinT)
+        let spinProgress = 1 - pow(1 - spinT, 1.45)
         let continuousFlip = reduceMotion ? sin(spinT * .pi) * 10 : 360 * spinProgress
 
         if u < ascentEnd {
@@ -1089,7 +1101,8 @@ final class RabbitHoleArena: ObservableObject {
             // part of the viewport. After that the camera follows it through
             // the long empty shaft; importantly, no floor is attached to this
             // transform, so the destroyed bottom remains behind below.
-            let screenRise = smoothstep(min(1, t * 2.1))
+            let ascentRaw = min(1, max(0, u / ascentEnd))
+            let screenRise = 1 - pow(1 - ascentRaw, 3.2)
             celebrateHop = shaftFlightLift * CGFloat(screenRise)
                 + CGFloat(sin(t * .pi * 7)) * 3 * CGFloat(1 - t)
             finaleFlip = continuousFlip
