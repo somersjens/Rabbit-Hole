@@ -216,7 +216,8 @@ struct RabbitHolePlayfield: View {
                 RabbitHoleParticles(particles: arena.particles)
                     .allowsHitTesting(false)
 
-                CraneRig(isPad: isPad,
+                CraneRig(character: character,
+                         isPad: isPad,
                          surface: surface,
                          fieldSize: size,
                          boom: arena.boomPoint,
@@ -2298,6 +2299,7 @@ private struct RabbitHoleSoil: View, Equatable {
 // MARK: - Crane
 
 private struct CraneRig: View {
+    let character: AnimalCharacter
     let isPad: Bool
     let surface: CGRect
     let fieldSize: CGSize
@@ -2372,26 +2374,27 @@ private struct CraneRig: View {
 
     /// Main body, then the stick, then the operator arm — all on the shared canvas.
     private func cabStack(size: CGSize) -> some View {
-        let throwAngle = RabbitHoleCraneLayout.joystickThrowDegrees * (1 - Double(reach))
-        let armShift = RabbitHoleCraneLayout.armSlide
-            * RabbitHoleCraneLayout.canvasScale(isPad: isPad)
-            * reach
+        let kit = character.excavatorKit
+        let throwAngle = kit.pokeThrowDegrees * (1 - Double(reach))
+        let scale = RabbitHoleCraneLayout.canvasScale(isPad: isPad)
+        let armShift = CGSize(width: kit.armSlide.width * scale * reach,
+                              height: kit.armSlide.height * scale * reach)
         return ZStack {
-            Image("main_no_arm")
+            Image(kit.body)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: size.width, height: size.height)
-            Image("joystick_pre")
+            Image(kit.pokePre)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: size.width, height: size.height)
                 .rotationEffect(.degrees(throwAngle),
-                                anchor: RabbitHoleCraneLayout.joystickPivot)
-            Image("arm_pre")
+                                anchor: kit.pokePivot)
+            Image(kit.armPre)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: size.width, height: size.height)
-                .offset(x: armShift)
+                .offset(x: armShift.width, y: armShift.height)
         }
         .frame(width: size.width, height: size.height)
     }

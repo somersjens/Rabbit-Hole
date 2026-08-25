@@ -144,67 +144,38 @@ struct AnimalCharacter: Identifiable, Equatable {
         (CharacterUnlocks.orderedCharacterIDs.firstIndex(of: id) ?? 0) + 1
     }
 
-    /// Artwork export index. The PNGs were numbered in the original crab-first
-    /// catalog, so this stays fixed when unlock order changes.
-    var artNumber: Int {
-        switch id {
-        case "crab": return 1
-        case "elephant": return 2
-        case "bear": return 3
-        case "fox": return 4
-        case "frog": return 5
-        case "penguin": return 6
-        case "bunny": return 7
-        case "dog": return 8
-        case "lion": return 9
-        case "octopus": return 10
-        default: return 7
-        }
-    }
+    /// Excavator PNG prefix. Matches catalog order, so bunny is 1, dog is 2,
+    /// and so on through penguin at 10.
+    var artNumber: Int { catalogOrder }
 
-    /// Facing the player: menus, cards, the shop and every portrait slot. It is
-    /// the whole animal — shell, claws and legs — on a square canvas, and all
-    /// ten are centred and optically equalised, so one square frame renders any
-    /// character at the same apparent size. The King keeps the picture he has
-    /// always had: he is the app's mascot and wears his crown in it.
-    var imageName: String { artNumber == 1 ? "1_main" : "\(artNumber)_full" }
-    var artwork: Image { Image(imageName) }
+    /// Rest-pose in the excavator. Used anywhere a character portrait is drawn
+    /// outside the layered in-game rig.
+    var imageName: String { menuPortraitName }
+    var artwork: Image { menuPortrait }
 
     /// Rest-pose in the excavator for the welcome screen and the shop hero:
-    /// `main_no_arm`, `joystick_pre`, `arm_pre`, then the centre `top_part` and
-    /// `claw` with no extension. Only the bunny is assembled so far; the other
-    /// animals keep `artwork` until their machines are layered too.
-    var menuPortraitName: String {
-        id == "bunny" ? "bunny_excavator_full" : imageName
-    }
+    /// body, poke-pre, arm-pre, then the centre `top_part` and `claw` with no
+    /// extension. Every catalog character is assembled onto the same canvas.
+    var menuPortraitName: String { "\(id)_excavator_full" }
     var menuPortrait: Image { Image(menuPortraitName) }
 
     /// Tight crop of the same rest-pose, framed like the app icon. The home
     /// character button uses this so that slot matches the icon on the springboard.
-    var menuIconName: String {
-        id == "bunny" ? "bunny_excavator_icon" : imageName
-    }
+    var menuIconName: String { "\(id)_excavator_icon" }
     var menuIcon: Image { Image(menuIconName) }
 
     /// Shop-grid size of the excavator portrait. Same framing as `menuPortrait`,
     /// small enough that five-across cells do not unpack a 1024-pixel image.
-    var menuThumbName: String {
-        id == "bunny" ? "bunny_excavator_thumb" : thumbImageName
-    }
+    var menuThumbName: String { "\(id)_excavator_thumb" }
     var menuThumb: Image { Image(menuThumbName) }
 
-    /// The same animal at chip size, for the slots that draw him no bigger than
-    /// a stamp: the shop's grid, the row of animals just earned, the line
-    /// counting down to the next one, and the small talking heads. Handing
-    /// those the full-size picture makes the renderer unpack a 640-pixel square
-    /// to paint forty points of it, and ten of those is most of what opening
-    /// the shop costs.
-    var thumbImageName: String { "\(artNumber)_thumb" }
-    var thumbArtwork: Image { Image(thumbImageName) }
+    /// Stamp-size excavator portrait for the next-character line and talking
+    /// heads. Same framing as `menuThumb`.
+    var thumbImageName: String { menuThumbName }
+    var thumbArtwork: Image { menuThumb }
 
-    /// The separate limbs the arena animates this character from, when the
-    /// character has been cut into parts. Everyone else is drawn from the one
-    /// square portrait above, so a character without a rig still works.
+    /// Limb rig, when this character is still cut into parts. Catalog animals
+    /// are drawn from the excavator portrait instead.
     var rig: CharacterRig? { CharacterRig.rig(for: id) }
 
     /// Localized display name, resolved per language from the string catalog

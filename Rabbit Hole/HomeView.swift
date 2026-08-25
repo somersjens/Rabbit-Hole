@@ -367,11 +367,8 @@ struct HomeView: View {
             character.menuIcon
                 .resizable()
                 .scaledToFit()
-                .padding(character.id == "bunny"
-                         ? EdgeInsets(top: box * 0.10, leading: box * 0.05,
-                                      bottom: 0, trailing: box * 0.05)
-                         : EdgeInsets(top: box * 0.08, leading: box * 0.08,
-                                      bottom: box * 0.08, trailing: box * 0.08))
+                .padding(EdgeInsets(top: box * 0.10, leading: box * 0.05,
+                                    bottom: 0, trailing: box * 0.05))
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .frame(width: box, height: box)

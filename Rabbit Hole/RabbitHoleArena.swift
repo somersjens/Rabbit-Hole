@@ -87,10 +87,10 @@ enum RabbitHoleHookMode: Equatable {
     case entering
 }
 
-/// Shared 1552×1531 art canvas. `main_no_arm`, the joystick and the operator
-/// arm were drawn on that canvas. The trolley interpolates the left / centre /
-/// right toppart poses in polar space around the yellow hub, then those pose
-/// images are thrown away.
+/// Shared 1552×1531 art canvas. Each character's body, poke stick and operator
+/// arm were drawn on that canvas — see `ExcavatorKit`. The trolley interpolates
+/// the left / centre / right toppart poses in polar space around the yellow
+/// hub, then those pose images are thrown away.
 enum RabbitHoleCraneLayout {
     static let canvasSize = CGSize(width: 1552, height: 1531)
     /// Designed height of the machine in the canvas (crop of the tracks).
@@ -109,12 +109,6 @@ enum RabbitHoleCraneLayout {
     static let clawGripY: CGFloat = 0.6980
     /// Bottom-centre of the striped block on the cropped toppart.
     static let topGlue = UnitPoint(x: 0.496, y: 0.959)
-    /// Canvas-pixel slide of the operator arm from pre → after.
-    static let armSlide: CGFloat = 10
-    /// Base of `joystick_pre` on the shared canvas, as a unit point.
-    static let joystickPivot = UnitPoint(x: 509.95 / 1552, y: 932.64 / 1531)
-    /// Clockwise throw of the stick from pre to after, in SwiftUI degrees (CCW).
-    static let joystickThrowDegrees: Double = -13.27
     static func trackSink(isPad: Bool) -> CGFloat { isPad ? 16 : 12 }
 
     static func mainHeight(isPad: Bool) -> CGFloat { isPad ? 214 : 163 }

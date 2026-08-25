@@ -166,7 +166,7 @@ struct ResultView: View {
                     .font(.system(size: 20 * scale, weight: .bold))
                     .foregroundStyle(character.color.opacity(0.68))
                     .offset(x: 53 * scale, y: -8 * scale)
-                character.artwork
+                character.menuPortrait
                     .resizable()
                     .scaledToFit()
                     .frame(width: 156 * scale, height: 110.4 * scale)
@@ -177,7 +177,7 @@ struct ResultView: View {
             }
             .frame(height: 110.4 * scale)
         } else {
-            character.artwork
+            character.menuPortrait
                 .resizable()
                 .scaledToFit()
                 .frame(width: 156 * scale, height: 110.4 * scale)
@@ -345,7 +345,7 @@ struct ResultView: View {
                 ForEach(result.unlockedCharacterIDs, id: \.self) { id in
                     let animal = CharacterCatalog.character(id: id)
                     VStack(spacing: 4) {
-                        animal.thumbArtwork
+                        animal.menuThumb
                             .resizable()
                             .scaledToFit()
                             .frame(width: 50 * scale, height: 50 * scale)
