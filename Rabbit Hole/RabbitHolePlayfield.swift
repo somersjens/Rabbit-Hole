@@ -2373,9 +2373,11 @@ private struct CraneRig: View {
     }
 
     /// Main body, then the stick, then the operator arm — all on the shared canvas.
+    /// Rest uses the pre art as drawn. A full grab uses the after art as drawn.
+    /// In between, the poke hinges clockwise around its foot and the arm slides.
     private func cabStack(size: CGSize) -> some View {
         let kit = character.excavatorKit
-        let throwAngle = kit.pokeThrowDegrees * (1 - Double(reach))
+        let thrown = reach >= 1
         let scale = RabbitHoleCraneLayout.canvasScale(isPad: isPad)
         let armShift = CGSize(width: kit.armSlide.width * scale * reach,
                               height: kit.armSlide.height * scale * reach)
@@ -2384,17 +2386,18 @@ private struct CraneRig: View {
                 .resizable()
                 .interpolation(.high)
                 .frame(width: size.width, height: size.height)
-            Image(kit.pokePre)
+            Image(thrown ? kit.pokeAfter : kit.pokePre)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: size.width, height: size.height)
-                .rotationEffect(.degrees(throwAngle),
+                .rotationEffect(.degrees(thrown ? 0 : kit.pokeThrowDegrees * Double(reach)),
                                 anchor: kit.pokePivot)
-            Image(kit.armPre)
+            Image(thrown ? kit.armAfter : kit.armPre)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: size.width, height: size.height)
-                .offset(x: armShift.width, y: armShift.height)
+                .offset(x: thrown ? 0 : armShift.width,
+                        y: thrown ? 0 : armShift.height)
         }
         .frame(width: size.width, height: size.height)
     }

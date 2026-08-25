@@ -154,19 +154,19 @@ struct AnimalCharacter: Identifiable, Equatable {
     var artwork: Image { menuPortrait }
 
     /// Rest-pose in the excavator for the welcome screen and the shop hero:
-    /// body, poke-pre, arm-pre, then the centre `top_part` and `claw` with no
+    /// body, poke, arm, then the centre `top_part` and `claw` with no
     /// extension. Every catalog character is assembled onto the same canvas.
-    var menuPortraitName: String { "\(id)_excavator_full" }
+    var menuPortraitName: String { "\(artNumber)_full" }
     var menuPortrait: Image { Image(menuPortraitName) }
 
-    /// Tight crop of the same rest-pose, framed like the app icon. The home
-    /// character button uses this so that slot matches the icon on the springboard.
-    var menuIconName: String { "\(id)_excavator_icon" }
+    /// Tight cab crop of the same rest-pose, framed like the home character
+    /// button. All ten share the bunny's zoom so the animal fills that slot.
+    var menuIconName: String { "\(artNumber)_icon" }
     var menuIcon: Image { Image(menuIconName) }
 
     /// Shop-grid size of the excavator portrait. Same framing as `menuPortrait`,
     /// small enough that five-across cells do not unpack a 1024-pixel image.
-    var menuThumbName: String { "\(id)_excavator_thumb" }
+    var menuThumbName: String { "\(artNumber)_thumb" }
     var menuThumb: Image { Image(menuThumbName) }
 
     /// Stamp-size excavator portrait for the next-character line and talking
