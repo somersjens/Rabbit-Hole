@@ -22,6 +22,27 @@ enum Currency {
     static func icon(for characterID: String) -> String {
         FoodCatalog.food(for: characterID).currencyIconName
     }
+
+    /// The source files deliberately keep transparent breathing room, but a
+    /// square SwiftUI frame would make the visible silhouettes feel much
+    /// smaller than the text beside them. These measurements normalize the
+    /// opaque bounds to the same optical size and centre them without changing
+    /// the layout footprint used by menus and reward animations.
+    static func opticalMetrics(for iconName: String) -> (scale: CGFloat, x: CGFloat, y: CGFloat) {
+        switch iconName {
+        case "currency_1":  return (1.082,  0.003,  0.000)
+        case "currency_2":  return (1.184,  0.009, -0.003)
+        case "currency_3":  return (1.309,  0.026, -0.036)
+        case "currency_4":  return (1.368, -0.031,  0.003)
+        case "currency_5":  return (1.239,  0.029, -0.005)
+        case "currency_6":  return (1.309,  0.000, -0.160)
+        case "currency_7":  return (1.594, -0.040, -0.004)
+        case "currency_8":  return (1.215,  0.078, -0.031)
+        case "currency_9":  return (1.203, -0.002, -0.013)
+        case "currency_10": return (1.171,  0.003,  0.003)
+        default:             return (1.000,  0.000,  0.000)
+        }
+    }
 }
 
 private struct CurrencyIconKey: EnvironmentKey {
@@ -59,10 +80,17 @@ struct CurrencyIcon: View {
     @Environment(\.currencyIcon) private var iconName
 
     var body: some View {
+        let optical = Currency.opticalMetrics(for: iconName)
         Image(iconName)
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
+            .frame(width: size, height: size)
+            .scaleEffect(optical.scale)
+            .offset(x: size * optical.x, y: size * optical.y)
+            // Preserve the requested layout footprint: the level-card flight
+            // anchors and compact badges rely on this exact square on both
+            // iPhone and iPad, while the artwork may draw slightly outside it.
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }

@@ -92906,7 +92906,7 @@
       }
     },
     "premium.availableAt %lld" : {
-      "comment" : "Status under a character still to be earned. The argument is the shell total that opens it.",
+      "comment" : "Status under a character still to be earned. The argument is the carrot total that opens it.",
       "extractionState" : "manual",
       "localizations" : {
         "af" : {
@@ -92915,13 +92915,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Beskikbaar vanaf %lld skulp"
+                  "value" : "Beskikbaar vanaf %lld wortels"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Beskikbaar vanaf %lld skulpe"
+                  "value" : "Beskikbaar vanaf %lld wortels"
                 }
               }
             }
@@ -92933,13 +92933,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ከ%lld ዛጎል ጀምሮ ይገኛል"
+                  "value" : "ከ%lld ካሮት ጀምሮ ይገኛል"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ከ%lld ዛጎሎች ጀምሮ ይገኛል"
+                  "value" : "ከ%lld ካሮት ጀምሮ ይገኛል"
                 }
               }
             }
@@ -92951,13 +92951,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "متاح عند جمع %lld صدفة"
+                  "value" : "متاح عند جمع %lld جزرة"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "متاح عند جمع %lld أصداف"
+                  "value" : "متاح عند جمع %lld جزرة"
                 }
               }
             }
@@ -92969,13 +92969,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lldটা শামুকৰ খোলাৰ পৰা উপলব্ধ"
+                  "value" : "%lld গাজৰৰ পৰা উপলব্ধ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lldটা শামুকৰ খোলাৰ পৰা উপলব্ধ"
+                  "value" : "%lld গাজৰৰ পৰা উপলব্ধ"
                 }
               }
             }
@@ -92987,13 +92987,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld dəniz qabığından etibarən əlçatandır"
+                  "value" : "%lld kökdən etibarən əlçatandır"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld dəniz qabığından etibarən əlçatandır"
+                  "value" : "%lld kökdən etibarən əlçatandır"
                 }
               }
             }
@@ -93005,13 +93005,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Даступна ад %lld ракавінкі"
+                  "value" : "Даступна ад %lld моркваў"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Даступна ад %lld ракавінак"
+                  "value" : "Даступна ад %lld моркваў"
                 }
               }
             }
@@ -93023,13 +93023,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Достъпно от %lld мида"
+                  "value" : "Достъпно от %lld моркова"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Достъпно от %lld миди"
+                  "value" : "Достъпно от %lld моркова"
                 }
               }
             }
@@ -93041,13 +93041,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lldটি ঝিনুক থেকে পাওয়া যাবে"
+                  "value" : "%lldটি গাজর থেকে পাওয়া যাবে"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lldটি ঝিনুক থেকে পাওয়া যাবে"
+                  "value" : "%lldটি গাজর থেকে পাওয়া যাবে"
                 }
               }
             }
@@ -93059,13 +93059,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ཉ་ཕྱིས་ %lld ནས་སྤྱོད་ཆོག"
+                  "value" : "ལ་ཕུག %lld ནས་སྤྱོད་ཆོག"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ཉ་ཕྱིས་ %lld ནས་སྤྱོད་ཆོག"
+                  "value" : "ལ་ཕུག %lld ནས་སྤྱོད་ཆོག"
                 }
               }
             }
@@ -93077,13 +93077,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupno od %lld školjke"
+                  "value" : "Dostupno od %lld mrkvi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupno od %lld školjki"
+                  "value" : "Dostupno od %lld mrkvi"
                 }
               }
             }
@@ -93095,13 +93095,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponible a partir de %lld petxina"
+                  "value" : "Disponible a partir de %lld pastanagues"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponible a partir de %lld petxines"
+                  "value" : "Disponible a partir de %lld pastanagues"
                 }
               }
             }
@@ -93113,13 +93113,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupné od %lld mušle"
+                  "value" : "Dostupné od %lld mrkví"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupné od %lld mušlí"
+                  "value" : "Dostupné od %lld mrkví"
                 }
               }
             }
@@ -93131,13 +93131,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ar gael o %lld gragen"
+                  "value" : "Ar gael o %lld moronen"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ar gael o %lld cregyn"
+                  "value" : "Ar gael o %lld moronen"
                 }
               }
             }
@@ -93149,13 +93149,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tilgængelig fra %lld musling"
+                  "value" : "Tilgængelig fra %lld gulerødder"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tilgængelig fra %lld muslinger"
+                  "value" : "Tilgængelig fra %lld gulerødder"
                 }
               }
             }
@@ -93167,13 +93167,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Verfügbar ab %lld Muschel"
+                  "value" : "Verfügbar ab %lld Karotten"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Verfügbar ab %lld Muscheln"
+                  "value" : "Verfügbar ab %lld Karotten"
                 }
               }
             }
@@ -93185,13 +93185,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Διαθέσιμο από %lld κοχύλι"
+                  "value" : "Διαθέσιμο από %lld καρότα"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Διαθέσιμο από %lld κοχύλια"
+                  "value" : "Διαθέσιμο από %lld καρότα"
                 }
               }
             }
@@ -93203,13 +93203,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Available from %lld shell"
+                  "value" : "Available from %lld carrots"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Available from %lld shells"
+                  "value" : "Available from %lld carrots"
                 }
               }
             }
@@ -93221,13 +93221,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponible a partir de %lld concha"
+                  "value" : "Disponible a partir de %lld zanahorias"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponible a partir de %lld conchas"
+                  "value" : "Disponible a partir de %lld zanahorias"
                 }
               }
             }
@@ -93239,13 +93239,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Saadaval alates %lld merekarbist"
+                  "value" : "Saadaval alates %lld porgandist"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Saadaval alates %lld merekarbist"
+                  "value" : "Saadaval alates %lld porgandist"
                 }
               }
             }
@@ -93257,13 +93257,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Maskor %lld lortzean erabilgarri"
+                  "value" : "%lld azenario lortzean erabilgarri"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld maskor lortzean erabilgarri"
+                  "value" : "%lld azenario lortzean erabilgarri"
                 }
               }
             }
@@ -93275,13 +93275,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "از %lld صدف در دسترس است"
+                  "value" : "از %lld هویج در دسترس است"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "از %lld صدف در دسترس است"
+                  "value" : "از %lld هویج در دسترس است"
                 }
               }
             }
@@ -93293,13 +93293,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Saatavilla %lld simpukasta alkaen"
+                  "value" : "Saatavilla %lld porkkanasta alkaen"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Saatavilla %lld simpukasta alkaen"
+                  "value" : "Saatavilla %lld porkkanasta alkaen"
                 }
               }
             }
@@ -93311,13 +93311,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tøkt frá %lld skel"
+                  "value" : "Tøkt frá %lld gularótum"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tøkt frá %lld skel"
+                  "value" : "Tøkt frá %lld gularótum"
                 }
               }
             }
@@ -93329,13 +93329,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponible à partir de %lld coquillage"
+                  "value" : "Disponible à partir de %lld carottes"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponible à partir de %lld coquillages"
+                  "value" : "Disponible à partir de %lld carottes"
                 }
               }
             }
@@ -93347,13 +93347,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ar fáil ó %lld bhlaosc"
+                  "value" : "Ar fáil ó %lld cairéad"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ar fáil ó %lld blaosc"
+                  "value" : "Ar fáil ó %lld cairéad"
                 }
               }
             }
@@ -93365,13 +93365,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dispoñible a partir de %lld cuncha"
+                  "value" : "Dispoñible a partir de %lld cenorias"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dispoñible a partir de %lld cunchas"
+                  "value" : "Dispoñible a partir de %lld cenorias"
                 }
               }
             }
@@ -93383,13 +93383,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld છીપથી ઉપલબ્ધ"
+                  "value" : "%lld ગાજરથી ઉપલબ્ધ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld છીપોથી ઉપલબ્ધ"
+                  "value" : "%lld ગાજરથી ઉપલબ્ધ"
                 }
               }
             }
@@ -93401,13 +93401,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "זמין החל מ-%lld צדפה"
+                  "value" : "זמין החל מ-%lld גזרים"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "זמין החל מ-%lld צדפות"
+                  "value" : "זמין החל מ-%lld גזרים"
                 }
               }
             }
@@ -93419,13 +93419,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld सीपी से उपलब्ध"
+                  "value" : "%lld गाजरों से उपलब्ध"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld सीपियों से उपलब्ध"
+                  "value" : "%lld गाजरों से उपलब्ध"
                 }
               }
             }
@@ -93437,13 +93437,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupno od %lld školjke"
+                  "value" : "Dostupno od %lld mrkvi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupno od %lld školjki"
+                  "value" : "Dostupno od %lld mrkvi"
                 }
               }
             }
@@ -93455,13 +93455,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Elérhető %lld kagylótól"
+                  "value" : "Elérhető %lld répától"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Elérhető %lld kagylótól"
+                  "value" : "Elérhető %lld répától"
                 }
               }
             }
@@ -93473,13 +93473,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Հասանելի է %lld խեցիից"
+                  "value" : "Հասանելի է %lld գազարից"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Հասանելի է %lld խեցիից"
+                  "value" : "Հասանելի է %lld գազարից"
                 }
               }
             }
@@ -93491,13 +93491,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tersedia mulai %lld kerang"
+                  "value" : "Tersedia mulai %lld wortel"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tersedia mulai %lld kerang"
+                  "value" : "Tersedia mulai %lld wortel"
                 }
               }
             }
@@ -93509,13 +93509,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Í boði frá %lld skel"
+                  "value" : "Í boði frá %lld gulrótum"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Í boði frá %lld skeljum"
+                  "value" : "Í boði frá %lld gulrótum"
                 }
               }
             }
@@ -93527,13 +93527,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponibile da %lld conchiglia"
+                  "value" : "Disponibile da %lld carote"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponibile da %lld conchiglie"
+                  "value" : "Disponibile da %lld carote"
                 }
               }
             }
@@ -93545,13 +93545,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "貝がら%lld個から利用可能"
+                  "value" : "にんじんを%lld本集めると利用可能"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "貝がら%lld個から利用可能"
+                  "value" : "にんじんを%lld本集めると利用可能"
                 }
               }
             }
@@ -93563,13 +93563,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ხელმისაწვდომია %lld ნიჟარიდან"
+                  "value" : "ხელმისაწვდომია %lld სტაფილოდან"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ხელმისაწვდომია %lld ნიჟარიდან"
+                  "value" : "ხელმისაწვდომია %lld სტაფილოდან"
                 }
               }
             }
@@ -93581,13 +93581,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld бақалшақтан бастап қолжетімді"
+                  "value" : "%lld сәбізден бастап қолжетімді"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld бақалшақтан бастап қолжетімді"
+                  "value" : "%lld сәбізден бастап қолжетімді"
                 }
               }
             }
@@ -93599,13 +93599,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "អាចប្រើបានចាប់ពីសំបកខ្យង %lld"
+                  "value" : "អាចប្រើបានចាប់ពីការ៉ុត %lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "អាចប្រើបានចាប់ពីសំបកខ្យង %lld"
+                  "value" : "អាចប្រើបានចាប់ពីការ៉ុត %lld"
                 }
               }
             }
@@ -93617,13 +93617,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ಚಿಪ್ಪಿನಿಂದ ಲಭ್ಯ"
+                  "value" : "%lld ಕ್ಯಾರೆಟ್‌ಗಳಿಂದ ಲಭ್ಯ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ಚಿಪ್ಪುಗಳಿಂದ ಲಭ್ಯ"
+                  "value" : "%lld ಕ್ಯಾರೆಟ್‌ಗಳಿಂದ ಲಭ್ಯ"
                 }
               }
             }
@@ -93635,13 +93635,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "조개껍데기 %lld개부터 이용 가능"
+                  "value" : "당근 %lld개부터 이용 가능"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "조개껍데기 %lld개부터 이용 가능"
+                  "value" : "당근 %lld개부터 이용 가능"
                 }
               }
             }
@@ -93653,13 +93653,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ໃຊ້ໄດ້ເມື່ອມີເປືອກຫອຍ %lld"
+                  "value" : "ໃຊ້ໄດ້ເມື່ອມີຫົວແຄຣອດ %lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ໃຊ້ໄດ້ເມື່ອມີເປືອກຫອຍ %lld"
+                  "value" : "ໃຊ້ໄດ້ເມື່ອມີຫົວແຄຣອດ %lld"
                 }
               }
             }
@@ -93671,13 +93671,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Pasiekiama nuo %lld kriauklės"
+                  "value" : "Pasiekiama nuo %lld morkų"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Pasiekiama nuo %lld kriauklių"
+                  "value" : "Pasiekiama nuo %lld morkų"
                 }
               }
             }
@@ -93689,13 +93689,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Pieejams no %lld gliemežvāka"
+                  "value" : "Pieejams no %lld burkāniem"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Pieejams no %lld gliemežvākiem"
+                  "value" : "Pieejams no %lld burkāniem"
                 }
               }
             }
@@ -93707,13 +93707,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Достапно од %lld школка"
+                  "value" : "Достапно од %lld моркови"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Достапно од %lld школки"
+                  "value" : "Достапно од %lld моркови"
                 }
               }
             }
@@ -93725,13 +93725,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ചിപ്പി മുതൽ ലഭ്യം"
+                  "value" : "%lld കാരറ്റ് മുതൽ ലഭ്യം"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ചിപ്പികൾ മുതൽ ലഭ്യം"
+                  "value" : "%lld കാരറ്റ് മുതൽ ലഭ്യം"
                 }
               }
             }
@@ -93743,13 +93743,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld хясаанаас эхлэн нээгдэнэ"
+                  "value" : "%lld лууваннаас эхлэн нээгдэнэ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld хясаанаас эхлэн нээгдэнэ"
+                  "value" : "%lld лууваннаас эхлэн нээгдэнэ"
                 }
               }
             }
@@ -93761,13 +93761,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld शिंपल्यापासून उपलब्ध"
+                  "value" : "%lld गाजरांपासून उपलब्ध"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld शिंपल्यांपासून उपलब्ध"
+                  "value" : "%lld गाजरांपासून उपलब्ध"
                 }
               }
             }
@@ -93779,13 +93779,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tersedia mulai %lld cangkerang"
+                  "value" : "Tersedia mulai %lld lobak merah"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tersedia mulai %lld cangkerang"
+                  "value" : "Tersedia mulai %lld lobak merah"
                 }
               }
             }
@@ -93797,13 +93797,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ခရုခွံ %lld ခုမှ စတင်ရရှိနိုင်"
+                  "value" : "မုန်လာဥ %lld ခုမှ စတင်ရရှိနိုင်"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ခရုခွံ %lld ခုမှ စတင်ရရှိနိုင်"
+                  "value" : "မုန်လာဥ %lld ခုမှ စတင်ရရှိနိုင်"
                 }
               }
             }
@@ -93815,13 +93815,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tilgjengelig fra %lld skjell"
+                  "value" : "Tilgjengelig fra %lld gulrøtter"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tilgjengelig fra %lld skjell"
+                  "value" : "Tilgjengelig fra %lld gulrøtter"
                 }
               }
             }
@@ -93833,13 +93833,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld सिपीबाट उपलब्ध"
+                  "value" : "%lld गाजरबाट उपलब्ध"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld सिपीहरूबाट उपलब्ध"
+                  "value" : "%lld गाजरबाट उपलब्ध"
                 }
               }
             }
@@ -93851,13 +93851,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Beschikbaar vanaf %lld schelp"
+                  "value" : "Beschikbaar vanaf %lld wortels"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Beschikbaar vanaf %lld schelpen"
+                  "value" : "Beschikbaar vanaf %lld wortels"
                 }
               }
             }
@@ -93869,13 +93869,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lldଟି ଶାମୁକା ଖୋଳରୁ ଉପଲବ୍ଧ"
+                  "value" : "%lld ଗାଜରରୁ ଉପଲବ୍ଧ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lldଟି ଶାମୁକା ଖୋଳରୁ ଉପଲବ୍ଧ"
+                  "value" : "%lld ଗାଜରରୁ ଉପଲବ୍ଧ"
                 }
               }
             }
@@ -93887,13 +93887,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ਸੀਪੀ ਤੋਂ ਉਪਲਬਧ"
+                  "value" : "%lld ਗਾਜਰਾਂ ਤੋਂ ਉਪਲਬਧ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ਸੀਪੀਆਂ ਤੋਂ ਉਪਲਬਧ"
+                  "value" : "%lld ਗਾਜਰਾਂ ਤੋਂ ਉਪਲਬਧ"
                 }
               }
             }
@@ -93905,13 +93905,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostępne od %lld muszli"
+                  "value" : "Dostępne od %lld marchewek"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostępne od %lld muszli"
+                  "value" : "Dostępne od %lld marchewek"
                 }
               }
             }
@@ -93923,13 +93923,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponível a partir de %lld concha"
+                  "value" : "Disponível a partir de %lld cenouras"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponível a partir de %lld conchas"
+                  "value" : "Disponível a partir de %lld cenouras"
                 }
               }
             }
@@ -93941,13 +93941,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponibil de la %lld scoică"
+                  "value" : "Disponibil de la %lld morcovi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Disponibil de la %lld scoici"
+                  "value" : "Disponibil de la %lld morcovi"
                 }
               }
             }
@@ -93959,13 +93959,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Доступно с %lld ракушки"
+                  "value" : "Доступно с %lld морковок"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Доступно с %lld ракушек"
+                  "value" : "Доступно с %lld морковок"
                 }
               }
             }
@@ -93977,13 +93977,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "සිප්පි කටුව %lld සිට ලබාගත හැක"
+                  "value" : "කැරට් %lld සිට ලබාගත හැක"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "සිප්පි කටු %lld සිට ලබාගත හැක"
+                  "value" : "කැරට් %lld සිට ලබාගත හැක"
                 }
               }
             }
@@ -93995,13 +93995,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupné od %lld mušle"
+                  "value" : "Dostupné od %lld mrkiev"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Dostupné od %lld mušlí"
+                  "value" : "Dostupné od %lld mrkiev"
                 }
               }
             }
@@ -94013,13 +94013,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Na voljo od %lld školjke"
+                  "value" : "Na voljo od %lld korenčkov"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Na voljo od %lld školjk"
+                  "value" : "Na voljo od %lld korenčkov"
                 }
               }
             }
@@ -94031,13 +94031,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "E disponueshme nga %lld guaskë"
+                  "value" : "E disponueshme nga %lld karota"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "E disponueshme nga %lld guaska"
+                  "value" : "E disponueshme nga %lld karota"
                 }
               }
             }
@@ -94049,13 +94049,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Доступно од %lld шкољке"
+                  "value" : "Доступно од %lld шаргарепа"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Доступно од %lld шкољки"
+                  "value" : "Доступно од %lld шаргарепа"
                 }
               }
             }
@@ -94067,13 +94067,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tillgänglig från %lld snäcka"
+                  "value" : "Tillgänglig från %lld morötter"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tillgänglig från %lld snäckor"
+                  "value" : "Tillgänglig från %lld morötter"
                 }
               }
             }
@@ -94085,13 +94085,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Inapatikana kuanzia gamba %lld"
+                  "value" : "Inapatikana kuanzia karoti %lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Inapatikana kuanzia magamba %lld"
+                  "value" : "Inapatikana kuanzia karoti %lld"
                 }
               }
             }
@@ -94103,13 +94103,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld சிப்பியிலிருந்து கிடைக்கும்"
+                  "value" : "%lld காரட்டுகளிலிருந்து கிடைக்கும்"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld சிப்பிகளிலிருந்து கிடைக்கும்"
+                  "value" : "%lld காரட்டுகளிலிருந்து கிடைக்கும்"
                 }
               }
             }
@@ -94121,13 +94121,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld గవ్వ నుంచి అందుబాటులో ఉంటుంది"
+                  "value" : "%lld క్యారెట్ల నుంచి అందుబాటులో ఉంటుంది"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld గవ్వల నుంచి అందుబాటులో ఉంటుంది"
+                  "value" : "%lld క్యారెట్ల నుంచి అందుబాటులో ఉంటుంది"
                 }
               }
             }
@@ -94139,13 +94139,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ใช้ได้เมื่อมีเปลือกหอย %lld ชิ้น"
+                  "value" : "ใช้ได้เมื่อมีแครอต %lld หัว"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ใช้ได้เมื่อมีเปลือกหอย %lld ชิ้น"
+                  "value" : "ใช้ได้เมื่อมีแครอต %lld หัว"
                 }
               }
             }
@@ -94157,13 +94157,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld deniz kabuğundan itibaren kullanılabilir"
+                  "value" : "%lld havuçtan itibaren kullanılabilir"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld deniz kabuğundan itibaren kullanılabilir"
+                  "value" : "%lld havuçtan itibaren kullanılabilir"
                 }
               }
             }
@@ -94175,13 +94175,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld دېڭىز قېپىدىن باشلاپ ئېچىلىدۇ"
+                  "value" : "%lld سەۋزەدىن باشلاپ ئېچىلىدۇ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld دېڭىز قېپىدىن باشلاپ ئېچىلىدۇ"
+                  "value" : "%lld سەۋزەدىن باشلاپ ئېچىلىدۇ"
                 }
               }
             }
@@ -94193,13 +94193,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Доступно від %lld мушлі"
+                  "value" : "Доступно від %lld морквин"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Доступно від %lld мушель"
+                  "value" : "Доступно від %lld морквин"
                 }
               }
             }
@@ -94211,13 +94211,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld سیپی سے دستیاب"
+                  "value" : "%lld گاجروں سے دستیاب"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld سیپیوں سے دستیاب"
+                  "value" : "%lld گاجروں سے دستیاب"
                 }
               }
             }
@@ -94229,13 +94229,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ta chig‘anoqdan boshlab ochiladi"
+                  "value" : "%lld sabzidan boshlab ochiladi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ta chig‘anoqdan boshlab ochiladi"
+                  "value" : "%lld sabzidan boshlab ochiladi"
                 }
               }
             }
@@ -94247,13 +94247,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Có thể mở từ %lld vỏ sò"
+                  "value" : "Có thể mở từ %lld củ cà rốt"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Có thể mở từ %lld vỏ sò"
+                  "value" : "Có thể mở từ %lld củ cà rốt"
                 }
               }
             }
@@ -94265,13 +94265,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "收集到 %lld 个贝壳时可用"
+                  "value" : "收集到 %lld 根胡萝卜时可用"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "收集到 %lld 个贝壳时可用"
+                  "value" : "收集到 %lld 根胡萝卜时可用"
                 }
               }
             }
@@ -94283,13 +94283,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Kuyatholakala kusukela egobolondweni elingu-%lld"
+                  "value" : "Kuyatholakala kusukela kuzaqathe ezingu-%lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Kuyatholakala kusukela emagobolondweni angu-%lld"
+                  "value" : "Kuyatholakala kusukela kuzaqathe ezingu-%lld"
                 }
               }
             }
@@ -95234,7 +95234,7 @@
       }
     },
     "premium.earnedCards %lld" : {
-      "comment" : "Status under a character showing how many shells the player has so far.",
+      "comment" : "Status under a character showing how many carrots the player has so far.",
       "extractionState" : "manual",
       "localizations" : {
         "af" : {
@@ -95243,13 +95243,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Jy het %lld skulp verdien"
+                  "value" : "Jy het %lld wortels verdien"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Jy het %lld skulpe verdien"
+                  "value" : "Jy het %lld wortels verdien"
                 }
               }
             }
@@ -95261,13 +95261,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ዛጎል አግኝተሃል"
+                  "value" : "%lld ካሮት አግኝተሃል"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ዛጎሎች አግኝተሃል"
+                  "value" : "%lld ካሮት አግኝተሃል"
                 }
               }
             }
@@ -95279,13 +95279,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "لقد كسبت %lld صدفة"
+                  "value" : "لقد كسبت %lld جزرة"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "لقد كسبت %lld أصداف"
+                  "value" : "لقد كسبت %lld جزرة"
                 }
               }
             }
@@ -95297,13 +95297,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "তুমি %lldটা শামুকৰ খোলা লাভ কৰিলা"
+                  "value" : "তুমি %lld গাজৰ লাভ কৰিলা"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "তুমি %lldটা শামুকৰ খোলা লাভ কৰিলা"
+                  "value" : "তুমি %lld গাজৰ লাভ কৰিলা"
                 }
               }
             }
@@ -95315,13 +95315,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld dəniz qabığı qazandın"
+                  "value" : "%lld kök qazandın"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld dəniz qabığı qazandın"
+                  "value" : "%lld kök qazandın"
                 }
               }
             }
@@ -95333,13 +95333,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ты зарабіў/ла %lld ракавінку"
+                  "value" : "Ты зарабіў/ла %lld моркваў"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ты зарабіў/ла %lld ракавінак"
+                  "value" : "Ты зарабіў/ла %lld моркваў"
                 }
               }
             }
@@ -95351,13 +95351,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Спечели %lld мида"
+                  "value" : "Спечели %lld моркова"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Спечели %lld миди"
+                  "value" : "Спечели %lld моркова"
                 }
               }
             }
@@ -95369,13 +95369,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "তুমি %lldটি ঝিনুক অর্জন করেছ"
+                  "value" : "তুমি %lldটি গাজর অর্জন করেছ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "তুমি %lldটি ঝিনুক অর্জন করেছ"
+                  "value" : "তুমি %lldটি গাজর অর্জন করেছ"
                 }
               }
             }
@@ -95387,13 +95387,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ཉ་ཕྱིས་ %lld ཐོབ་ཟིན།"
+                  "value" : "ལ་ཕུག %lld ཐོབ་ཟིན།"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ཉ་ཕྱིས་ %lld ཐོབ་ཟིན།"
+                  "value" : "ལ་ཕུག %lld ཐོབ་ཟིན།"
                 }
               }
             }
@@ -95405,13 +95405,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Osvojio/la si %lld školjku"
+                  "value" : "Osvojio/la si %lld mrkvi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Osvojio/la si %lld školjki"
+                  "value" : "Osvojio/la si %lld mrkvi"
                 }
               }
             }
@@ -95423,13 +95423,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Has guanyat %lld petxina"
+                  "value" : "Has guanyat %lld pastanagues"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Has guanyat %lld petxines"
+                  "value" : "Has guanyat %lld pastanagues"
                 }
               }
             }
@@ -95441,13 +95441,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Získal/a jsi %lld mušli"
+                  "value" : "Získal/a jsi %lld mrkví"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Získal/a jsi %lld mušlí"
+                  "value" : "Získal/a jsi %lld mrkví"
                 }
               }
             }
@@ -95459,13 +95459,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Rwyt ti wedi ennill %lld gragen"
+                  "value" : "Rwyt ti wedi ennill %lld moronen"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Rwyt ti wedi ennill %lld cregyn"
+                  "value" : "Rwyt ti wedi ennill %lld moronen"
                 }
               }
             }
@@ -95477,13 +95477,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du har tjent %lld musling"
+                  "value" : "Du har tjent %lld gulerødder"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du har tjent %lld muslinger"
+                  "value" : "Du har tjent %lld gulerødder"
                 }
               }
             }
@@ -95495,13 +95495,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du hast %lld Muschel verdient"
+                  "value" : "Du hast %lld Karotten verdient"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du hast %lld Muscheln verdient"
+                  "value" : "Du hast %lld Karotten verdient"
                 }
               }
             }
@@ -95513,13 +95513,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Κέρδισες %lld κοχύλι"
+                  "value" : "Κέρδισες %lld καρότα"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Κέρδισες %lld κοχύλια"
+                  "value" : "Κέρδισες %lld καρότα"
                 }
               }
             }
@@ -95531,13 +95531,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "You’ve earned %lld shell"
+                  "value" : "You’ve earned %lld carrots"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "You’ve earned %lld shells"
+                  "value" : "You’ve earned %lld carrots"
                 }
               }
             }
@@ -95549,13 +95549,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Has conseguido %lld concha"
+                  "value" : "Has conseguido %lld zanahorias"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Has conseguido %lld conchas"
+                  "value" : "Has conseguido %lld zanahorias"
                 }
               }
             }
@@ -95567,13 +95567,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Oled teeninud %lld merekarbi"
+                  "value" : "Oled teeninud %lld porgandit"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Oled teeninud %lld merekarpi"
+                  "value" : "Oled teeninud %lld porgandit"
                 }
               }
             }
@@ -95585,13 +95585,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Maskor %lld irabazi duzu"
+                  "value" : "%lld azenario irabazi dituzu"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld maskor irabazi dituzu"
+                  "value" : "%lld azenario irabazi dituzu"
                 }
               }
             }
@@ -95603,13 +95603,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld صدف به دست آورده‌ای"
+                  "value" : "%lld هویج به دست آورده‌ای"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld صدف به دست آورده‌ای"
+                  "value" : "%lld هویج به دست آورده‌ای"
                 }
               }
             }
@@ -95621,13 +95621,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Olet ansainnut %lld simpukan"
+                  "value" : "Olet ansainnut %lld porkkanaa"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Olet ansainnut %lld simpukkaa"
+                  "value" : "Olet ansainnut %lld porkkanaa"
                 }
               }
             }
@@ -95639,13 +95639,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tú hevur vunnið %lld skel"
+                  "value" : "Tú hevur vunnið %lld gularøtur"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tú hevur vunnið %lld skel"
+                  "value" : "Tú hevur vunnið %lld gularøtur"
                 }
               }
             }
@@ -95657,13 +95657,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tu as gagné %lld coquillage"
+                  "value" : "Tu as gagné %lld carottes"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tu as gagné %lld coquillages"
+                  "value" : "Tu as gagné %lld carottes"
                 }
               }
             }
@@ -95675,13 +95675,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tá %lld bhlaosc tuillte agat"
+                  "value" : "Tá %lld cairéad tuillte agat"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tá %lld blaosc tuillte agat"
+                  "value" : "Tá %lld cairéad tuillte agat"
                 }
               }
             }
@@ -95693,13 +95693,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Conseguiches %lld cuncha"
+                  "value" : "Conseguiches %lld cenorias"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Conseguiches %lld cunchas"
+                  "value" : "Conseguiches %lld cenorias"
                 }
               }
             }
@@ -95711,13 +95711,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "તમે %lld છીપ કમાઈ"
+                  "value" : "તમે %lld ગાજર કમાઈ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "તમે %lld છીપો કમાઈ"
+                  "value" : "તમે %lld ગાજર કમાઈ"
                 }
               }
             }
@@ -95729,13 +95729,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "הרווחת %lld צדפה"
+                  "value" : "הרווחת %lld גזרים"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "הרווחת %lld צדפות"
+                  "value" : "הרווחת %lld גזרים"
                 }
               }
             }
@@ -95747,13 +95747,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "तुमने %lld सीपी कमाई"
+                  "value" : "तुमने %lld गाजर कमाईं"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "तुमने %lld सीपियाँ कमाईं"
+                  "value" : "तुमने %lld गाजर कमाईं"
                 }
               }
             }
@@ -95765,13 +95765,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Osvojio/la si %lld školjku"
+                  "value" : "Osvojio/la si %lld mrkvi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Osvojio/la si %lld školjki"
+                  "value" : "Osvojio/la si %lld mrkvi"
                 }
               }
             }
@@ -95783,13 +95783,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld kagylót szereztél"
+                  "value" : "%lld répát szereztél"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld kagylót szereztél"
+                  "value" : "%lld répát szereztél"
                 }
               }
             }
@@ -95801,13 +95801,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Դու վաստակել ես %lld խեցի"
+                  "value" : "Դու վաստակել ես %lld գազար"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Դու վաստակել ես %lld խեցի"
+                  "value" : "Դու վաստակել ես %lld գազար"
                 }
               }
             }
@@ -95819,13 +95819,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Kamu sudah mendapatkan %lld kerang"
+                  "value" : "Kamu sudah mendapatkan %lld wortel"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Kamu sudah mendapatkan %lld kerang"
+                  "value" : "Kamu sudah mendapatkan %lld wortel"
                 }
               }
             }
@@ -95837,13 +95837,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Þú hefur unnið %lld skel"
+                  "value" : "Þú hefur unnið %lld gulrætur"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Þú hefur unnið %lld skeljar"
+                  "value" : "Þú hefur unnið %lld gulrætur"
                 }
               }
             }
@@ -95855,13 +95855,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Hai guadagnato %lld conchiglia"
+                  "value" : "Hai guadagnato %lld carote"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Hai guadagnato %lld conchiglie"
+                  "value" : "Hai guadagnato %lld carote"
                 }
               }
             }
@@ -95873,13 +95873,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "貝がらを%lld個集めたよ"
+                  "value" : "にんじんを%lld本集めたよ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "貝がらを%lld個集めたよ"
+                  "value" : "にんじんを%lld本集めたよ"
                 }
               }
             }
@@ -95891,13 +95891,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "შენ მოიპოვე %lld ნიჟარა"
+                  "value" : "შენ მოიპოვე %lld სტაფილო"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "შენ მოიპოვე %lld ნიჟარა"
+                  "value" : "შენ მოიპოვე %lld სტაფილო"
                 }
               }
             }
@@ -95909,13 +95909,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld бақалшақ таптың"
+                  "value" : "%lld сәбіз таптың"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld бақалшақ таптың"
+                  "value" : "%lld сәбіз таптың"
                 }
               }
             }
@@ -95927,13 +95927,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "អ្នករកបានសំបកខ្យង %lld"
+                  "value" : "អ្នករកបានការ៉ុត %lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "អ្នករកបានសំបកខ្យង %lld"
+                  "value" : "អ្នករកបានការ៉ុត %lld"
                 }
               }
             }
@@ -95945,13 +95945,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ನೀನು %lld ಚಿಪ್ಪು ಗಳಿಸಿದ್ದೀಯ"
+                  "value" : "ನೀನು %lld ಕ್ಯಾರೆಟ್‌ಗಳನ್ನು ಗಳಿಸಿದ್ದೀಯ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ನೀನು %lld ಚಿಪ್ಪುಗಳನ್ನು ಗಳಿಸಿದ್ದೀಯ"
+                  "value" : "ನೀನು %lld ಕ್ಯಾರೆಟ್‌ಗಳನ್ನು ಗಳಿಸಿದ್ದೀಯ"
                 }
               }
             }
@@ -95963,13 +95963,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "조개껍데기 %lld개를 모았어요"
+                  "value" : "당근 %lld개를 모았어요"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "조개껍데기 %lld개를 모았어요"
+                  "value" : "당근 %lld개를 모았어요"
                 }
               }
             }
@@ -95981,13 +95981,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ເຈົ້າໄດ້ເປືອກຫອຍ %lld"
+                  "value" : "ເຈົ້າໄດ້ຫົວແຄຣອດ %lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ເຈົ້າໄດ້ເປືອກຫອຍ %lld"
+                  "value" : "ເຈົ້າໄດ້ຫົວແຄຣອດ %lld"
                 }
               }
             }
@@ -95999,13 +95999,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Uždirbai %lld kriauklę"
+                  "value" : "Uždirbai %lld morkų"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Uždirbai %lld kriauklių"
+                  "value" : "Uždirbai %lld morkų"
                 }
               }
             }
@@ -96017,13 +96017,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tu nopelnīji %lld gliemežvāku"
+                  "value" : "Tu nopelnīji %lld burkānus"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Tu nopelnīji %lld gliemežvākus"
+                  "value" : "Tu nopelnīji %lld burkānus"
                 }
               }
             }
@@ -96035,13 +96035,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Освои %lld школка"
+                  "value" : "Освои %lld моркови"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Освои %lld школки"
+                  "value" : "Освои %lld моркови"
                 }
               }
             }
@@ -96053,13 +96053,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "നീ %lld ചിപ്പി നേടി"
+                  "value" : "നീ %lld കാരറ്റ് നേടി"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "നീ %lld ചിപ്പികൾ നേടി"
+                  "value" : "നീ %lld കാരറ്റ് നേടി"
                 }
               }
             }
@@ -96071,13 +96071,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Чи %lld хясаа оллоо"
+                  "value" : "Чи %lld лууван оллоо"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Чи %lld хясаа оллоо"
+                  "value" : "Чи %lld лууван оллоо"
                 }
               }
             }
@@ -96089,13 +96089,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "तू %lld शिंपला कमावलास"
+                  "value" : "तू %lld गाजरे कमावलीस"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "तू %lld शिंपले कमावलीस"
+                  "value" : "तू %lld गाजरे कमावलीस"
                 }
               }
             }
@@ -96107,13 +96107,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Kamu telah memperoleh %lld cangkerang"
+                  "value" : "Kamu telah memperoleh %lld lobak merah"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Kamu telah memperoleh %lld cangkerang"
+                  "value" : "Kamu telah memperoleh %lld lobak merah"
                 }
               }
             }
@@ -96125,13 +96125,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ခရုခွံ %lld ခု ရရှိထားတယ်"
+                  "value" : "မုန်လာဥ %lld ခု ရရှိထားတယ်"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ခရုခွံ %lld ခု ရရှိထားတယ်"
+                  "value" : "မုန်လာဥ %lld ခု ရရှိထားတယ်"
                 }
               }
             }
@@ -96143,13 +96143,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du har tjent %lld skjell"
+                  "value" : "Du har tjent %lld gulrøtter"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du har tjent %lld skjell"
+                  "value" : "Du har tjent %lld gulrøtter"
                 }
               }
             }
@@ -96161,13 +96161,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "तिमीले %lld सिपी कमायौ"
+                  "value" : "तिमीले %lld गाजर कमायौ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "तिमीले %lld सिपीहरू कमायौ"
+                  "value" : "तिमीले %lld गाजर कमायौ"
                 }
               }
             }
@@ -96179,13 +96179,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Je hebt %lld schelp verdiend"
+                  "value" : "Je hebt %lld wortels verdiend"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Je hebt %lld schelpen verdiend"
+                  "value" : "Je hebt %lld wortels verdiend"
                 }
               }
             }
@@ -96197,13 +96197,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ତୁମେ %lldଟି ଶାମୁକା ଖୋଳ ପାଇଛ"
+                  "value" : "ତୁମେ %lld ଗାଜର ପାଇଛ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ତୁମେ %lldଟି ଶାମୁକା ଖୋଳ ପାଇଛ"
+                  "value" : "ତୁମେ %lld ଗାଜର ପାଇଛ"
                 }
               }
             }
@@ -96215,13 +96215,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ਤੂੰ %lld ਸੀਪੀ ਕਮਾਈ"
+                  "value" : "ਤੂੰ %lld ਗਾਜਰਾਂ ਕਮਾਈਆਂ"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ਤੂੰ %lld ਸੀਪੀਆਂ ਕਮਾਈਆਂ"
+                  "value" : "ਤੂੰ %lld ਗਾਜਰਾਂ ਕਮਾਈਆਂ"
                 }
               }
             }
@@ -96233,13 +96233,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Zdobyto %lld muszlę"
+                  "value" : "Zdobyto %lld marchewek"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Zdobyto %lld muszli"
+                  "value" : "Zdobyto %lld marchewek"
                 }
               }
             }
@@ -96251,13 +96251,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ganhaste %lld concha"
+                  "value" : "Ganhaste %lld cenouras"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ganhaste %lld conchas"
+                  "value" : "Ganhaste %lld cenouras"
                 }
               }
             }
@@ -96269,13 +96269,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ai câștigat %lld scoică"
+                  "value" : "Ai câștigat %lld morcovi"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ai câștigat %lld scoici"
+                  "value" : "Ai câștigat %lld morcovi"
                 }
               }
             }
@@ -96287,13 +96287,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ты заработал(а) %lld ракушку"
+                  "value" : "Ты заработал(а) %lld морковок"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ты заработал(а) %lld ракушек"
+                  "value" : "Ты заработал(а) %lld морковок"
                 }
               }
             }
@@ -96305,13 +96305,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ඔයා සිප්පි කටුව %lldක් උපයාගත්තා"
+                  "value" : "ඔයා කැරට් %lldක් උපයාගත්තා"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "ඔයා සිප්පි කටු %lldක් උපයාගත්තා"
+                  "value" : "ඔයා කැරට් %lldක් උපයාගත්තා"
                 }
               }
             }
@@ -96323,13 +96323,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Získal/a si %lld mušľu"
+                  "value" : "Získal/a si %lld mrkiev"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Získal/a si %lld mušlí"
+                  "value" : "Získal/a si %lld mrkiev"
                 }
               }
             }
@@ -96341,13 +96341,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Prislužil/a si %lld školjko"
+                  "value" : "Prislužil/a si %lld korenčkov"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Prislužil/a si %lld školjk"
+                  "value" : "Prislužil/a si %lld korenčkov"
                 }
               }
             }
@@ -96359,13 +96359,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ke fituar %lld guaskë"
+                  "value" : "Ke fituar %lld karota"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ke fituar %lld guaska"
+                  "value" : "Ke fituar %lld karota"
                 }
               }
             }
@@ -96377,13 +96377,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Освојио/ла си %lld шкољку"
+                  "value" : "Освојио/ла си %lld шаргарепа"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Освојио/ла си %lld шкољки"
+                  "value" : "Освојио/ла си %lld шаргарепа"
                 }
               }
             }
@@ -96395,13 +96395,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du har tjänat %lld snäcka"
+                  "value" : "Du har tjänat %lld morötter"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Du har tjänat %lld snäckor"
+                  "value" : "Du har tjänat %lld morötter"
                 }
               }
             }
@@ -96413,13 +96413,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Umepata gamba %lld"
+                  "value" : "Umepata karoti %lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Umepata magamba %lld"
+                  "value" : "Umepata karoti %lld"
                 }
               }
             }
@@ -96431,13 +96431,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "நீ %lld சிப்பி சம்பாதித்தாய்"
+                  "value" : "நீ %lld காரட் சம்பாதித்தாய்"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "நீ %lld சிப்பிகள் சம்பாதித்தாய்"
+                  "value" : "நீ %lld காரட் சம்பாதித்தாய்"
                 }
               }
             }
@@ -96449,13 +96449,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "నువ్వు %lld గవ్వ సంపాదించావు"
+                  "value" : "నువ్వు %lld క్యారెట్లు సంపాదించావు"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "నువ్వు %lld గవ్వలు సంపాదించావు"
+                  "value" : "నువ్వు %lld క్యారెట్లు సంపాదించావు"
                 }
               }
             }
@@ -96467,13 +96467,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "คุณได้เปลือกหอย %lld ชิ้น"
+                  "value" : "คุณได้แครอต %lld หัว"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "คุณได้เปลือกหอย %lld ชิ้น"
+                  "value" : "คุณได้แครอต %lld หัว"
                 }
               }
             }
@@ -96485,13 +96485,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld deniz kabuğu kazandın"
+                  "value" : "%lld havuç kazandın"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld deniz kabuğu kazandın"
+                  "value" : "%lld havuç kazandın"
                 }
               }
             }
@@ -96503,13 +96503,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld دېڭىز قېپى تاپتىڭىز"
+                  "value" : "%lld سەۋزە تاپتىڭىز"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld دېڭىز قېپى تاپتىڭىز"
+                  "value" : "%lld سەۋزە تاپتىڭىز"
                 }
               }
             }
@@ -96521,13 +96521,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ти заробив/ла %lld мушлю"
+                  "value" : "Ти заробив/ла %lld морквин"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Ти заробив/ла %lld мушель"
+                  "value" : "Ти заробив/ла %lld морквин"
                 }
               }
             }
@@ -96539,13 +96539,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "تم نے %lld سیپی کمائی"
+                  "value" : "تم نے %lld گاجریں کمائیں"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "تم نے %lld سیپیاں کمائیں"
+                  "value" : "تم نے %lld گاجریں کمائیں"
                 }
               }
             }
@@ -96557,13 +96557,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ta chig‘anoq topding"
+                  "value" : "%lld sabzi topding"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ta chig‘anoq topding"
+                  "value" : "%lld sabzi topding"
                 }
               }
             }
@@ -96575,13 +96575,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Bạn đã kiếm được %lld vỏ sò"
+                  "value" : "Bạn đã kiếm được %lld củ cà rốt"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Bạn đã kiếm được %lld vỏ sò"
+                  "value" : "Bạn đã kiếm được %lld củ cà rốt"
                 }
               }
             }
@@ -96593,13 +96593,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "你已获得 %lld 个贝壳"
+                  "value" : "你已获得 %lld 根胡萝卜"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "你已获得 %lld 个贝壳"
+                  "value" : "你已获得 %lld 根胡萝卜"
                 }
               }
             }
@@ -96611,13 +96611,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Uzuze igobolondo elingu-%lld"
+                  "value" : "Uzuze izaqathe ezingu-%lld"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Uzuze amagobolondo angu-%lld"
+                  "value" : "Uzuze izaqathe ezingu-%lld"
                 }
               }
             }
@@ -103178,469 +103178,469 @@
       }
     },
     "premium.unlockWithCards" : {
-      "comment" : "Alternative call to action: open a character with collected shells instead of money.",
+      "comment" : "Alternative call to action: open a character with collected carrots instead of money.",
       "extractionState" : "manual",
       "localizations" : {
         "af" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ontsluit met skulpe"
+            "value" : "Ontsluit met wortels"
           }
         },
         "am" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "በዛጎሎች ክፈት"
+            "value" : "በካሮት ክፈት"
           }
         },
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "افتح باستخدام الأصداف"
+            "value" : "افتح باستخدام الجزرة"
           }
         },
         "as" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "শামুকৰ খোলাৰে খোলা"
+            "value" : "গাজৰে খোলা"
           }
         },
         "az" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dəniz qabıqları ilə kilidi aç"
+            "value" : "Köklərlə kilidi aç"
           }
         },
         "be" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Адкрыць за ракавінкі"
+            "value" : "Адкрыць за моркву"
           }
         },
         "bg" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отключи с миди"
+            "value" : "Отключи с моркова"
           }
         },
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ঝিনুক দিয়ে আনলক করো"
+            "value" : "গাজর দিয়ে আনলক করো"
           }
         },
         "bo" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ཉ་ཕྱིས་ཀྱིས་ཁ་ཕྱེ།"
+            "value" : "ལ་ཕུག་གིས་ཁ་ཕྱེ།"
           }
         },
         "bs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otključaj školjkama"
+            "value" : "Otključaj mrkvama"
           }
         },
         "ca" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desbloqueja amb petxines"
+            "value" : "Desbloqueja amb pastanagues"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odemknout za mušle"
+            "value" : "Odemknout pomocí mrkví"
           }
         },
         "cy" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Datgloi gyda chregyn"
+            "value" : "Datgloi gyda moron"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lås op med muslinger"
+            "value" : "Lås op med gulerødder"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mit Muscheln freischalten"
+            "value" : "Mit Karotten freischalten"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ξεκλείδωσε με κοχύλια"
+            "value" : "Ξεκλείδωσε με καρότα"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unlock with shells"
+            "value" : "Unlock with carrots"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desbloquear con conchas"
+            "value" : "Desbloquear con zanahorias"
           }
         },
         "et" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ava merekarpidega"
+            "value" : "Ava porganditega"
           }
         },
         "eu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desblokeatu maskorrekin"
+            "value" : "Desblokeatu azenariorekin"
           }
         },
         "fa" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "باز کردن با صدف‌ها"
+            "value" : "باز کردن با هویج‌ها"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avaa simpukoilla"
+            "value" : "Avaa porkkanoilla"
           }
         },
         "fo" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lat upp við skeljum"
+            "value" : "Lat upp við gularótum"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Débloquer avec des coquillages"
+            "value" : "Débloquer avec des carottes"
           }
         },
         "ga" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Díghlasáil le blaoscanna"
+            "value" : "Díghlasáil le cairéid"
           }
         },
         "gl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desbloquear con cunchas"
+            "value" : "Desbloquear con cenorias"
           }
         },
         "gu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "છીપોથી અનલૉક કરો"
+            "value" : "ગાજરથી અનલૉક કરો"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "פתיחה בעזרת צדפות"
+            "value" : "פתיחה בעזרת גזרים"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "सीपियों से अनलॉक करें"
+            "value" : "गाजरों से अनलॉक करें"
           }
         },
         "hr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otključaj školjkama"
+            "value" : "Otključaj mrkvama"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Feloldás kagylókkal"
+            "value" : "Feloldás répákkal"
           }
         },
         "hy" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Բացել խեցիներով"
+            "value" : "Բացել գազարներով"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buka dengan kerang"
+            "value" : "Buka dengan wortel"
           }
         },
         "is" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opna með skeljum"
+            "value" : "Opna með gulrótum"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sblocca con le conchiglie"
+            "value" : "Sblocca con le carote"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "貝がらでアンロック"
+            "value" : "にんじんでアンロック"
           }
         },
         "ka" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "გახსენი ნიჟარებით"
+            "value" : "გახსენი სტაფილოებით"
           }
         },
         "kk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Бақалшақпен ашу"
+            "value" : "Сәбізбен ашу"
           }
         },
         "km" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ដោះសោដោយប្រើសំបកខ្យង"
+            "value" : "ដោះសោដោយប្រើការ៉ុត"
           }
         },
         "kn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ಚಿಪ್ಪುಗಳಿಂದ ತೆರೆಯಿರಿ"
+            "value" : "ಕ್ಯಾರೆಟ್‌ಗಳಿಂದ ತೆರೆಯಿರಿ"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "조개껍데기로 잠금 해제"
+            "value" : "당근으로 잠금 해제"
           }
         },
         "lo" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ປົດລັອກດ້ວຍເປືອກຫອຍ"
+            "value" : "ປົດລັອກດ້ວຍຫົວແຄຣອດ"
           }
         },
         "lt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Atrakinti už kriaukles"
+            "value" : "Atrakinti už morkas"
           }
         },
         "lv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Atbloķēt ar gliemežvākiem"
+            "value" : "Atbloķēt ar burkāniem"
           }
         },
         "mk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отклучи со школки"
+            "value" : "Отклучи со моркови"
           }
         },
         "ml" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ചിപ്പികൾ ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യൂ"
+            "value" : "കാരറ്റ് ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യൂ"
           }
         },
         "mn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Хясаагаар нээх"
+            "value" : "Луувангаар нээх"
           }
         },
         "mr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "शिंपल्यांनी अनलॉक कर"
+            "value" : "गाजरांनी अनलॉक कर"
           }
         },
         "ms" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buka dengan cangkerang"
+            "value" : "Buka dengan lobak merah"
           }
         },
         "my" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ခရုခွံနဲ့ လော့ခ်ဖွင့်"
+            "value" : "မုန်လာဥနဲ့ လော့ခ်ဖွင့်"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lås opp med skjell"
+            "value" : "Lås opp med gulrøtter"
           }
         },
         "ne" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "सिपीहरूले खोल"
+            "value" : "गाजरले खोल"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vrijspelen met schelpen"
+            "value" : "Vrijspelen met wortels"
           }
         },
         "or" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ଶାମୁକା ଖୋଳରେ ଖୋଲ"
+            "value" : "ଗାଜରରେ ଖୋଲ"
           }
         },
         "pa" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ਸੀਪੀਆਂ ਨਾਲ ਅਨਲੌਕ ਕਰੋ"
+            "value" : "ਗਾਜਰਾਂ ਨਾਲ ਅਨਲੌਕ ਕਰੋ"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odblokuj za muszle"
+            "value" : "Odblokuj za marchewki"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desbloquear com conchas"
+            "value" : "Desbloquear com cenouras"
           }
         },
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deblochează cu scoici"
+            "value" : "Deblochează cu morcovi"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть за ракушки"
+            "value" : "Открыть за морковки"
           }
         },
         "si" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "සිප්පි කටුවලින් අගුළු හරින්න"
+            "value" : "කැරට්වලින් අගුළු හරින්න"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odomknúť za mušle"
+            "value" : "Odomknúť za mrkvy"
           }
         },
         "sl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odkleni s školjkami"
+            "value" : "Odkleni s korenčki"
           }
         },
         "sq" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zhblloko me guaska"
+            "value" : "Zhblloko me karota"
           }
         },
         "sr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откључај шкољкама"
+            "value" : "Откључај шаргарепама"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lås upp med snäckor"
+            "value" : "Lås upp med morötter"
           }
         },
         "sw" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fungua kwa magamba"
+            "value" : "Fungua kwa karoti"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "சிப்பிகளால் திற"
+            "value" : "காரட்டுகளால் திற"
           }
         },
         "te" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "గవ్వలతో అన్‌లాక్ చేయి"
+            "value" : "క్యారెట్లతో అన్‌లాక్ చేయి"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ปลดล็อกด้วยเปลือกหอย"
+            "value" : "ปลดล็อกด้วยแครอต"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deniz kabuklarıyla aç"
+            "value" : "Havuçlarla aç"
           }
         },
         "ug" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "دېڭىز قېپى بىلەن ئېچىڭ"
+            "value" : "سەۋزە بىلەن ئېچىڭ"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Відкрити за мушлі"
+            "value" : "Відкрити за морквини"
           }
         },
         "ur" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "سیپیوں سے کھولو"
+            "value" : "گاجروں سے کھولو"
           }
         },
         "uz" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chig‘anoqlar bilan och"
+            "value" : "Sabzilar bilan och"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mở khóa bằng vỏ sò"
+            "value" : "Mở khóa bằng củ cà rốt"
           }
         },
         "zh" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用贝壳解锁"
+            "value" : "用胡萝卜解锁"
           }
         },
         "zu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vula ngamagobolondo"
+            "value" : "Vula ngezaqathe"
           }
         }
       }

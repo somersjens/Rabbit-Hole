@@ -31,7 +31,7 @@ struct FoodPickupStyle: Equatable, Sendable {
         assetName: "carrot_new",
         canvasAspectRatio: 656.0 / 650.0,
         gripLiftFraction: 0.468,
-        numberYOffsetFraction: 0,
+        numberYOffsetFraction: 0.035,
         numberWidthFraction: 0.50,
         numberContrast: .light
     )

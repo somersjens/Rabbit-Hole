@@ -357,6 +357,7 @@ struct HomeView: View {
 
     private var characterButton: some View {
         let box: CGFloat = isPad ? 118 : 68
+        let iconScale: CGFloat = character.id == "bunny" ? 1 : 1.10
         return ZStack {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(LinearGradient(colors: [character.skyColor, character.tintColor],
@@ -370,6 +371,10 @@ struct HomeView: View {
                 .scaledToFit()
                 .padding(EdgeInsets(top: box * 0.10, leading: box * 0.05,
                                     bottom: 0, trailing: box * 0.05))
+                // The bunny's ears already place its visual centre high in the
+                // tile. Lift the shorter animals by enlarging them from the
+                // bottom edge, without changing the bunny's framing.
+                .scaleEffect(iconScale, anchor: .bottom)
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .frame(width: box, height: box)

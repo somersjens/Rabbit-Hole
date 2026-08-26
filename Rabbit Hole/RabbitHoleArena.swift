@@ -115,7 +115,16 @@ enum RabbitHoleCraneLayout {
     static let topGlue = UnitPoint(x: 0.496, y: 0.959)
     static func trackSink(isPad: Bool) -> CGFloat { isPad ? 16 : 12 }
 
-    static func mainHeight(isPad: Bool) -> CGFloat { isPad ? 214 : 163 }
+    /// The iPad playfield is substantially wider than the phone canvas. Keep
+    /// the operator/excavator visually dominant there instead of applying the
+    /// former, almost phone-sized 214-point crop.
+    static func mainHeight(isPad: Bool) -> CGFloat { isPad ? 270 : 163 }
+
+    /// On iPhone the larger rig naturally fills the left bank while its boom
+    /// sits at screen centre. iPad's wider canvas needs the pivot slightly left
+    /// to retain that same composition and keep the character out of the
+    /// visual centre of the board.
+    static func boomUnitX(isPad: Bool) -> CGFloat { isPad ? 0.46 : 0.50 }
 
     static func canvasScale(isPad: Bool) -> CGFloat {
         mainHeight(isPad: isPad) / canvasBodyHeight
@@ -381,8 +390,9 @@ final class RabbitHoleArena: ObservableObject {
 #endif
 
     var boomPoint: CGPoint {
-        // The boom's right-hand pin sits in the middle of the grass lip.
-        CGPoint(x: surface.midX,
+        // The boom's right-hand pin sits just left of centre on iPad so the
+        // wider surface retains the phone composition.
+        CGPoint(x: surface.minX + surface.width * RabbitHoleCraneLayout.boomUnitX(isPad: isPad),
                 y: surface.maxY - RabbitHoleCraneLayout.pinHeightAboveTracks(isPad: isPad)
                     + RabbitHoleCraneLayout.trackSink(isPad: isPad)
                     + excavatorDrop)

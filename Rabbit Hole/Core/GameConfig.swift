@@ -95,8 +95,10 @@ nonisolated public enum GameConfig {
     /// Where the dirt begins, as a share of the screen height. The grass sits
     /// on that lip; the rabbit stands on the grass.
     public static let rabbitHoleGrassShare = 0.50
-    /// On-screen size of a carrot (and the dynamite bundle).
-    public static func rabbitHoleCarrotSize(isPad: Bool) -> CGFloat { isPad ? 99 : 77 }
+    /// On-screen size of a carrot (and the dynamite bundle). iPad needs a
+    /// stronger step than the old phone-like scaling: its playfield grows far
+    /// more than 22 points, especially in landscape.
+    public static func rabbitHoleCarrotSize(isPad: Bool) -> CGFloat { isPad ? 122 : 77 }
     /// The illustrated floor items leave a little more dirt visible between
     /// lanes than the original drawn placeholders did.
     public static let rabbitHoleItemDisplayScale: CGFloat = 0.90
