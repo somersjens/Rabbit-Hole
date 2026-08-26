@@ -10,9 +10,25 @@
 		F9A045973039B3870091C7C1 /* Rabbit Hole.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rabbit Hole.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F9A0D1010000000000000001 /* Exceptions for "Rabbit Hole" folder in "Rabbit Hole" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"explosion.mp3",
+				"extention move out.mp3",
+				"make contact with item.mp3",
+				"new music.mp3",
+			);
+			target = F9A045963039B3870091C7C1 /* Rabbit Hole */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F9A045993039B3870091C7C1 /* Rabbit Hole */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F9A0D1010000000000000001 /* Exceptions for "Rabbit Hole" folder in "Rabbit Hole" target */,
+			);
 			path = "Rabbit Hole";
 			sourceTree = "<group>";
 		};

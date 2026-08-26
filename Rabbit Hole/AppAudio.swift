@@ -161,6 +161,11 @@ final class AppAudio: NSObject, ObservableObject {
         Effect(key: "halfLife",      file: "sfx_half_life",      ext: "caf", volume: 0.12, lead: 0.0),
         Effect(key: "lifeLost",      file: "sfx_life_lost",      ext: "caf", volume: 0.24, lead: 0.045),
         Effect(key: "flamethrower",  file: "sfx_flamethrower",   ext: "caf", volume: 0.31, lead: 0.045),
+        // Rabbit Hole machinery and impact cues. These source files are
+        // physically silence-trimmed, so no runtime lead skip is required.
+        Effect(key: "explosion",       file: "sfx_explosion",          ext: "caf", volume: 0.08, lead: 0.0),
+        Effect(key: "extensionMoveOut", file: "sfx_extension_move_out", ext: "caf", volume: 0.10, lead: 0.0),
+        Effect(key: "itemContact",      file: "sfx_item_contact",       ext: "caf", volume: 0.35, lead: 0.0),
         Effect(key: "sessionStart",  file: "sfx_session_start",  ext: "caf", volume: 0.16, lead: 0.225),
         Effect(key: "sessionComplete", file: "sfx_level_complete", ext: "caf", volume: 0.10, lead: 0.010),
         Effect(key: "highScore",     file: "sfx_high_score",     ext: "caf", volume: 0.14, lead: 0.025),
@@ -168,7 +173,7 @@ final class AppAudio: NSObject, ObservableObject {
         // The card counters on the result screen and the home header.
         Effect(key: "cardCount",     file: "sfx_card_count",     ext: "caf", volume: 1.0,  lead: 0.065),
         Effect(key: "cardFlight",    file: "sfx_card_flight",    ext: "caf", volume: 0.812, lead: 0.35),
-        Effect(key: "cardTotal",     file: "score_increase",     ext: "caf", volume: 1.0,  lead: 0.0),
+        Effect(key: "cardTotal",     file: "score_increase_in_game", ext: "caf", volume: 0.06, lead: 0.0),
         Effect(key: "menuCardTotal", file: "score_increase_main", ext: "caf", volume: 1.0,  lead: 0.0),
         Effect(key: "select",        file: "sfx_select",         ext: "caf", volume: 0.17, lead: 0.0),
         Effect(key: "switchOn",      file: "sfx_switch_on",      ext: "caf", volume: 0.89, lead: 0.200),
@@ -206,10 +211,9 @@ final class AppAudio: NSObject, ObservableObject {
     private let gameMusicVolume: Float = 0.30
     private let duckedMusicVolume: Float = 0.05
 
-    /// The source track fades to inaudible by ~88.6 s but contains another
-    /// 1.4 s of near-silence before its physical end at 90.04 s. Restart after
-    /// a short musical breath instead of making every loop wait for that tail.
-    private let musicLoopEndTime: TimeInterval = 88.95
+    /// The replacement track is physically trimmed to 80.43 s. Restart once
+    /// its final decay is inaudible, just before the encoded end frame.
+    private let musicLoopEndTime: TimeInterval = 80.35
 
     /// The volume the music should currently sit at, given where the player is.
     private var currentMusicTarget: Float { isGameplayActive ? gameMusicVolume : menuMusicVolume }
@@ -673,6 +677,9 @@ final class AppAudio: NSObject, ObservableObject {
     func playDoubleCardAppear() { playEffect("doubleCard") }       // the thick special card
     func playDoubleScore()      { playEffect("doubleScore") }      // a double card paid out
     func playFlamethrower()     { playEffect("flamethrower") }     // the helper fires
+    func playExplosion()        { playEffect("explosion") }        // Rabbit Hole dynamite
+    func playExtensionMoveOut() { playEffect("extensionMoveOut") } // claw starts extending
+    func playItemContact()      { playEffect("itemContact") }      // claw meets a pickup
     func playHalfLife()         { playEffect("halfLife") }         // half a life spent
     func playLifeLost()         { playEffect("lifeLost") }         // a whole life lost
     func playLifeRestored()     { playEffect("characterUnlock") }  // heart fish caught

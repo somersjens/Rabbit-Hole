@@ -466,6 +466,18 @@ final class GameViewModel: ObservableObject {
         haptic(.rigid)
     }
 
+    /// Feedback tied to the Rabbit Hole claw, kept separate from the crab-hit
+    /// cue so the two arenas can use their own authored sounds.
+    func rabbitHoleExtensionStarted() {
+        AppAudio.shared.playExtensionMoveOut()
+        haptic(.rigid)
+    }
+
+    func rabbitHoleItemContact() {
+        AppAudio.shared.playItemContact()
+        haptic(.light)
+    }
+
     /// The King answers everything that reached him with one blow.
     func kingSweeps() {
         AppAudio.shared.playFlamethrower()

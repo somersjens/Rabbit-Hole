@@ -329,7 +329,8 @@ final class RabbitHoleArena: ObservableObject {
     var onFinalFloorCleared: (() -> Void)?
     var onTimeout: (() -> Void)?
     var onShellArrived: (() -> Void)?
-    var onDrop: (() -> Void)?
+    var onExtensionStarted: (() -> Void)?
+    var onItemContact: (() -> Void)?
     var onExplode: (() -> Void)?
     var onTutorialEvent: ((RabbitHoleTutorialEvent) -> Void)?
     var onEntranceComplete: (() -> Void)?
@@ -829,7 +830,7 @@ final class RabbitHoleArena: ObservableObject {
         dropAngle = dropStartAngle
         mode = .dropping
         actionProgress = 0
-        onDrop?()
+        onExtensionStarted?()
         objectWillChange.send()
     }
 
@@ -1536,6 +1537,7 @@ final class RabbitHoleArena: ObservableObject {
         }
 
         let item = items[offset]
+        onItemContact?()
         if item.isDynamite {
             beginExplosion()
             return
@@ -1708,7 +1710,6 @@ final class RabbitHoleArena: ObservableObject {
             items[index].isPresent = true
         }
         publishFloorState()
-        onDrop?()
     }
 
     // MARK: - Tutorial stocking

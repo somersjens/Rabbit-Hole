@@ -42,7 +42,8 @@ struct RabbitHolePlayfield: View {
     var onFloorStateChanged: (RabbitHoleFloorState) -> Void = { _ in }
     var onFinalFloorCleared: () -> Void = {}
     var onTimeout: () -> Void = {}
-    var onSmash: () -> Void = {}
+    var onExtensionStarted: () -> Void = {}
+    var onItemContact: () -> Void = {}
     let onShellArrived: () -> Void
     var onBonusCrabCaught: () -> Void = {}
     var onLifeCrabArrived: () -> Bool = { false }
@@ -478,8 +479,9 @@ struct RabbitHolePlayfield: View {
         arena.onFinalFloorCleared = onFinalFloorCleared
         arena.onTimeout = onTimeout
         arena.onShellArrived = onShellArrived
-        arena.onDrop = onSmash
-        arena.onExplode = { AppAudio.shared.playFlamethrower() }
+        arena.onExtensionStarted = onExtensionStarted
+        arena.onItemContact = onItemContact
+        arena.onExplode = { AppAudio.shared.playExplosion() }
         arena.onTutorialEvent = onTutorialEvent
     }
 }
@@ -1928,7 +1930,12 @@ private struct RabbitHoleSoil: View, Equatable {
     }
 
     private func drawFence(context: GraphicsContext, size: CGSize) {
-        let scale = surfaceScale(in: size)
+        // Keep the expanded landscape scenery on iPad, but use the original
+        // width-only scale for the iPhone fence. The height-aware surface
+        // scale made it roughly 60% larger on tall phones.
+        let scale = isPad
+            ? surfaceScale(in: size)
+            : HabitatDraw.scale(for: size.width)
         let fenceTop = grassY - 78 * scale
         let fenceBottom = grassY - 9
         let wood = Color(red: 0.67, green: 0.39, blue: 0.17)
