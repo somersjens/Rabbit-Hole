@@ -392,6 +392,7 @@ enum LevelCardStatus: Equatable {
 /// score turns it into the gold "completed" card.
 struct LevelCardView: View {
     @Environment(\.layoutDirection) private var layoutDirection
+    private var isRightToLeft: Bool { layoutDirection == .rightToLeft }
     let level: MathLevel
     let status: LevelCardStatus
     let best: Int
@@ -489,7 +490,7 @@ struct LevelCardView: View {
 
     /// A level that crosses its maximum on this return stays in its ordinary
     /// card until the bubbles have finished counting. Only then do the gold
-    /// card, crown and ferns arrive together.
+    /// card, crown and earth cracks arrive together.
     private var isNewMaximumCelebration: Bool {
         isNewMaximumCelebration(startedAt: celebrationStartedAt)
     }
@@ -785,22 +786,22 @@ struct LevelCardView: View {
                         .scaleEffect(scorePulse ? 1.48 : 1)
                 }
                 .foregroundStyle(hero)
-                // The repeat marker is a superscript detail beside the score,
-                // not a second item in the centred layout. It appears from the
-                // second maximum onward; the first is marked by crown and gold.
-                .overlay(alignment: .topTrailing) {
+                // Number then bubble is a spoken count ("twelve bubbles"), so
+                // the chip itself stays left-to-right. The ×N tally is then
+                // placed in that same coordinate space: trailing in LTR, leading
+                // in RTL. Mixing a flipping alignment with a raw offset is what
+                // walked the badge further right instead of onto the other side.
+                .environment(\.layoutDirection, .leftToRight)
+                .overlay(alignment: isRightToLeft ? .topLeading : .topTrailing) {
                     if maxCompletions >= 2 {
                         maxCompletionBadge(fill: hero, metal: metal)
                             // The wrapper is only an alignment column: the badge
-                            // keeps its natural width and grows to the right, so
-                            // a wider label ("MAX") never creeps back over the
-                            // number instead of staying pinned beside it.
-                            .frame(width: 23 * cardScale, alignment: .leading)
-                            // Same story as the alignment above: `topTrailing`
-                            // turns over with the reading direction, a raw
-                            // offset does not, and an unturned one walks the
-                            // badge back across the number it sits beside.
-                            .offset(x: (layoutDirection == .rightToLeft ? -20 : 20) * cardScale,
+                            // keeps its natural width and grows away from the
+                            // number, so a wider label ("MAX") never creeps back
+                            // over it.
+                            .frame(width: 23 * cardScale,
+                                   alignment: isRightToLeft ? .trailing : .leading)
+                            .offset(x: (isRightToLeft ? -20 : 20) * cardScale,
                                     y: -7 * cardScale)
                     }
                 }
@@ -822,7 +823,7 @@ struct LevelCardView: View {
                 .stroke(metal, lineWidth: 2.5 * cardScale)
         )
         .overlay {
-            completedFerns(color: hero, highlight: metal)
+            completedCracks(color: metal)
         }
         .overlay(alignment: .top) {
             completedRibbon(fill: hero, crown: metal)
@@ -831,32 +832,38 @@ struct LevelCardView: View {
         .shadow(color: metal.opacity(0.35), radius: 6, y: 3)
     }
 
-    /// Ferns curl up both sides of every maxed level. Their stems sit just
-    /// outside the card edge while the leaves overlap it slightly, framing the
-    /// score without narrowing the number or bubble line.
-    private func completedFerns(color _: Color, highlight: Color) -> some View {
+    /// Earth cracks run up both sides of every maxed level, mirrored so the
+    /// card sits in a split that opened around it. They sit in from the edge
+    /// so the branches frame the score without crowding the number.
+    ///
+    /// Layout is pinned to left-to-right: an `HStack` would swap the sides
+    /// in RTL, but `offset` and `scaleEffect` would not, so the pair would
+    /// lean inward and walk off the card. These are physical left and right
+    /// ornaments, not leading and trailing ones.
+    private func completedCracks(color: Color) -> some View {
         HStack(spacing: 0) {
-            CompletionFern(color: highlight, revealStartedAt: fernRevealStartedAt)
+            CompletionEarthCrack(color: color, revealStartedAt: crackRevealStartedAt)
                 .frame(width: 25 * cardScale, height: 52 * cardScale)
-                .rotationEffect(.degrees(-3), anchor: .bottom)
-                .offset(x: 9 * cardScale, y: 3 * cardScale)
+                .rotationEffect(.degrees(-2), anchor: .bottom)
+                .offset(x: 13 * cardScale, y: 3 * cardScale)
 
             Spacer(minLength: 0)
 
-            CompletionFern(color: highlight, revealStartedAt: fernRevealStartedAt)
+            CompletionEarthCrack(color: color, revealStartedAt: crackRevealStartedAt)
                 .frame(width: 25 * cardScale, height: 52 * cardScale)
                 .scaleEffect(x: -1, y: 1)
-                .rotationEffect(.degrees(3), anchor: .bottom)
-                .offset(x: -9 * cardScale, y: 3 * cardScale)
+                .rotationEffect(.degrees(2), anchor: .bottom)
+                .offset(x: -13 * cardScale, y: 3 * cardScale)
         }
+        .environment(\.layoutDirection, .leftToRight)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    /// The completed card is inserted at this exact instant. Giving the ferns
-    /// the shared timestamp keeps both sides perfectly synchronized even when
+    /// The completed card is inserted at this exact instant. Giving both cracks
+    /// the shared timestamp keeps the sides perfectly synchronized even when
     /// SwiftUI creates one side a frame later than the other.
-    private var fernRevealStartedAt: Date? {
+    private var crackRevealStartedAt: Date? {
         guard isNewMaximumCelebration, let celebrationStartedAt else { return nil }
         return celebrationStartedAt.addingTimeInterval(Self.scoreCountDelay + Self.scoreCountDuration)
     }
@@ -876,167 +883,250 @@ struct LevelCardView: View {
             .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
     }
 
-    /// "×3" — or the word for "max" once the tally is capped. Deliberately
-    /// smaller than the score: the airy outline is its visual footprint.
+    /// Small type needs more than linear card-height scaling on iPad.
+    /// `cardScale` is only ~1.375× there, which adds a couple of points to an
+    /// 8pt label and reads as if the tally never grew with the card. Matching
+    /// the menu chrome (1.55×) keeps the superscript readable at tablet
+    /// distance without changing its place in the hierarchy.
+    private var maxCompletionBadgeScale: CGFloat { AppLayout.isPad ? 1.55 : 1 }
+
+    /// "×3" — or the word for "max" once the tally is capped. Smaller than the
+    /// score: the airy outline is its visual footprint.
     private func maxCompletionBadge(fill: Color, metal: Color) -> some View {
         let isCapped = maxCompletions >= GameConfig.maximumCompletionCount
+        let scale = maxCompletionBadgeScale
+        let shape = RoundedRectangle(cornerRadius: 5 * scale, style: .continuous)
         let label = isCapped ? L("menu.maximumCount") : "×\(maxCompletions)"
-        let cornerRadius = 3.5 * cardScale
-        return Text(verbatim: label)
-            .fixedSize()
-            .font(.system(size: 5.6 * cardScale, weight: .heavy, design: .rounded))
+        let accessibility = isCapped
+            ? L("menu.maximumCount")
+            : L("menu.maximumCount.accessibility \(maxCompletions)")
+        let text = Text(verbatim: label)
+            .font(.system(size: 8 * scale, weight: .heavy, design: .rounded))
             .foregroundStyle(fill)
             .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .padding(.horizontal, 2 * cardScale)
-            .padding(.vertical, 1 * cardScale)
-            .background(.white.opacity(0.5),
-                        in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(metal.opacity(0.8), lineWidth: 1 * cardScale))
-            .shadow(color: metal.opacity(0.18), radius: 2, y: 1)
-            .accessibilityLabel(Text(verbatim: isCapped
-                ? L("menu.maximumCount")
-                : L("menu.maximumCount.accessibility \(maxCompletions)")))
+            .fixedSize()
+        return text
+            .padding(.horizontal, 3 * scale)
+            .padding(.vertical, 1.5 * scale)
+            .background(.white.opacity(0.5), in: shape)
+            .overlay { shape.stroke(metal.opacity(0.8), lineWidth: scale) }
+            .shadow(color: metal.opacity(0.18), radius: 2 * scale, y: scale)
+            .accessibilityLabel(Text(verbatim: accessibility))
     }
 }
 
-/// A compact water fern for the sides of a completed level card. Its detached,
-/// oval leaves and bowed stem deliberately echo a celebratory laurel, while the
-/// irregular spacing keeps it organic enough for the reef setting.
-private struct CompletionFern: View {
+/// A compact earth crack for the sides of a completed level card. The main
+/// fissure tapers as it climbs, with jagged branches that read as split soil
+/// rather than a plant — the same visual language as the warren floor.
+private struct CompletionEarthCrack: View {
     let color: Color
     /// Nil means this is an already-completed card and should render fully.
     let revealStartedAt: Date?
 
-    private struct Leaf: Identifiable {
-        let id: Int
+    private struct Spine {
         let x: CGFloat
         let y: CGFloat
-        let width: CGFloat
-        let height: CGFloat
-        let rotation: Double
+        let halfWidth: CGFloat
     }
 
-    private static let leaves: [Leaf] = [
-        Leaf(id: 0, x: 0.63, y: 0.82, width: 0.25, height: 0.12, rotation: 48),
-        Leaf(id: 1, x: 0.29, y: 0.75, width: 0.27, height: 0.12, rotation: 27),
-        Leaf(id: 2, x: 0.62, y: 0.66, width: 0.28, height: 0.12, rotation: -42),
-        Leaf(id: 3, x: 0.18, y: 0.58, width: 0.28, height: 0.12, rotation: 13),
-        Leaf(id: 4, x: 0.57, y: 0.49, width: 0.29, height: 0.12, rotation: -52),
-        Leaf(id: 5, x: 0.19, y: 0.39, width: 0.27, height: 0.115, rotation: -7),
-        Leaf(id: 6, x: 0.62, y: 0.31, width: 0.27, height: 0.115, rotation: -58),
-        Leaf(id: 7, x: 0.34, y: 0.20, width: 0.25, height: 0.11, rotation: -25),
-        Leaf(id: 8, x: 0.70, y: 0.14, width: 0.23, height: 0.105, rotation: -45)
+    private struct Branch: Identifiable {
+        let id: Int
+        let points: [CGPoint]
+        let along: CGFloat
+        let lineScale: CGFloat
+    }
+
+    /// Irregular leftward lean so the mirrored pair opens around the card.
+    /// Width tapers to a hairline at the tip, the way a real split does.
+    private static let spine: [Spine] = [
+        Spine(x: 0.58, y: 0.98, halfWidth: 0.078),
+        Spine(x: 0.44, y: 0.87, halfWidth: 0.070),
+        Spine(x: 0.36, y: 0.75, halfWidth: 0.061),
+        Spine(x: 0.54, y: 0.64, halfWidth: 0.053),
+        Spine(x: 0.32, y: 0.52, halfWidth: 0.045),
+        Spine(x: 0.28, y: 0.41, halfWidth: 0.036),
+        Spine(x: 0.48, y: 0.30, halfWidth: 0.027),
+        Spine(x: 0.34, y: 0.19, halfWidth: 0.019),
+        Spine(x: 0.46, y: 0.09, halfWidth: 0.010),
+        Spine(x: 0.41, y: 0.02, halfWidth: 0.0)
     ]
+
+    private static let branches: [Branch] = [
+        Branch(id: 0, points: [
+            CGPoint(x: 0.44, y: 0.87),
+            CGPoint(x: 0.24, y: 0.82),
+            CGPoint(x: 0.13, y: 0.85),
+            CGPoint(x: 0.10, y: 0.79)
+        ], along: 0.12, lineScale: 0.50),
+        Branch(id: 1, points: [
+            CGPoint(x: 0.36, y: 0.75),
+            CGPoint(x: 0.60, y: 0.70),
+            CGPoint(x: 0.78, y: 0.74),
+            CGPoint(x: 0.96, y: 0.67)
+        ], along: 0.22, lineScale: 0.64),
+        Branch(id: 2, points: [
+            CGPoint(x: 0.78, y: 0.74),
+            CGPoint(x: 0.86, y: 0.84),
+            CGPoint(x: 0.82, y: 0.92)
+        ], along: 0.30, lineScale: 0.38),
+        Branch(id: 3, points: [
+            CGPoint(x: 0.54, y: 0.64),
+            CGPoint(x: 0.72, y: 0.58),
+            CGPoint(x: 0.86, y: 0.61)
+        ], along: 0.38, lineScale: 0.44),
+        Branch(id: 4, points: [
+            CGPoint(x: 0.32, y: 0.52),
+            CGPoint(x: 0.16, y: 0.47),
+            CGPoint(x: 0.10, y: 0.50)
+        ], along: 0.48, lineScale: 0.40),
+        Branch(id: 5, points: [
+            CGPoint(x: 0.48, y: 0.30),
+            CGPoint(x: 0.68, y: 0.24),
+            CGPoint(x: 0.84, y: 0.28),
+            CGPoint(x: 0.94, y: 0.22)
+        ], along: 0.64, lineScale: 0.54),
+        Branch(id: 6, points: [
+            CGPoint(x: 0.34, y: 0.19),
+            CGPoint(x: 0.18, y: 0.14),
+            CGPoint(x: 0.12, y: 0.16)
+        ], along: 0.76, lineScale: 0.34),
+        Branch(id: 7, points: [
+            CGPoint(x: 0.46, y: 0.09),
+            CGPoint(x: 0.62, y: 0.05),
+            CGPoint(x: 0.70, y: 0.08)
+        ], along: 0.86, lineScale: 0.30)
+    ]
+
+    private static let earth = Color(red: 0.55, green: 0.38, blue: 0.22)
+    private static let earthDeep = Color(red: 0.38, green: 0.24, blue: 0.13)
 
     var body: some View {
         Group {
-            // Only a fern that is actually growing needs a frame-by-frame
-            // redraw. An already-completed card renders its finished fern once
+            // Only a crack that is actually opening needs a frame-by-frame
+            // redraw. An already-completed card renders its finished crack once
             // and then costs nothing — which matters because the menu can show
             // dozens of completed levels, each carrying two of these.
             if let revealStartedAt {
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-                    fern(at: max(0, context.date.timeIntervalSince(revealStartedAt)))
+                    crack(at: max(0, context.date.timeIntervalSince(revealStartedAt)))
                 }
             } else {
-                fern(at: .greatestFiniteMagnitude)
+                crack(at: .greatestFiniteMagnitude)
             }
         }
-        .shadow(color: color.opacity(0.16), radius: 1, y: 0.5)
+        .shadow(color: Self.earthDeep.opacity(0.14), radius: 0.8, y: 0.4)
     }
 
-    private func fern(at elapsed: TimeInterval) -> some View {
-        GeometryReader { proxy in
-            ZStack {
-                FernStemShape()
-                    .trim(from: 0, to: stemProgress(at: elapsed))
-                    .stroke(color.opacity(0.62),
-                            style: StrokeStyle(lineWidth: max(1, proxy.size.width * 0.05),
-                                               lineCap: .round))
+    private func crack(at elapsed: TimeInterval) -> some View {
+        Canvas { context, size in
+            let propagate = Self.propagate(at: elapsed)
+            let open = Self.open(at: elapsed)
+            guard propagate > 0.01 else { return }
 
-                ForEach(Self.leaves) { leaf in
-                    let progress = leafProgress(leaf, at: elapsed)
-                    let leafX = proxy.size.width * leaf.x
-                    let leafY = proxy.size.height * leaf.y
-
-                    // A short petiole connects every leaf to the bowed
-                    // stem, so the ornament reads as a growing fern rather
-                    // than a loose row of capsules.
-                    Path { path in
-                        path.move(to: CGPoint(x: proxy.size.width * stemX(at: leaf.y),
-                                              y: leafY))
-                        path.addLine(to: CGPoint(x: leafX, y: leafY))
-                    }
-                    .trim(from: 0, to: min(1, progress))
-                    .stroke(color.opacity(0.48),
-                            style: StrokeStyle(lineWidth: max(0.7, proxy.size.width * 0.025),
-                                               lineCap: .round))
-
-                    FernLeafShape()
-                        .fill(
-                            LinearGradient(colors: [color.opacity(0.95), color.opacity(0.62)],
-                                           startPoint: .topLeading,
-                                           endPoint: .bottomTrailing)
-                        )
-                        .frame(width: proxy.size.width * leaf.width,
-                               height: proxy.size.height * leaf.height)
-                        .scaleEffect(x: progress, y: progress, anchor: .leading)
-                        .rotationEffect(.degrees(leaf.rotation
-                            + (leaf.x < stemX(at: leaf.y) ? -14 : 14) * (1 - progress)))
-                        .opacity(min(1, progress))
-                        .position(x: leafX, y: leafY)
-                }
+            drawMainFissure(context: context, size: size,
+                            propagate: propagate, open: 0.14 + 0.86 * open)
+            for branch in Self.branches {
+                let progress = Self.branchProgress(branch, at: elapsed)
+                guard progress > 0.02 else { continue }
+                drawBranch(branch, progress: progress, in: context, size: size)
             }
         }
     }
 
-    private func stemProgress(at elapsed: TimeInterval) -> CGFloat {
-        CGFloat(min(1, max(0, elapsed / 0.48)))
+    private func drawMainFissure(context: GraphicsContext, size: CGSize,
+                                 propagate: CGFloat, open: CGFloat) {
+        let (minus, plus) = Self.edges(in: size, widthScale: open)
+        var fissure = Path()
+        fissure.move(to: minus[0])
+        for point in minus.dropFirst() { fissure.addLine(to: point) }
+        for point in plus.reversed() { fissure.addLine(to: point) }
+        fissure.closeSubpath()
+
+        var clipped = context
+        let revealY = size.height * (1 - propagate)
+        clipped.clip(to: Path(CGRect(x: -2, y: revealY - 1,
+                                     width: size.width + 4,
+                                     height: size.height - revealY + 4)))
+
+        clipped.fill(fissure, with: .color(Self.earth.opacity(0.72)))
+        clipped.stroke(fissure, with: .color(Self.earthDeep.opacity(0.40)),
+                       style: StrokeStyle(lineWidth: max(0.5, size.width * 0.028),
+                                          lineJoin: .miter))
+
+        let (innerMinus, innerPlus) = Self.edges(in: size, widthScale: open * 0.32)
+        var core = Path()
+        core.move(to: innerMinus[0])
+        for point in innerMinus.dropFirst() { core.addLine(to: point) }
+        for point in innerPlus.reversed() { core.addLine(to: point) }
+        core.closeSubpath()
+        clipped.fill(core, with: .color(Self.earthDeep.opacity(0.48)))
+
+        let outer = zip(minus, plus).map { $0.x <= $1.x ? $0 : $1 }
+        var rim = Path()
+        rim.move(to: outer[0])
+        for point in outer.dropFirst() { rim.addLine(to: point) }
+        clipped.stroke(rim, with: .color(color.opacity(0.78)),
+                       style: StrokeStyle(lineWidth: max(0.6, size.width * 0.032),
+                                          lineCap: .round, lineJoin: .round))
     }
 
-    private func leafProgress(_ leaf: Leaf, at elapsed: TimeInterval) -> CGFloat {
-        let delay = 0.16 + Double(leaf.id) * 0.055
-        let raw = min(1, max(0, (elapsed - delay) / 0.30))
-        // Back ease: each leaf opens with a tiny organic overshoot.
-        let c1 = 1.70158
-        let c3 = c1 + 1
-        return CGFloat(1 + c3 * pow(raw - 1, 3) + c1 * pow(raw - 1, 2))
-    }
-
-    /// Approximation of the stem's horizontal position at a leaf's height.
-    private func stemX(at y: CGFloat) -> CGFloat {
-        let fromBottom = 1 - y
-        return 0.76 - 0.10 * fromBottom - 0.34 * sin(fromBottom * .pi)
-    }
-}
-
-/// A pointed, slightly asymmetric leaf reads more naturally at this tiny size
-/// than a capsule, while remaining crisp on both phone and iPad.
-private struct FernLeafShape: Shape {
-    func path(in rect: CGRect) -> Path {
+    private func drawBranch(_ branch: Branch, progress: CGFloat,
+                            in context: GraphicsContext, size: CGSize) {
         var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-        path.addCurve(to: CGPoint(x: rect.maxX, y: rect.midY),
-                      control1: CGPoint(x: rect.width * 0.30, y: rect.minY),
-                      control2: CGPoint(x: rect.width * 0.78, y: rect.minY + rect.height * 0.08))
-        path.addCurve(to: CGPoint(x: rect.minX, y: rect.midY),
-                      control1: CGPoint(x: rect.width * 0.72, y: rect.maxY),
-                      control2: CGPoint(x: rect.width * 0.22, y: rect.maxY - rect.height * 0.04))
-        path.closeSubpath()
-        return path
+        let points = branch.points.map {
+            CGPoint(x: $0.x * size.width, y: $0.y * size.height)
+        }
+        path.move(to: points[0])
+        for point in points.dropFirst() { path.addLine(to: point) }
+        let drawn = path.trimmedPath(from: 0, to: progress)
+        let earthWidth = max(0.55, size.width * 0.048 * branch.lineScale)
+        context.stroke(drawn, with: .color(Self.earth.opacity(0.68)),
+                       style: StrokeStyle(lineWidth: earthWidth,
+                                          lineCap: .round, lineJoin: .round))
+        context.stroke(drawn, with: .color(color.opacity(0.50)),
+                       style: StrokeStyle(lineWidth: earthWidth * 0.38,
+                                          lineCap: .round, lineJoin: .round))
     }
-}
 
-private struct FernStemShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.width * 0.76, y: rect.height * 0.94))
-        path.addCurve(to: CGPoint(x: rect.width * 0.66, y: rect.height * 0.10),
-                      control1: CGPoint(x: rect.width * 0.34, y: rect.height * 0.80),
-                      control2: CGPoint(x: rect.width * 0.08, y: rect.height * 0.34))
-        return path
+    /// Left and right edges of the tapering fissure, offset along the local
+    /// perpendicular so a sharp jog keeps even width instead of pinching.
+    private static func edges(in size: CGSize,
+                              widthScale: CGFloat) -> (minus: [CGPoint], plus: [CGPoint]) {
+        let points = spine.map { CGPoint(x: $0.x * size.width, y: $0.y * size.height) }
+        var minus: [CGPoint] = []
+        var plus: [CGPoint] = []
+        minus.reserveCapacity(points.count)
+        plus.reserveCapacity(points.count)
+        for index in points.indices {
+            let previous = points[max(0, index - 1)]
+            let next = points[min(points.count - 1, index + 1)]
+            let dx = next.x - previous.x
+            let dy = next.y - previous.y
+            let length = max(0.001, hypot(dx, dy))
+            let nx = -dy / length
+            let ny = dx / length
+            let half = spine[index].halfWidth * size.width * widthScale
+            minus.append(CGPoint(x: points[index].x - nx * half,
+                                 y: points[index].y - ny * half))
+            plus.append(CGPoint(x: points[index].x + nx * half,
+                                y: points[index].y + ny * half))
+        }
+        return (minus, plus)
+    }
+
+    private static func propagate(at elapsed: TimeInterval) -> CGFloat {
+        CGFloat(min(1, max(0, elapsed / 0.50)))
+    }
+
+    private static func open(at elapsed: TimeInterval) -> CGFloat {
+        let raw = min(1, max(0, (elapsed - 0.04) / 0.30))
+        return CGFloat(1 - pow(1 - raw, 3))
+    }
+
+    private static func branchProgress(_ branch: Branch, at elapsed: TimeInterval) -> CGFloat {
+        let delay = 0.10 + Double(branch.along) * 0.36
+        let raw = min(1, max(0, (elapsed - delay) / 0.22))
+        return CGFloat(1 - pow(1 - raw, 2))
     }
 }
 

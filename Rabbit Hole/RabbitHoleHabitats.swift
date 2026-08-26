@@ -623,7 +623,7 @@ enum HabitatDraw {
             startPoint: CGPoint(x: origin.x, y: origin.y),
             endPoint: CGPoint(x: origin.x, y: origin.y + height)))
         context.stroke(log, with: .color(dark.opacity(0.55)), lineWidth: 1.1)
-        var knot = Path(ellipseIn: CGRect(x: origin.x + width * 0.42,
+        let knot = Path(ellipseIn: CGRect(x: origin.x + width * 0.42,
                                           y: origin.y + height * 0.32,
                                           width: height * 0.28, height: height * 0.22))
         context.fill(knot, with: .color(dark.opacity(0.45)))

@@ -28,7 +28,7 @@ private struct ScoreCelebration: Identifiable {
     let topicStart: Int
     let totalStart: Int
     /// True only when this session turned an unfinished board into a maxed one.
-    /// That inserts the fern-and-crown reveal before its bubble flies away.
+    /// That inserts the crack-and-crown reveal before its bubble flies away.
     let revealsMaximum: Bool
     let id = UUID()
     /// Stamped when the celebration actually becomes visible, not when it was
@@ -1021,7 +1021,7 @@ struct HomeView: View {
     private static var cardSettleDelay: Double {
         LevelCardView.scoreCountDelay + LevelCardView.scoreCountDuration + 0.1
     }
-    /// Gives the springing max card, ferns and crown a clear beat on screen
+    /// Gives the springing max card, cracks and crown a clear beat on screen
     /// before the reward bubble starts its flight to the topic total.
     private static let maximumRevealPause = 0.9
     private static let flightDuration = 0.62

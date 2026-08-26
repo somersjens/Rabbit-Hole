@@ -538,8 +538,35 @@ final class RabbitHoleArena: ObservableObject {
            let item = items.first(where: { $0.id == id }) {
             return gripPoint(of: item)
         }
-        return CGPoint(x: boomPoint.x + CGFloat(sin(swingAngle) * lengths.grab),
-                       y: boomPoint.y + CGFloat(cos(swingAngle) * lengths.grab))
+        let length = maximumVisibleDropLength(angle: swingAngle)
+        return CGPoint(x: boomPoint.x + CGFloat(sin(swingAngle) * length),
+                       y: boomPoint.y + CGFloat(cos(swingAngle) * length))
+    }
+
+    /// Distance from the boom to the first visible dirt/screen edge along a
+    /// hook ray. Empty shots use this instead of the item-derived grab length:
+    /// with no carrots that old length was only 24 points beyond rest, which
+    /// made the first tutorial tap look like a small pulse.
+    private func maximumVisibleDropLength(angle: Double) -> Double {
+        let pivot = boomPoint
+        let directionX = CGFloat(sin(angle))
+        let directionY = CGFloat(cos(angle))
+        let margin = max(6, RabbitHoleCraneLayout.clawSize(isPad: isPad).width * 0.10)
+        let bounds = CGRect(x: margin,
+                            y: field.minY,
+                            width: max(1, size.width - margin * 2),
+                            height: max(1, field.maxY - field.minY - margin))
+        var candidates: [CGFloat] = []
+        if directionX > 0.0001 {
+            candidates.append((bounds.maxX - pivot.x) / directionX)
+        } else if directionX < -0.0001 {
+            candidates.append((bounds.minX - pivot.x) / directionX)
+        }
+        if directionY > 0.0001 {
+            candidates.append((bounds.maxY - pivot.y) / directionY)
+        }
+        let edge = candidates.filter { $0 > 0 }.min() ?? CGFloat(ropeLengths.grab)
+        return max(ropeLengths.rest + 24, Double(edge))
     }
 
     // MARK: - Layout
@@ -792,12 +819,12 @@ final class RabbitHoleArena: ObservableObject {
                 dropGrabLength = hypot(Double(grip.x - boomPoint.x), Double(grip.y - boomPoint.y))
             } else {
                 dropEndAngle = swingAngle
-                dropGrabLength = lengths.grab
+                dropGrabLength = maximumVisibleDropLength(angle: swingAngle)
             }
         } else {
             dropTargetID = nil
             dropEndAngle = swingAngle
-            dropGrabLength = lengths.grab
+            dropGrabLength = maximumVisibleDropLength(angle: swingAngle)
         }
         dropAngle = dropStartAngle
         mode = .dropping

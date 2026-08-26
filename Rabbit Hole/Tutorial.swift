@@ -152,9 +152,9 @@ final class RabbitHoleTutorialController: ObservableObject {
         generation &+= 1
         practiceCarrotsFinished = 0
         reservesMessageArea = true
-        // The new walkthrough finishes in the arena; it no longer owes the
-        // menu the legacy crab tutorial's tenth, score-pointer step.
-        GameSettings.tutorialHomeHintPending = false
+        // After the arena lesson, the menu still points out where the newly
+        // earned score lives before its normal return celebration begins.
+        GameSettings.tutorialHomeHintPending = true
         enter(.launchHook)
     }
 
@@ -399,8 +399,7 @@ final class TutorialController: ObservableObject {
 /// The line the tutorial is currently teaching: a note tucked in directly under
 /// the sum, in the same white card the sum itself is drawn on, only smaller and
 /// quieter — the same relationship the missed-sum note has to the question above
-/// it. The character does the talking, so it reads as the same voice as the
-/// level card.
+/// it.
 ///
 /// It is deliberately a fixed-height strip rather than a card that grows with
 /// its text: the arena keeps exactly this much water free under the sum for the
@@ -412,49 +411,36 @@ struct TutorialMessageCard: View {
     var isPad: Bool = AppLayout.isPad
 
     /// The tallest the strip is ever drawn, which is what the arena reserves.
-    static func height(isPad: Bool) -> CGFloat { isPad ? 92 : 70 }
+    static func height(isPad: Bool) -> CGFloat { isPad ? 96 : 76 }
 
-    private var portraitSize: CGFloat { isPad ? 46 : 34 }
     private var corner: CGFloat { isPad ? 22 : 18 }
 
     var body: some View {
-        HStack(alignment: .center, spacing: isPad ? 12 : 9) {
-            theme.thumbArtwork
-                .resizable()
-                .scaledToFit()
-                .padding(isPad ? 3 : 2)
-                .frame(width: portraitSize, height: portraitSize)
-                .background(theme.skyColor, in: Circle())
-                .overlay(Circle().stroke(theme.deepColor.opacity(0.14), lineWidth: 1))
-
-            Text(verbatim: text)
-                .font(.system(size: isPad ? 17 : 13, weight: .bold, design: .rounded))
-                .foregroundStyle(theme.deepColor)
-                .multilineTextAlignment(.leading)
-                // Three lines is what the reserved band holds; a stubbornly
-                // long translation shrinks into it rather than being cut off.
-                .lineLimit(3)
-                .minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, isPad ? 15 : 11)
-        .padding(.vertical, isPad ? 8 : 6)
-        .frame(maxWidth: isPad ? 600 : 400)
-        .frame(height: Self.height(isPad: isPad))
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: corner, style: .continuous)
-                    .fill(.white.opacity(0.95))
-                    .shadow(color: theme.deepColor.opacity(0.20), radius: 9, y: 5)
-                // The sum's own dashed edge, one size down: the note reads as a
-                // footnote to the question rather than as a second panel.
-                RoundedRectangle(cornerRadius: corner * 0.78, style: .continuous)
-                    .stroke(theme.deepColor.opacity(0.26),
-                            style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                    .padding(isPad ? 6 : 5)
+        Text(verbatim: text)
+            .font(.system(size: isPad ? 22 : 17, weight: .bold, design: .rounded))
+            .foregroundStyle(theme.deepColor)
+            .multilineTextAlignment(.leading)
+            .lineLimit(2)
+            .minimumScaleFactor(0.72)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, isPad ? 22 : 16)
+            .padding(.vertical, isPad ? 8 : 6)
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.height(isPad: isPad))
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .fill(RabbitHoleHUDStyle.questionInterior)
+                        .shadow(color: theme.deepColor.opacity(0.20), radius: 9, y: 5)
+                    // The sum's own dashed edge, one size down: the note reads as a
+                    // footnote to the question rather than as a second panel.
+                    RoundedRectangle(cornerRadius: corner * 0.78, style: .continuous)
+                        .stroke(theme.deepColor.opacity(0.26),
+                                style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                        .padding(isPad ? 6 : 5)
+                }
             }
-        }
-        .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .combine)
     }
 }
 

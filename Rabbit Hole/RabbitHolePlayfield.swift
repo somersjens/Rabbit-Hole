@@ -3034,8 +3034,7 @@ private struct TutorialHookGuide: View {
 }
 
 /// Clearly blocks the tutorial bomb without hiding it. The double translucent
-/// shell reads as a protective bubble, while the slow pulse keeps it visibly
-/// separate from ordinary floor decoration.
+/// shell reads as a protective bubble on its own.
 private struct DynamiteShieldView: View {
     let isPad: Bool
     let clock: Double
@@ -3044,28 +3043,21 @@ private struct DynamiteShieldView: View {
 
     var body: some View {
         let pulse = 1 + CGFloat(sin(clock * 2.4)) * 0.025
-        ZStack {
-            Circle()
-                .fill(Color.cyan.opacity(0.14))
-                .overlay {
-                    Circle().stroke(Color.white.opacity(0.92), lineWidth: isPad ? 4 : 3)
-                }
-                .overlay {
-                    Circle()
-                        .stroke(Color.cyan.opacity(0.78), lineWidth: isPad ? 2.5 : 2)
-                        .padding(isPad ? 8 : 6)
-                }
-                .shadow(color: Color.cyan.opacity(0.55), radius: isPad ? 12 : 8)
-
-            Image(systemName: "shield.fill")
-                .font(.system(size: isPad ? 31 : 21, weight: .bold))
-                .foregroundStyle(.white.opacity(0.92), Color.cyan.opacity(0.72))
-                .offset(y: size * 0.34)
-        }
-        .frame(width: size, height: size)
-        .scaleEffect(pulse)
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
+        Circle()
+            .fill(Color.cyan.opacity(0.14))
+            .overlay {
+                Circle().stroke(Color.white.opacity(0.92), lineWidth: isPad ? 4 : 3)
+            }
+            .overlay {
+                Circle()
+                    .stroke(Color.cyan.opacity(0.78), lineWidth: isPad ? 2.5 : 2)
+                    .padding(isPad ? 8 : 6)
+            }
+            .shadow(color: Color.cyan.opacity(0.55), radius: isPad ? 12 : 8)
+            .frame(width: size, height: size)
+            .scaleEffect(pulse)
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
     }
 }
 
