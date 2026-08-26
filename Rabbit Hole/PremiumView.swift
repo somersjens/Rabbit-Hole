@@ -101,6 +101,7 @@ struct PremiumView: View {
         // same unit, so it keeps counting in carrots no matter which animal is
         // selected or previewed here.
         .carrotCurrencyIcon()
+        .currencyIconScale(isPad ? 1.5 : 1.3)
         .animation(.easeInOut(duration: 0.25), value: previewCharacterID)
         .animation(.spring(response: 0.42, dampingFraction: 0.7), value: premium.isPremium)
         .onAppear {

@@ -169,11 +169,13 @@ struct RabbitHolePlayfield: View {
                               clock: arena.clock,
                               amount: arena.skyAmount,
                               habitat: HabitatKind(characterID: character.id),
-                              hudBottom: surfaceTop)
+                              hudBottom: surfaceTop,
+                              isPad: isPad)
                     .opacity(Double(skyVisibility))
 
                 RabbitHoleSoil(palette: palette,
                                characterID: character.id,
+                               isPad: isPad,
                                grassY: grassY,
                                field: field,
                                holeOpen: arena.holeOpen,
@@ -497,6 +499,7 @@ private struct RabbitHoleSky: View {
     /// Bottom of the question banner. The sun sits just under it so a sliver
     /// can tuck behind the board without vanishing.
     var hudBottom: CGFloat = 110
+    var isPad = false
 
     var body: some View {
         let dusk = min(1, max(0, 1 - amount))
@@ -555,6 +558,8 @@ private struct RabbitHoleSky: View {
             let travel = 1.80
             let progress = (phase + clock * speed)
                 .truncatingRemainder(dividingBy: travel) - 0.40
+            let cloudScale = scale * (isPad ? 2 : 1)
+            let cloudY = y + (isPad ? 0 : 0.05)
             // One creamy fill only. A cyan underside plus a white stroke read
             // as a second cloud sitting underneath the first.
             let cloudFill = LinearGradient(
@@ -567,16 +572,16 @@ private struct RabbitHoleSky: View {
             ZStack {
                 RabbitPuffyCloudShape()
                     .fill(cloudFill)
-                    .frame(width: 112 * scale, height: 52 * scale)
+                    .frame(width: 112 * cloudScale, height: 52 * cloudScale)
                 Capsule()
                     .fill(.white.opacity(0.55))
-                    .frame(width: 28 * scale, height: 5 * scale)
-                    .offset(x: -12 * scale, y: -11 * scale)
-                    .blur(radius: 0.8 * scale)
+                    .frame(width: 28 * cloudScale, height: 5 * cloudScale)
+                    .offset(x: -12 * cloudScale, y: -11 * cloudScale)
+                    .blur(radius: 0.8 * cloudScale)
             }
-            .frame(width: 118 * scale, height: 58 * scale)
+            .frame(width: 118 * cloudScale, height: 58 * cloudScale)
             .opacity(0.96 - 0.24 * dusk)
-            .position(x: proxy.size.width * progress, y: proxy.size.height * y)
+            .position(x: proxy.size.width * progress, y: proxy.size.height * cloudY)
         }
     }
 }
@@ -625,6 +630,7 @@ private struct RabbitPuffyCloudShape: Shape {
 private struct RabbitHoleSoil: View, Equatable {
     let palette: ReefPalette
     var characterID: String = "bunny"
+    let isPad: Bool
     let grassY: CGFloat
     let field: CGRect
     let holeOpen: CGFloat
@@ -652,6 +658,7 @@ private struct RabbitHoleSoil: View, Equatable {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.palette == rhs.palette
             && lhs.characterID == rhs.characterID
+            && lhs.isPad == rhs.isPad
             && lhs.grassY == rhs.grassY
             && lhs.field == rhs.field
             && abs(lhs.holeOpen - rhs.holeOpen) < 0.01
@@ -2226,7 +2233,13 @@ private struct RabbitHoleSoil: View, Equatable {
     }
 
     private func drawAnswerSign(context: GraphicsContext, size: CGSize) {
-        let scale = surfaceScale(in: size)
+        // Before the landscape scenery pass, this sign deliberately used only
+        // the phone's width. Reusing the new height-aware scenery scale made a
+        // tall iPhone board roughly 60% larger. iPad's current size is right,
+        // so retain the richer surface scale there and restore the phone value.
+        let scale = isPad
+            ? surfaceScale(in: size)
+            : HabitatDraw.scale(for: size.width)
         let wood = Color(red: 0.70, green: 0.42, blue: 0.18)
         let woodLight = Color(red: 0.90, green: 0.68, blue: 0.38)
         let woodDark = Color(red: 0.34, green: 0.16, blue: 0.06)

@@ -208,6 +208,10 @@ struct HomeView: View {
                         .allowsHitTesting(false)
                 }
             }
+            // Currency counts are key navigation cues in the menu. Give their
+            // artwork more presence here while leaving the in-game HUD at its
+            // compact size (the inline session is a sibling of this subtree).
+            .currencyIconScale(isPad ? 1.5 : 1.3)
             .opacity(presentsSessionInline ? 0 : 1)
             .allowsHitTesting(!presentsSessionInline)
             .accessibilityHidden(presentsSessionInline)

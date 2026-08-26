@@ -49,6 +49,10 @@ private struct CurrencyIconKey: EnvironmentKey {
     static let defaultValue = Currency.icon
 }
 
+private struct CurrencyIconScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
 extension EnvironmentValues {
     /// Which currency artwork every `CurrencyIcon` below this point draws.
     /// Carried in the environment rather than passed down: the counters sit
@@ -57,6 +61,13 @@ extension EnvironmentValues {
     var currencyIcon: String {
         get { self[CurrencyIconKey.self] }
         set { self[CurrencyIconKey.self] = newValue }
+    }
+
+    /// A screen-local optical multiplier for currency artwork. Menus have more
+    /// room than the in-game HUD and deliberately render these counters larger.
+    var currencyIconScale: CGFloat {
+        get { self[CurrencyIconScaleKey.self] }
+        set { self[CurrencyIconScaleKey.self] = newValue }
     }
 }
 
@@ -70,6 +81,12 @@ extension View {
     func carrotCurrencyIcon() -> some View {
         environment(\.currencyIcon, Currency.icon)
     }
+
+    /// Enlarges currency artwork within one view hierarchy without changing
+    /// compact gameplay counters elsewhere in the app.
+    func currencyIconScale(_ scale: CGFloat) -> some View {
+        environment(\.currencyIconScale, scale)
+    }
 }
 
 /// The artwork used anywhere a currency count is shown. It is rendered as a
@@ -78,20 +95,22 @@ struct CurrencyIcon: View {
     let size: CGFloat
 
     @Environment(\.currencyIcon) private var iconName
+    @Environment(\.currencyIconScale) private var iconScale
 
     var body: some View {
         let optical = Currency.opticalMetrics(for: iconName)
+        let renderedSize = size * iconScale
         Image(iconName)
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
-            .frame(width: size, height: size)
+            .frame(width: renderedSize, height: renderedSize)
             .scaleEffect(optical.scale)
-            .offset(x: size * optical.x, y: size * optical.y)
+            .offset(x: renderedSize * optical.x, y: renderedSize * optical.y)
             // Preserve the requested layout footprint: the level-card flight
             // anchors and compact badges rely on this exact square on both
             // iPhone and iPad, while the artwork may draw slightly outside it.
-            .frame(width: size, height: size)
+            .frame(width: renderedSize, height: renderedSize)
             .accessibilityHidden(true)
     }
 }
