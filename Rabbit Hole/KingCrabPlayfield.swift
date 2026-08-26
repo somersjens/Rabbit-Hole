@@ -749,8 +749,10 @@ private struct KingCrabView: View {
                         endRadius: max(1, size * 0.42 * shadowFade)
                     )
                 )
-                .frame(width: size * 0.82 * shadowFade, height: size * 0.19 * shadowFade)
-                .offset(y: size * groundDrop + king.lift)
+                .frame(width: size * shadowWidth * shadowFade,
+                       height: size * 0.16 * shadowFade)
+                .offset(x: size * groundContact.x,
+                        y: size * groundContact.y + king.lift)
 
             if let sweep, sweep < 1 {
                 shockwave(progress: sweep)
@@ -801,12 +803,24 @@ private struct KingCrabView: View {
             .shadow(color: .orange.opacity(0.45), radius: 4, y: 2)
     }
 
-    /// How far below his middle the sand is. A rigged character stands on his
-    /// own feet, which hang past the bottom of the artwork square; a flat one
-    /// is drawn inside it and keeps the old line.
-    private var groundDrop: CGFloat {
-        guard let rig = character.rig else { return 0.44 }
-        return rig.groundLine - 0.5
+    /// The point where the artwork actually meets the sand, measured from the
+    /// centre of its square. The excavator portraits are square presentation
+    /// crops rather than the older 1552×1531 authoring canvas: their crawler
+    /// ends around y 0.856 and is centred around x 0.38. Reusing the old 0.44
+    /// vertical drop put the darkest part of the shadow about twenty points
+    /// below the tracks on iPad, which made the whole machine appear to float.
+    private var groundContact: CGPoint {
+        guard let rig = character.rig else {
+            return CGPoint(x: -0.12, y: 0.375)
+        }
+        return CGPoint(x: 0, y: rig.groundLine - 0.5)
+    }
+
+    /// The excavator's contact patch follows its crawler, not the claw that
+    /// makes the complete square artwork much wider. Rigged animals retain the
+    /// broader body shadow used for their stance.
+    private var shadowWidth: CGFloat {
+        character.rig == nil ? 0.68 : 0.82
     }
 
     /// Tightens and pales as he leaves the ground.

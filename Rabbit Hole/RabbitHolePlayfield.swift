@@ -1489,7 +1489,15 @@ private struct RabbitHoleSoil: View, Equatable {
         let lip = max(origin + 8, min(floorY, size.height))
         let span = max(40, lip - origin - 16)
         let spacing = max(58, span / 6)
-        let phase = shaftScroll.truncatingRemainder(dividingBy: spacing)
+        // During the first descent `wallTop` already carries the roots upward
+        // with the surviving surface rim. Applying the complete shaft scroll
+        // here as well made them overtake that rim and disappear into its sod.
+        // Start cycling the procedural wall details only after the first
+        // landing; subsequent descents have a fixed wall top and therefore do
+        // need the normal camera scroll.
+        let firstLandingTravel = max(1, (size.height - grassY) * 2)
+        let wallDetailScroll = max(0, shaftScroll - firstLandingTravel)
+        let phase = wallDetailScroll.truncatingRemainder(dividingBy: spacing)
         let count = max(3, Int(ceil((lip - origin + phase) / spacing)) + 2)
         var roots = context
         roots.clip(to: Path(CGRect(x: 0, y: origin,
@@ -2402,13 +2410,18 @@ private struct CraneRig: View {
             .rotationEffect(.degrees(flip), anchor: flipAnchor)
             .offset(x: slide + travelX, y: -hop)
 
-            CraneTerrainOverlap(isPad: isPad,
-                                floorIndex: floorIndex,
-                                contact: groundContact,
-                                hop: hop,
-                                flip: flip)
-                .position(x: trackContact.x, y: trackContact.y)
-                .offset(x: slide + travelX)
+            // Surface grass belongs to the stationary meadow. Drawing a
+            // second grass strip inside this moving rig made green blades
+            // slide in with the excavator during the opening animation.
+            if floorIndex > 0 {
+                CraneTerrainOverlap(isPad: isPad,
+                                    floorIndex: floorIndex,
+                                    contact: groundContact,
+                                    hop: hop,
+                                    flip: flip)
+                    .position(x: trackContact.x, y: trackContact.y)
+                    .offset(x: slide + travelX)
+            }
         }
         .frame(width: fieldSize.width, height: fieldSize.height)
         .allowsHitTesting(false)
@@ -2533,10 +2546,10 @@ private struct CraneContactShadow: View {
     }
 }
 
-/// A few pixels of terrain cross in front of the crawler baseline. That small
-/// occlusion is what makes the otherwise independent transparent artwork feel
-/// planted in the scene: grass catches the tracks at the surface; deeper down,
-/// loose clods and stones share the floor's progressively darker earth colour.
+/// A few pixels of underground terrain cross in front of the crawler baseline.
+/// That small occlusion makes the otherwise independent transparent artwork
+/// feel planted: loose clods and stones share the floor's progressively darker
+/// earth colour. Surface grass is part of the stationary meadow instead.
 private struct CraneTerrainOverlap: View {
     let isPad: Bool
     let floorIndex: Int
@@ -2570,40 +2583,11 @@ private struct CraneTerrainOverlap: View {
 
     var body: some View {
         Canvas { context, size in
-            if floorIndex == 0 {
-                drawGrass(context: context, size: size)
-            } else {
-                drawEarth(context: context, size: size)
-            }
+            drawEarth(context: context, size: size)
         }
         .frame(width: width, height: height)
         .opacity(presence)
         .allowsHitTesting(false)
-    }
-
-    private func drawGrass(context: GraphicsContext, size: CGSize) {
-        let blades: [(CGFloat, CGFloat, CGFloat)] = [
-            (0.05, 0.72, -2), (0.13, 0.48, 2), (0.22, 0.64, -1),
-            (0.34, 0.42, 2), (0.47, 0.61, -2), (0.59, 0.45, 1),
-            (0.72, 0.68, -1), (0.84, 0.50, 2), (0.94, 0.63, -2)
-        ]
-        let baseY = size.height * 0.63
-        for (index, blade) in blades.enumerated() {
-            var path = Path()
-            let x = size.width * blade.0
-            let bladeHeight = (4.5 + 4.2 * blade.1) * scale
-            path.move(to: CGPoint(x: x, y: baseY + 2 * scale))
-            path.addQuadCurve(to: CGPoint(x: x + blade.2 * scale,
-                                          y: baseY - bladeHeight),
-                              control: CGPoint(x: x - blade.2 * 0.35 * scale,
-                                               y: baseY - bladeHeight * 0.52))
-            let color = index.isMultiple(of: 2)
-                ? Color(red: 0.19, green: 0.43, blue: 0.08)
-                : Color(red: 0.31, green: 0.57, blue: 0.12)
-            context.stroke(path, with: .color(color.opacity(0.84)),
-                           style: StrokeStyle(lineWidth: 1.35 * scale,
-                                              lineCap: .round))
-        }
     }
 
     private func drawEarth(context: GraphicsContext, size: CGSize) {
@@ -3100,6 +3084,17 @@ private struct RabbitHoleParticles: View {
 
 // MARK: - Banner
 
+/// The warm paper inside the sum card. HUD controls reuse the exact same fill
+/// so the score and pause glyph belong visually to the question they support.
+enum RabbitHoleHUDStyle {
+    static var questionInterior: LinearGradient {
+        LinearGradient(colors: [
+            Color(red: 1.00, green: 0.96, blue: 0.88),
+            Color(red: 0.98, green: 0.90, blue: 0.76)
+        ], startPoint: .top, endPoint: .bottom)
+    }
+}
+
 struct RabbitHoleQuestionBanner: View {
     let prompt: String
     let roundID: UUID?
@@ -3121,12 +3116,7 @@ struct RabbitHoleQuestionBanner: View {
             .background {
                 ZStack {
                     RoundedRectangle(cornerRadius: isPad ? 22 : 18, style: .continuous)
-                        .fill(
-                            LinearGradient(colors: [
-                                Color(red: 1.00, green: 0.96, blue: 0.88),
-                                Color(red: 0.98, green: 0.90, blue: 0.76)
-                            ], startPoint: .top, endPoint: .bottom)
-                        )
+                        .fill(RabbitHoleHUDStyle.questionInterior)
                     RoundedRectangle(cornerRadius: isPad ? 22 : 18, style: .continuous)
                         .stroke(accent.opacity(0.70), lineWidth: 3)
                     RoundedRectangle(cornerRadius: isPad ? 16 : 12, style: .continuous)

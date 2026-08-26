@@ -51,8 +51,8 @@ struct OnboardingView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         let portrait: CGFloat = isPad
-                            ? (step == 1 ? 160 : 210)
-                            : (step == 1 ? 112 : 150)
+                            ? (step == 1 ? 200 : 264)
+                            : (step == 1 ? 148 : 198)
                         welcomeCharacter.menuPortrait
                             .resizable()
                             .scaledToFit()
@@ -153,7 +153,7 @@ struct OnboardingView: View {
                 .onSubmit { goToSubjects() }
                 .padding(.horizontal, isPad ? 22 : 16)
                 .padding(.vertical, isPad ? 18 : 14)
-                .background(.white.opacity(0.6), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(isNameFieldFocused ? OnboardingTheme.accent : OnboardingTheme.ink.opacity(0.18),
@@ -207,7 +207,7 @@ struct OnboardingView: View {
                         }
                         .padding(.horizontal, isPad ? 26 : 16)
                         .frame(maxWidth: .infinity, minHeight: isPad ? 72 : 54)
-                        .background(.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .buttonStyle(OnboardingOptionStyle())
                     .accessibilityIdentifier("onboarding-topic-\(option.rawValue)")
@@ -484,9 +484,14 @@ private struct OnboardingChoiceLabel: View {
         .padding(.horizontal, isPad ? 26 : 16)
         .frame(maxWidth: .infinity)
         .frame(height: rowHeight)
-        .background(isSelected ? AnyShapeStyle(OnboardingTheme.accent.opacity(0.16))
-                               : AnyShapeStyle(.white.opacity(0.78)),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.white)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(isSelected ? OnboardingTheme.accent.opacity(0.14) : .clear)
+                }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(OnboardingTheme.accent.opacity(isSelected ? 0.9 : 0), lineWidth: 2.5)

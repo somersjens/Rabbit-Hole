@@ -344,7 +344,7 @@ struct HomeView: View {
         .padding(isPad ? 22 : 14)
         .background {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.white.opacity(0.76))
+                .fill(.white.opacity(0.92))
                 .overlay {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .stroke(.white.opacity(0.9), lineWidth: 1)
@@ -547,7 +547,7 @@ struct HomeView: View {
             topicIcon(option, isSelected: isSelected)
                 .frame(maxWidth: .infinity)
                 .frame(height: topicButtonDiameter)
-                .background(isSelected ? character.deepColor : .white.opacity(0.7), in: Circle())
+                .background(isSelected ? character.deepColor : .white.opacity(0.90), in: Circle())
                 .overlay(Circle().stroke(character.deepColor.opacity(isSelected ? 0 : 0.25), lineWidth: 1))
                 .reportAnchor("topic.\(option.rawValue)")
                 .animation(.snappy(duration: 0.2), value: isSelected)
@@ -612,7 +612,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: isPad ? 56 : 37)
                         .padding(.horizontal, isPad ? 8 : 2)
-                        .background(isSelected ? character.deepColor : .white.opacity(0.7),
+                        .background(isSelected ? character.deepColor : .white.opacity(0.90),
                                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -656,7 +656,7 @@ struct HomeView: View {
                     .foregroundStyle(isSelected ? .white : character.deepColor)
                     .frame(maxWidth: .infinity)
                     .frame(height: isPad ? 56 : 37)
-                    .background(isSelected ? character.deepColor : .white.opacity(0.62),
+                    .background(isSelected ? character.deepColor : .white.opacity(0.88),
                                 in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(character.deepColor.opacity(isSelected ? 0 : 0.28), lineWidth: 1))

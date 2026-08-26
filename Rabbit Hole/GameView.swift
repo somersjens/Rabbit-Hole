@@ -82,9 +82,9 @@ struct GameView: View {
     /// After the card, the King gets the stage to himself while he climbs out
     /// of the sand. The first round only opens when that is finished.
     @State private var playsKingEntrance = false
-    /// Measured from the real HUD layout so the flying currency glyph can land
-    /// pixel-for-pixel over its stationary twin on every device and score width.
-    @State private var scoreIconCenter: CGPoint?
+    /// Measured from the real HUD layout so earned items can land pixel-for-
+    /// pixel in the centre of the score disc on every device.
+    @State private var scoreCounterCenter: CGPoint?
     /// A cleared bottom floor gets one last moment in the arena before its
     /// result card appears, even when early carrot choices left the score below
     /// the board maximum. Other endings (no lives, touching the final bomb, or
@@ -306,7 +306,7 @@ struct GameView: View {
                                 reservesTutorialMessage: reservesTutorialMessage,
                                 topReserve: playfieldTopReserve(topInset: topInset),
                                 bottomReserve: screenInsets.bottom,
-                                scoreTarget: scoreIconCenter,
+                                scoreTarget: scoreCounterCenter,
                                 onCorrect: { model.select(optionID: $0) },
                                 onWrong: model.missCarrot,
                                 onDynamiteMistake: model.missDynamite,
@@ -346,8 +346,8 @@ struct GameView: View {
             }
         }
         .ignoresSafeArea()
-        .onPreferenceChange(ScoreIconCenterPreferenceKey.self) { center in
-            scoreIconCenter = center
+        .onPreferenceChange(ScoreCounterCenterPreferenceKey.self) { center in
+            scoreCounterCenter = center
         }
     }
 
@@ -423,53 +423,48 @@ struct GameView: View {
             showsPauseCard = true
             showsIntro = true
         } label: {
-            // Inverted against the rest of the HUD: the disc carries the theme
-            // colour and the bars are punched clean out of it, so the playing
-            // field shows through where the glyph used to be.
             Circle()
                 .fill(character.deepColor)
                 .frame(width: hudControlSize, height: hudControlSize)
                 .overlay {
-                    Image(systemName: "pause.fill")
-                        .font(.system(size: pauseGlyphSize, weight: .bold))
-                        .blendMode(.destinationOut)
+                    FilledPauseGlyph(isPad: isPad)
                 }
-                .compositingGroup()
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("pause")
         .accessibilityLabel(Text("game.pause"))
     }
 
-    /// The bubble and hearts nearly fill the pause button's height, like the
-    /// reference HUD, while the pause bars keep the breathing room of the disc.
+    /// Score and pause deliberately use one shared diameter.
     private var hudControlSize: CGFloat { isPad ? 44 : 34 }
-    private var hudSymbolSize: CGFloat { isPad ? 34 : 26 }
-    private var pauseGlyphSize: CGFloat { isPad ? 22 : 16 }
-    private var hudNumberSize: CGFloat { isPad ? 32 : 24 }
+    private var hudNumberSize: CGFloat { isPad ? 28 : 21 }
 
     /// Just the shells banked this session. What the board holds is quoted on
     /// the start card and again on the result card, so the playing field does
     /// not have to carry it too.
     private var progressCounter: some View {
-        HStack(alignment: .center, spacing: isPad ? 7 : 5) {
+        ZStack {
+            Circle()
+                .fill(RabbitHoleHUDStyle.questionInterior)
+
             Text(verbatim: LN(model.cards))
                 .font(.system(size: hudNumberSize, weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(3)
                 .modifier(NumericCountTransition(value: Double(model.cards)))
-            CurrencyIcon(size: hudSymbolSize)
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear.preference(
-                            key: ScoreIconCenterPreferenceKey.self,
-                            value: CGPoint(x: proxy.frame(in: .global).midX,
-                                           y: proxy.frame(in: .global).midY)
-                        )
-                    }
-                }
         }
-        .frame(height: hudControlSize, alignment: .center)
+        .frame(width: hudControlSize, height: hudControlSize)
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ScoreCounterCenterPreferenceKey.self,
+                    value: CGPoint(x: proxy.frame(in: .global).midX,
+                                   y: proxy.frame(in: .global).midY)
+                )
+            }
+        }
         .foregroundStyle(character.deepColor)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: model.cards)
         .accessibilityIdentifier("progress")
@@ -484,11 +479,30 @@ struct GameView: View {
     }
 }
 
-struct ScoreIconCenterPreferenceKey: PreferenceKey {
+struct ScoreCounterCenterPreferenceKey: PreferenceKey {
     static var defaultValue: CGPoint? = nil
 
     static func reduce(value: inout CGPoint?, nextValue: () -> CGPoint?) {
         value = nextValue() ?? value
+    }
+}
+
+/// Two genuinely filled pause bars. The old knockout glyph made the playfield
+/// shine through them, which looked as if the bars continued through the disc.
+struct FilledPauseGlyph: View {
+    let isPad: Bool
+
+    var body: some View {
+        HStack(spacing: isPad ? 5 : 4) {
+            pauseBar
+            pauseBar
+        }
+    }
+
+    private var pauseBar: some View {
+        Capsule(style: .continuous)
+            .fill(RabbitHoleHUDStyle.questionInterior)
+            .frame(width: isPad ? 5 : 4, height: isPad ? 20 : 15)
     }
 }
 

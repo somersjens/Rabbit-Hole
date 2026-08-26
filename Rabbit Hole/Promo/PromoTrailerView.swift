@@ -26,7 +26,7 @@ struct PromoTrailerView: View {
 
     @StateObject private var model: GameViewModel
     @StateObject private var director: PromoDirector
-    @State private var scoreIconCenter: CGPoint?
+    @State private var scoreCounterCenter: CGPoint?
     @State private var showsStreakBanner = false
     @State private var streakBannerToken = 0
     @State private var playsLevelCompletion = false
@@ -124,8 +124,8 @@ struct PromoTrailerView: View {
         .onChange(of: director.isFinished) { finished in
             if finished { onFinished?() }
         }
-        .onPreferenceChange(ScoreIconCenterPreferenceKey.self) { center in
-            scoreIconCenter = center
+        .onPreferenceChange(ScoreCounterCenterPreferenceKey.self) { center in
+            scoreCounterCenter = center
         }
         .background {
             GeometryReader { proxy in
@@ -164,7 +164,7 @@ struct PromoTrailerView: View {
                           reservesTutorialMessage: true,
                           topReserve: topInset + hudHeight + (isPad ? 22 : 18),
                           bottomReserve: insets.bottom,
-                          scoreTarget: scoreIconCenter,
+                          scoreTarget: scoreCounterCenter,
                           onGuardedArrival: { model.select(optionID: $0) },
                           onSmashedGuard: model.smashGuardedAnswer,
                           onBreach: { _ = model.absorbBreach() },
@@ -189,24 +189,28 @@ struct PromoTrailerView: View {
 
     private func hud(topInset: CGFloat) -> some View {
         ZStack {
-            HStack(alignment: .center, spacing: isPad ? 7 : 5) {
+            ZStack {
+                Circle()
+                    .fill(RabbitHoleHUDStyle.questionInterior)
+
                 Text(verbatim: LN(model.cards))
-                    .font(.system(size: isPad ? 32 : 24, weight: .heavy, design: .rounded))
+                    .font(.system(size: isPad ? 28 : 21, weight: .heavy, design: .rounded))
                     .monospacedDigit()
                     .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(3)
                     .modifier(NumericCountTransition(value: Double(model.cards)))
-                CurrencyIcon(size: isPad ? 34 : 26)
-                    .background {
-                        GeometryReader { proxy in
-                            Color.clear.preference(
-                                key: ScoreIconCenterPreferenceKey.self,
-                                value: CGPoint(x: proxy.frame(in: .global).midX,
-                                               y: proxy.frame(in: .global).midY)
-                            )
-                        }
-                    }
             }
-            .frame(height: hudHeight, alignment: .center)
+            .frame(width: hudHeight, height: hudHeight)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: ScoreCounterCenterPreferenceKey.self,
+                        value: CGPoint(x: proxy.frame(in: .global).midX,
+                                       y: proxy.frame(in: .global).midY)
+                    )
+                }
+            }
             .foregroundStyle(character.deepColor)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: model.cards)
 
@@ -215,11 +219,8 @@ struct PromoTrailerView: View {
                     .fill(character.deepColor)
                     .frame(width: hudHeight, height: hudHeight)
                     .overlay {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: isPad ? 22 : 16, weight: .bold))
-                            .blendMode(.destinationOut)
+                        FilledPauseGlyph(isPad: isPad)
                     }
-                    .compositingGroup()
 
                 Spacer(minLength: 0)
 
