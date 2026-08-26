@@ -2629,7 +2629,17 @@ private struct CraneRig: View {
                                contact: groundContact,
                                hop: hop,
                                flip: flip)
-                .position(x: trackContact.x, y: trackContact.y + 1)
+                .position(x: trackContact.x, y: trackContact.y - (isPad ? 6 : 5))
+                .offset(x: slide + travelX)
+
+            CraneHookShadow(isPad: isPad,
+                            floorIndex: floorIndex,
+                            contact: groundContact,
+                            hop: hop,
+                            flip: flip,
+                            heightAbove: trackContact.y - hook.y)
+                .position(x: (clawGlue.x + hook.x) / 2,
+                          y: trackContact.y - (isPad ? 6 : 5))
                 .offset(x: slide + travelX)
 
             ZStack {
@@ -2750,8 +2760,8 @@ private struct CraneContactShadow: View {
     let flip: Double
 
     private var isUnderground: Bool { floorIndex > 0 }
-    private var width: CGFloat { isPad ? 198 : 150 }
-    private var height: CGFloat { isPad ? 28 : 21 }
+    private var width: CGFloat { isPad ? 238 : 180 }
+    private var height: CGFloat { isPad ? 34 : 25 }
 
     private var presence: Double {
         let hopFade = max(0, 1 - hop / (isPad ? 42 : 32))
@@ -2797,11 +2807,46 @@ private struct CraneContactShadow: View {
     }
 }
 
+/// A faint overhead-cast disc under the claw. It stays on the dirt plane and
+/// only strengthens a little as the hook comes down, so a high rest pose
+/// does not print a second machine-sized shadow.
+private struct CraneHookShadow: View {
+    let isPad: Bool
+    let floorIndex: Int
+    let contact: CGFloat
+    let hop: CGFloat
+    let flip: Double
+    let heightAbove: CGFloat
+
+    private var isUnderground: Bool { floorIndex > 0 }
+    private var width: CGFloat { isPad ? 42 : 32 }
+    private var height: CGFloat { isPad ? 12 : 9 }
+
+    private var presence: Double {
+        let hopFade = max(0, 1 - hop / (isPad ? 42 : 32))
+        let flipFade = max(0, 1 - abs(flip) / 18)
+        let reach: CGFloat = isPad ? 130 : 96
+        let proximity = max(0, min(1, 1 - abs(heightAbove) / reach))
+        return Double(max(0, min(1, contact * hopFade * CGFloat(flipFade) * proximity)))
+    }
+
+    var body: some View {
+        Ellipse()
+            .fill(Color.black.opacity(isUnderground ? 0.22 : 0.16))
+            .frame(width: width, height: height)
+            .blur(radius: isPad ? 4 : 3)
+            .blendMode(.multiply)
+            .opacity(presence * 0.85)
+            .scaleEffect(x: 0.72 + 0.28 * CGFloat(presence),
+                         y: 0.68 + 0.32 * CGFloat(presence))
+            .allowsHitTesting(false)
+    }
+}
+
 /// A few pixels of underground terrain cross in front of the crawler baseline.
 /// That small occlusion makes the otherwise independent transparent artwork
-/// feel planted: a soil-coloured wash stains the dark track pads, then loose
-/// clods share the floor's progressively darker earth colour. Surface grass
-/// is part of the stationary meadow instead.
+/// feel planted: loose clods and stones share the floor's progressively darker
+/// earth colour. Surface grass is part of the stationary meadow instead.
 private struct CraneTerrainOverlap: View {
     let isPad: Bool
     let floorIndex: Int
@@ -2809,8 +2854,8 @@ private struct CraneTerrainOverlap: View {
     let hop: CGFloat
     let flip: Double
 
-    private var width: CGFloat { isPad ? 198 : 152 }
-    private var height: CGFloat { isPad ? 34 : 26 }
+    private var width: CGFloat { isPad ? 190 : 144 }
+    private var height: CGFloat { isPad ? 28 : 21 }
     private var scale: CGFloat { isPad ? 1.28 : 1 }
 
     private var presence: Double {
@@ -2834,44 +2879,20 @@ private struct CraneTerrainOverlap: View {
     }
 
     var body: some View {
-        ZStack {
-            Canvas { context, size in
-                drawWash(context: context, size: size)
-            }
-            .compositingGroup()
-            .blendMode(.multiply)
-
-            Canvas { context, size in
-                drawClods(context: context, size: size)
-            }
+        Canvas { context, size in
+            drawEarth(context: context, size: size)
         }
         .frame(width: width, height: height)
         .opacity(presence)
         .allowsHitTesting(false)
     }
 
-    /// Stains the underside of the tracks with the floor colour so the dark
-    /// rubber edge reads as sitting in dirt instead of a cut-out sprite.
-    private func drawWash(context: GraphicsContext, size: CGSize) {
-        let pad = Path(ellipseIn: CGRect(x: size.width * 0.02,
-                                         y: size.height * 0.28,
-                                         width: size.width * 0.96,
-                                         height: size.height * 0.70))
-        context.fill(pad, with: .color(earth.opacity(0.42)))
-
-        let lip = Path(ellipseIn: CGRect(x: size.width * 0.10,
-                                         y: size.height * 0.48,
-                                         width: size.width * 0.80,
-                                         height: size.height * 0.46))
-        context.fill(lip, with: .color(earthDeep.opacity(0.38)))
-    }
-
-    private func drawClods(context: GraphicsContext, size: CGSize) {
+    private func drawEarth(context: GraphicsContext, size: CGSize) {
         let stones: [(CGFloat, CGFloat, CGFloat)] = [
             (0.04, 2.4, -0.5), (0.17, 3.4, 1), (0.31, 2.0, -1),
             (0.64, 2.7, 0.5), (0.79, 3.5, -1), (0.94, 2.2, 0.5)
         ]
-        let baseY = size.height * 0.62
+        let baseY = size.height * 0.59
         for (index, stone) in stones.enumerated() {
             let radius = stone.1 * scale
             let centre = CGPoint(x: size.width * stone.0,
@@ -2882,14 +2903,14 @@ private struct CraneTerrainOverlap: View {
                               height: radius * 1.16)
             context.fill(Path(ellipseIn: rect),
                          with: .color((index.isMultiple(of: 2) ? earth : earthDeep)
-                            .opacity(0.78)))
+                            .opacity(0.92)))
 
             let glint = CGRect(x: centre.x - radius * 0.43,
                                y: centre.y - radius * 0.40,
                                width: radius * 0.62,
                                height: max(0.7, radius * 0.20))
             context.fill(Path(ellipseIn: glint),
-                         with: .color(Color.white.opacity(0.10)))
+                         with: .color(Color.white.opacity(0.12)))
         }
     }
 }
