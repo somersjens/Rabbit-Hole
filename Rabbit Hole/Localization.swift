@@ -388,19 +388,6 @@ func L(key: String) -> String {
     return value
 }
 
-/// Resolve a runtime key in the language on screen *only*, with no English
-/// fallback. `nil` means that language has no entry for it.
-///
-/// This is for the one case the English fallback handles badly: a key that
-/// refines a line the catalog already carries in every language. Falling back
-/// to English there would swap a good translation for an English sentence, so
-/// the caller wants to know it came up short and offer the broader line
-/// instead. Everything else should use `L(key:)`.
-func LTranslated(key: String) -> String? {
-    let value = LanguageManager.shared.bundle.localizedString(forKey: key, value: key, table: nil)
-    return isTranslated(value, forKey: key) ? value : nil
-}
-
 /// Resolve a runtime key whose text varies with a count — "1 wortel" against
 /// "3 wortels". The catalog holds one string per food, so the count is
 /// substituted in; nothing here has to know which forms a language distinguishes.

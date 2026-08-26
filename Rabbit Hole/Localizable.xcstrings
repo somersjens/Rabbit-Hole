@@ -18242,7 +18242,7 @@
       }
     },
     "game.end.completionSubtitle.carrot" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18259,26 +18259,26 @@
         }
       }
     },
-    "game.end.completionSubtitle.chicken" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+    "game.end.completionSubtitle.egg" : {
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You collected all the chickens"
+            "value": "You collected all the eggs"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Je hebt alle kippen verzameld"
+            "value": "Je hebt alle eieren verzameld"
           }
         }
       }
     },
     "game.end.completionSubtitle.fish" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18295,26 +18295,26 @@
         }
       }
     },
-    "game.end.completionSubtitle.fly" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+    "game.end.completionSubtitle.spider" : {
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You collected all the flies"
+            "value": "You collected all the spiders"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Je hebt alle vliegen verzameld"
+            "value": "Je hebt alle spinnen verzameld"
           }
         }
       }
     },
     "game.end.completionSubtitle.honey" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18332,7 +18332,7 @@
       }
     },
     "game.end.completionSubtitle.kibble" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18350,7 +18350,7 @@
       }
     },
     "game.end.completionSubtitle.meat" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18368,7 +18368,7 @@
       }
     },
     "game.end.completionSubtitle.peanut" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18386,7 +18386,7 @@
       }
     },
     "game.end.completionSubtitle.pearl" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -18403,20 +18403,20 @@
         }
       }
     },
-    "game.end.completionSubtitle.shrimp" : {
-      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. A language that leaves these ten untranslated keeps its food-neutral \"game.end.completionSubtitle\" line instead of falling back to English.",
+    "game.end.completionSubtitle.worm" : {
+      "comment": "Under the character on the result card when the board was filled. One sentence per food, so the noun can take whatever case, article and word order the language needs. Languages without a translation use the English food-specific sentence.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You collected all the shrimp"
+            "value": "You collected all the worms"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Je hebt alle garnalen verzameld"
+            "value": "Je hebt alle wormen verzameld"
           }
         }
       }
@@ -46464,6 +46464,60 @@
         }
       },
       "comment": "The count is always 20, 30, 40 or 50 (GameConfig level maximums), which every language treats alike, so this needs no other plural form."
+    },
+    "levelIntro.cardsBullet.egg %lld" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can collect up to **%lld eggs** in this level."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt in dit level maximaal **%lld eieren** verzamelen."
+          }
+        }
+      },
+      "comment": "The count is always 20, 30, 40 or 50 (GameConfig level maximums), which every language treats alike, so this needs no other plural form. Languages without a translation use English."
+    },
+    "levelIntro.cardsBullet.spider %lld" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can collect up to **%lld spiders** in this level."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt in dit level maximaal **%lld spinnen** verzamelen."
+          }
+        }
+      },
+      "comment": "The count is always 20, 30, 40 or 50 (GameConfig level maximums), which every language treats alike, so this needs no other plural form. Languages without a translation use English."
+    },
+    "levelIntro.cardsBullet.worm %lld" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can collect up to **%lld worms** in this level."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt in dit level maximaal **%lld wormen** verzamelen."
+          }
+        }
+      },
+      "comment": "The count is always 20, 30, 40 or 50 (GameConfig level maximums), which every language treats alike, so this needs no other plural form. Languages without a translation use English."
     },
     "levelIntro.fractions.intro" : {
       "comment" : "First line of the level intro card for Fractions. Emphasise the operation with Markdown **bold**, wherever it falls in your sentence.",

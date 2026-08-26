@@ -11,14 +11,13 @@ import SwiftUI
 
 /// The game's currency. What a player collects is whatever their character
 /// eats, so the counter matches that animal: the bunny banks carrots, the frog
-/// flies, the penguin fish. The artwork is Hungry Frog's `fly_currency` and
-/// `currency_2`…`currency_10`, looked up by character ID so the catalog order
-/// here (bunny first) cannot hand an animal the wrong food.
+/// spiders, the penguin fish. The artwork is looked up by character ID so the
+/// catalog order here (bunny first) cannot hand an animal the wrong food.
 enum Currency {
     /// The bunny's carrot. Also the icon wherever the currency is spoken of in
     /// general rather than in one character's world — the Premium screen sells
     /// the whole cast, so it counts in carrots for all of them.
-    static let icon = "currency_3"
+    static let icon = "currency_1"
 
     static func icon(for characterID: String) -> String {
         FoodCatalog.food(for: characterID).currencyIconName
