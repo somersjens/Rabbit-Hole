@@ -328,6 +328,7 @@ final class RabbitHoleArena: ObservableObject {
     private var field: CGRect = .zero
     private var surface: CGRect = .zero
     private var isPad = false
+    private var pickupStyle = FoodPickupStyle.carrot
     private var isLive = false
     private var reduceMotion = false
     private var speedMultiplier: Double = 1
@@ -387,15 +388,21 @@ final class RabbitHoleArena: ObservableObject {
                     + excavatorDrop)
     }
 
-    /// Rest hang is the trolley on the boom pin. Grab hang is the claw on a
-    /// carrot leaf, so a tap extends along the aim it already has.
+    /// Rest hang is the trolley on the boom pin. Grab hang reaches the chosen
+    /// pickup's actual top-centre grip point.
     private var ropeLengths: (rest: Double, grab: Double) {
         let pivot = boomPoint
         var farthest = 0.0
-        let rests = items.isEmpty ? pocketLayout.points(in: field) : items.map(\.rest)
-        for rest in rests {
-            let leaf = leafTowardBoom(from: rest)
-            let distance = hypot(Double(leaf.x - pivot.x), Double(leaf.y - pivot.y))
+        let gripPoints: [CGPoint]
+        if items.isEmpty {
+            gripPoints = pocketLayout.points(in: field).map {
+                gripTowardBoom(from: $0, lift: pickupGripLift)
+            }
+        } else {
+            gripPoints = items.map(gripPoint)
+        }
+        for grip in gripPoints {
+            let distance = hypot(Double(grip.x - pivot.x), Double(grip.y - pivot.y))
             farthest = max(farthest, distance)
         }
         let restLength = RabbitHoleCraneLayout.restHang(isPad: isPad)
@@ -415,13 +422,20 @@ final class RabbitHoleArena: ObservableObject {
 
     var currentAnswer: String? { currentRound?.question.correctAnswer }
 
-    /// How far above a carrot's rest the leafy tuft sits, so the hook aims
-    /// at the greens instead of the body.
-    private var leafLift: CGFloat { isPad ? 54 : 42 }
+    /// Every pickup uses the same displayed canvas and answer size. Its own
+    /// normalized grip height places the claw just above opaque artwork.
+    private var pickupGripLift: CGFloat {
+        GameConfig.rabbitHoleDisplayedItemLength(isPad: isPad)
+            * CGFloat(pickupStyle.gripLiftFraction)
+    }
 
-    /// Leafy top along the boom ray, so a tilted carrot is still grabbed by its head.
-    private func leafTowardBoom(from rest: CGPoint, lift: CGFloat? = nil) -> CGPoint {
-        let lift = lift ?? leafLift
+    /// Dynamite keeps the established short fuse/body target regardless of
+    /// which character's pickup is active.
+    private var dynamiteGripLift: CGFloat { (isPad ? 54 : 42) * 0.6 }
+
+    /// Grip point along the boom ray, so rotating the artwork toward the crane
+    /// always puts the claw and the selected contour point on top of each other.
+    private func gripTowardBoom(from rest: CGPoint, lift: CGFloat) -> CGPoint {
         let pivot = boomPoint
         let dx = pivot.x - rest.x
         let dy = pivot.y - rest.y
@@ -433,9 +447,11 @@ final class RabbitHoleArena: ObservableObject {
                        y: rest.y + dy / len * lift)
     }
 
-    private func leafPoint(of item: RabbitHoleItem) -> CGPoint {
-        let lift = item.isDynamite ? leafLift * 0.6 : leafLift
-        return leafTowardBoom(from: item.rest, lift: lift)
+    private func gripPoint(of item: RabbitHoleItem) -> CGPoint {
+        gripTowardBoom(
+            from: item.rest,
+            lift: item.isDynamite ? dynamiteGripLift : pickupGripLift
+        )
     }
 
     /// Degrees of clockwise tilt that aims a carrot's leaves at the boom.
@@ -451,7 +467,7 @@ final class RabbitHoleArena: ObservableObject {
 
     private func hangingCenter(from hook: CGPoint) -> CGPoint {
         let angle = hookRayAngle
-        let lift = Double(leafLift)
+        let lift = Double(pickupGripLift)
         return CGPoint(x: hook.x + CGFloat(sin(angle) * lift),
                        y: hook.y + CGFloat(cos(angle) * lift))
     }
@@ -475,6 +491,13 @@ final class RabbitHoleArena: ObservableObject {
         if hookX == 0.5 || hookX == 0 {
             hookX = field.midX
         }
+        objectWillChange.send()
+    }
+
+    func setPickupStyle(_ style: FoodPickupStyle) {
+        guard pickupStyle != style else { return }
+        pickupStyle = style
+        repositionRests()
         objectWillChange.send()
     }
 
@@ -677,9 +700,9 @@ final class RabbitHoleArena: ObservableObject {
         if let id = itemAlongRay(angle: swingAngle, maxLength: lengths.grab) {
             dropTargetID = id
             if let item = items.first(where: { $0.id == id }) {
-                let leaf = leafPoint(of: item)
-                dropEndAngle = atan2(Double(leaf.x - boomPoint.x), Double(leaf.y - boomPoint.y))
-                dropGrabLength = hypot(Double(leaf.x - boomPoint.x), Double(leaf.y - boomPoint.y))
+                let grip = gripPoint(of: item)
+                dropEndAngle = atan2(Double(grip.x - boomPoint.x), Double(grip.y - boomPoint.y))
+                dropGrabLength = hypot(Double(grip.x - boomPoint.x), Double(grip.y - boomPoint.y))
             } else {
                 dropEndAngle = swingAngle
                 dropGrabLength = lengths.grab
@@ -988,24 +1011,29 @@ final class RabbitHoleArena: ObservableObject {
 
         // The blast removes the floor, but the rabbit remains the camera's
         // fixed anchor. The apparent fall starts when the shaft moves past it.
+        // Hold the grass under the tracks until the fence and sign have left,
+        // otherwise one in-between frame reads as the machine hovering.
         excavatorDrop = 0
-        if u < 0.18 {
+        let collapseStart = 0.32
+        if u < collapseStart {
             slabFall = 0
         } else {
-            let dropU = min(1, (u - 0.18) / 0.22)
+            let dropU = min(1, (u - collapseStart) / 0.18)
             slabFall = CGFloat(dropU * dropU * (3 - 2 * dropU))
         }
         holeOpen = slabFall
         floorDropped = slabFall > 0.18
         if u < 0.38 {
-            excavatorTilt = sin(u * 38) * 3.2 * (1 - u)
-            excavatorSquash = 1 + CGFloat(sin(u * .pi * 7)) * 0.04 * CGFloat(1 - u)
+            excavatorTilt = sin(u * 38) * 2.4 * (1 - u)
+            // Recoil only compresses into the tracks. Stretching above 1 lifts
+            // the cab off the grass lip.
+            excavatorSquash = 1 - abs(CGFloat(sin(u * .pi * 7))) * 0.035 * CGFloat(1 - u)
         } else {
-            excavatorTilt = sin((u - 0.38) * 14) * 3
-            excavatorSquash = 1.08
+            excavatorTilt = sin((u - 0.38) * 14) * 2.2
+            excavatorSquash = 1
         }
 
-        if u >= 0.18, !collapseSpawned {
+        if u >= collapseStart, !collapseSpawned {
             collapseSpawned = true
             spawnSurfaceCollapse()
         }
@@ -1041,7 +1069,7 @@ final class RabbitHoleArena: ObservableObject {
 
         // The next floor waits below and the moving shaft will bring it up to
         // the stationary rabbit.
-        if u >= 0.40 || actionProgress >= 1 {
+        if u >= 0.50 || actionProgress >= 1 {
             mode = .falling
             actionProgress = 0
             fallTravel = landingDepth()
@@ -1349,9 +1377,9 @@ final class RabbitHoleArena: ObservableObject {
         let uy = CGFloat(cos(angle))
         var scored: [(id: UUID, isDynamite: Bool, dAngle: Double, along: CGFloat, perp: CGFloat)] = []
         for item in items where item.isPresent && item.flight == .none {
-            let leaf = leafPoint(of: item)
-            let dx = leaf.x - pivot.x
-            let dy = leaf.y - pivot.y
+            let grip = gripPoint(of: item)
+            let dx = grip.x - pivot.x
+            let dy = grip.y - pivot.y
             let itemAngle = atan2(Double(dx), Double(dy))
             let dAngle = abs(atan2(sin(itemAngle - angle), cos(itemAngle - angle)))
             let along = dx * ux + dy * uy
@@ -1904,14 +1932,25 @@ final class RabbitHoleArena: ObservableObject {
         let margin = size.width * 0.06
         let tight = ArenaPerformanceBudget.isConstrained
         let chunks = tight ? 16 : 28
+        let trackX = surface.midX
+            + (RabbitHoleCraneLayout.canvasTracksCenterX
+               - RabbitHoleCraneLayout.canvasHub.x)
+            * RabbitHoleCraneLayout.canvasScale(isPad: isPad)
+        let trackClearance: CGFloat = isPad ? 108 : 82
+        func awayFromTracks(_ x: CGFloat) -> CGFloat {
+            if abs(x - trackX) >= trackClearance { return x }
+            return x < trackX
+                ? max(margin, trackX - trackClearance - 8)
+                : min(size.width - margin, trackX + trackClearance + 8)
+        }
         for _ in 0..<chunks {
             let big = Bool.random()
             particles.append(RabbitHoleParticle(
                 id: UUID(),
-                position: CGPoint(x: CGFloat.random(in: margin...(size.width - margin)),
-                                  y: y + CGFloat.random(in: -10...18)),
+                position: CGPoint(x: awayFromTracks(CGFloat.random(in: margin...(size.width - margin))),
+                                  y: y + CGFloat.random(in: 4...22)),
                 velocity: CGSize(width: CGFloat.random(in: -110...110),
-                                 height: CGFloat.random(in: 40...280)),
+                                 height: CGFloat.random(in: 80...300)),
                 age: 0,
                 life: Double.random(in: 0.55...1.15),
                 radius: big ? CGFloat.random(in: 11...20) : CGFloat.random(in: 5...12),
@@ -1922,10 +1961,10 @@ final class RabbitHoleArena: ObservableObject {
         for _ in 0..<(tight ? 8 : 14) {
             particles.append(RabbitHoleParticle(
                 id: UUID(),
-                position: CGPoint(x: CGFloat.random(in: margin...(size.width - margin)),
-                                  y: y + CGFloat.random(in: -6...10)),
+                position: CGPoint(x: awayFromTracks(CGFloat.random(in: margin...(size.width - margin))),
+                                  y: y + CGFloat.random(in: 6...18)),
                 velocity: CGSize(width: CGFloat.random(in: -80...80),
-                                 height: CGFloat.random(in: 30...180)),
+                                 height: CGFloat.random(in: 60...200)),
                 age: 0,
                 life: Double.random(in: 0.45...0.85),
                 radius: CGFloat.random(in: 7...14),
@@ -1936,10 +1975,10 @@ final class RabbitHoleArena: ObservableObject {
         for _ in 0..<(tight ? 10 : 16) {
             particles.append(RabbitHoleParticle(
                 id: UUID(),
-                position: CGPoint(x: CGFloat.random(in: margin...(size.width - margin)),
-                                  y: y),
+                position: CGPoint(x: awayFromTracks(CGFloat.random(in: margin...(size.width - margin))),
+                                  y: y + CGFloat.random(in: 2...12)),
                 velocity: CGSize(width: CGFloat.random(in: -50...50),
-                                 height: CGFloat.random(in: 20...150)),
+                                 height: CGFloat.random(in: 40...170)),
                 age: 0,
                 life: Double.random(in: 0.40...0.80),
                 radius: CGFloat.random(in: 4...10),

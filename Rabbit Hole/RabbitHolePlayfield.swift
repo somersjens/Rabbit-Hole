@@ -59,6 +59,9 @@ struct RabbitHolePlayfield: View {
     @ObservedObject private var language = LanguageManager.shared
 
     private var palette: ReefPalette { ReefPalette.palette(for: character) }
+    private var pickupStyle: FoodPickupStyle {
+        FoodCatalog.food(for: character.id).pickupStyle
+    }
     private var isRightToLeft: Bool {
         language.layoutDirection == .rightToLeft
     }
@@ -105,6 +108,21 @@ struct RabbitHolePlayfield: View {
                     ? 0
                     : max(arena.finaleSurfaceReveal,
                           min(1, max(0, 2 - travelledFloors))))
+            // First blast only: fence and sign leave with the shockwave.
+            // The finale restores the meadow, so scatter resets there.
+            let surfaceDressingScatter: CGFloat = {
+                if arena.finaleSceneActive { return 0 }
+                if arena.floorIndex != 0 { return 1 }
+                switch arena.mode {
+                case .exploding:
+                    let t = min(1, CGFloat(arena.actionProgress) / 0.28)
+                    return t * t * (3 - 2 * t)
+                case .falling:
+                    return 1
+                default:
+                    return arena.floorDropped ? 1 : 0
+                }
+            }()
 
             ZStack(alignment: .topLeading) {
                 // The open centre of the shaft needs its own backing. Without
@@ -174,7 +192,9 @@ struct RabbitHolePlayfield: View {
                                finaleCameraShift: arena.finaleSceneActive
                                    ? min(size.width * 0.48,
                                          max(0, arena.finaleWorldShift))
-                                   : 0)
+                                   : 0,
+                               dressingScatter: surfaceDressingScatter,
+                               pickupStyle: pickupStyle)
                     .equatable()
                     .frame(width: size.width, height: size.height)
 
@@ -250,10 +270,12 @@ struct RabbitHolePlayfield: View {
                          surface: surface,
                          fieldSize: size,
                          floorIndex: arena.floorIndex,
-                         groundContact: arena.floorDropped
-                            ? 0
-                            : max(0, 1 - arena.fallShift
-                                / (RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.72)),
+                         groundContact: arena.mode == .exploding
+                            ? 1
+                            : (arena.floorDropped
+                                ? 0
+                                : max(0, 1 - arena.fallShift
+                                    / (RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.72))),
                          boom: arena.boomPoint,
                          hook: arena.hookPoint,
                          entrance: arena.excavatorEntrance,
@@ -315,6 +337,7 @@ struct RabbitHolePlayfield: View {
             .environment(\.layoutDirection, .leftToRight)
             .onAppear {
                 bindArena()
+                arena.setPickupStyle(pickupStyle)
                 arena.layout(size: size, field: field, surface: surface, isPad: isPad)
                 arena.setRemainingQuestions(remainingQuestions,
                                             maximum: maximumRounds,
@@ -347,6 +370,9 @@ struct RabbitHolePlayfield: View {
             }
             .onChange(of: scoreTarget) { target in
                 arena.setScoreTarget(localScoreTarget(target, in: proxy))
+            }
+            .onChange(of: character.id) { _ in
+                arena.setPickupStyle(pickupStyle)
             }
             .onChange(of: isRightToLeft) { _ in
                 arena.setScoreTarget(localScoreTarget(scoreTarget, in: proxy))
@@ -407,7 +433,8 @@ struct RabbitHolePlayfield: View {
                 .scaleEffect(item.scale)
                 .opacity(item.opacity)
         } else {
-            AnswerCarrotView(text: item.text,
+            AnswerPickupView(text: item.text,
+                             style: pickupStyle,
                              isPad: isPad,
                              isRightToLeft: isRightToLeft,
                              scale: item.scale,
@@ -492,10 +519,12 @@ private struct RabbitHoleSky: View {
             let travel = 1.80
             let progress = (phase + clock * speed)
                 .truncatingRemainder(dividingBy: travel) - 0.40
+            // One creamy fill only. A cyan underside plus a white stroke read
+            // as a second cloud sitting underneath the first.
             let cloudFill = LinearGradient(
                 colors: [.white,
-                         Color(red: 0.91, green: 0.97, blue: 1.0),
-                         Color(red: 0.82, green: 0.92, blue: 0.98)],
+                         Color(red: 0.97, green: 0.97, blue: 0.96),
+                         Color(red: 0.93, green: 0.93, blue: 0.92)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -503,14 +532,11 @@ private struct RabbitHoleSky: View {
                 RabbitPuffyCloudShape()
                     .fill(cloudFill)
                     .frame(width: 112 * scale, height: 52 * scale)
-                RabbitPuffyCloudShape()
-                    .stroke(Color.white.opacity(0.38), lineWidth: 0.8 * scale)
-                    .frame(width: 112 * scale, height: 52 * scale)
                 Capsule()
-                    .fill(.white.opacity(0.48))
-                    .frame(width: 35 * scale, height: 6 * scale)
-                    .offset(x: -14 * scale, y: -13 * scale)
-                    .blur(radius: 1.5 * scale)
+                    .fill(.white.opacity(0.55))
+                    .frame(width: 28 * scale, height: 5 * scale)
+                    .offset(x: -12 * scale, y: -11 * scale)
+                    .blur(radius: 0.8 * scale)
             }
             .frame(width: 118 * scale, height: 58 * scale)
             .opacity(0.96 - 0.24 * dusk)
@@ -539,14 +565,14 @@ private struct RabbitPuffyCloudShape: Shape {
         path.addCurve(to: CGPoint(x: w * 0.72, y: h * 0.41),
                       control1: CGPoint(x: w * 0.67, y: h * 0.12),
                       control2: CGPoint(x: w * 0.72, y: h * 0.25))
-        // One broad terminal lobe tapers straight into the underside. There is
-        // no extra small bump at the right that can read as another cloud.
-        path.addCurve(to: CGPoint(x: w * 0.93, y: h * 0.70),
-                      control1: CGPoint(x: w * 0.84, y: h * 0.30),
-                      control2: CGPoint(x: w * 0.995, y: h * 0.48))
-        path.addCurve(to: CGPoint(x: w * 0.79, y: h * 0.86),
-                      control1: CGPoint(x: w * 0.96, y: h * 0.82),
-                      control2: CGPoint(x: w * 0.88, y: h * 0.87))
+        // Keep the right-hand tangent going down and slightly left so the
+        // lobe does not reverse and leave a V-shaped notch in the outline.
+        path.addCurve(to: CGPoint(x: w * 0.90, y: h * 0.78),
+                      control1: CGPoint(x: w * 0.78, y: h * 0.30),
+                      control2: CGPoint(x: w * 0.99, y: h * 0.52))
+        path.addCurve(to: CGPoint(x: w * 0.78, y: h * 0.86),
+                      control1: CGPoint(x: w * 0.86, y: h * 0.86),
+                      control2: CGPoint(x: w * 0.82, y: h * 0.86))
         path.addCurve(to: CGPoint(x: w * 0.20, y: h * 0.86),
                       control1: CGPoint(x: w * 0.64, y: h * 0.90),
                       control2: CGPoint(x: w * 0.34, y: h * 0.90))
@@ -579,6 +605,9 @@ private struct RabbitHoleSoil: View, Equatable {
     var finaleLayout = false
     var finaleSurfaceProgress: CGFloat = 0
     var finaleCameraShift: CGFloat = 0
+    /// 0 = fence and sign still planted. 1 = blown fully off-screen.
+    var dressingScatter: CGFloat = 0
+    var pickupStyle: FoodPickupStyle = .carrot
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.palette == rhs.palette
@@ -599,6 +628,8 @@ private struct RabbitHoleSoil: View, Equatable {
             && lhs.finaleLayout == rhs.finaleLayout
             && abs(lhs.finaleSurfaceProgress - rhs.finaleSurfaceProgress) < 0.008
             && abs(lhs.finaleCameraShift - rhs.finaleCameraShift) < 0.4
+            && abs(lhs.dressingScatter - rhs.dressingScatter) < 0.012
+            && lhs.pickupStyle == rhs.pickupStyle
     }
 
     var body: some View {
@@ -712,6 +743,14 @@ private struct RabbitHoleSoil: View, Equatable {
                               wallTop: wallTop, floorY: wellEnd)
             } else if collapsing {
                 drawCollapsingGrass(context: context, size: size, edges: edges)
+                // Fence and sign keep drawing through the collapse so the
+                // shockwave can throw them off-screen instead of popping them.
+                if dressingScatter < 0.98 {
+                    drawFence(context: context, size: size)
+                    if !finaleLayout {
+                        drawAnswerSign(context: context, size: size)
+                    }
+                }
             } else {
                 // The finale returns to the exact same meadow/fence dressing
                 // as the opening scene; only the surviving crater is shifted
@@ -721,7 +760,7 @@ private struct RabbitHoleSoil: View, Equatable {
                 if holeOpen > 0.01 {
                     drawCrater(context: context, size: size)
                 }
-                if !finaleLayout {
+                    if !finaleLayout {
                     // The instruction board belongs to the untouched opening
                     // scene. It was destroyed during the descent and must not
                     // reappear on the new right-hand landing extension.
@@ -1708,27 +1747,30 @@ private struct RabbitHoleSoil: View, Equatable {
 
         let scale = max(0.86, min(1.32, size.width / 390))
         let edges = pitEdges(in: size)
-        let daisies: [(CGFloat, CGFloat, Color, CGFloat)] = [
-            (0.07, 15, Color.white, 0.92),
-            (0.14, 11, Color(red: 1.00, green: 0.86, blue: 0.28), 0.78),
-            (0.22, 17, Color.white, 1.04),
-            (0.31, 12, Color.white, 0.84),
-            (0.41, 16, Color(red: 1.00, green: 0.82, blue: 0.22), 0.90),
-            (0.52, 13, Color.white, 0.96),
-            (0.63, 18, Color.white, 1.08),
-            (0.72, 11, Color(red: 1.00, green: 0.55, blue: 0.68), 0.80),
-            (0.81, 15, Color.white, 0.98),
-            (0.91, 12, Color(red: 1.00, green: 0.84, blue: 0.24), 0.86)
+        // stemHeight is how far the head sits above the turf.
+        let daisies: [(CGFloat, CGFloat, Color, CGFloat, Double)] = [
+            (0.05, 14, Color.white, 0.82, -8),
+            (0.12, 22, Color(red: 1.00, green: 0.86, blue: 0.28), 0.90, 6),
+            (0.19, 12, Color.white, 0.74, -5),
+            (0.28, 18, Color.white, 0.88, 7),
+            (0.48, 15, Color(red: 1.00, green: 0.82, blue: 0.22), 0.80, -6),
+            (0.57, 20, Color.white, 0.92, 5),
+            // Keep the board face clear: only short blooms at the posts.
+            (0.62, 11, Color(red: 1.00, green: 0.55, blue: 0.68), 0.72, -9),
+            (0.97, 13, Color.white, 0.78, 8)
         ]
-        for (index, daisy) in daisies.enumerated() {
+        for daisy in daisies {
             let x = size.width * daisy.0
             if hidesInHole(x, edges: edges, inset: 8) { continue }
+            let stem = daisy.1 * scale
             drawDaisy(context: context,
-                      at: CGPoint(x: x, y: grassY - daisy.1 * scale),
+                      at: CGPoint(x: x, y: grassY - stem),
                       petal: daisy.2,
                       scale: daisy.3 * scale,
                       opacity: opacity,
-                      tilt: (index.isMultiple(of: 2) ? -8 : 7))
+                      tilt: daisy.4,
+                      stemHeight: stem,
+                      stemLean: daisy.4 * 0.18 * scale)
         }
     }
 
@@ -1736,20 +1778,45 @@ private struct RabbitHoleSoil: View, Equatable {
     /// from Canvas paths. That keeps it crisp without adding image assets.
     private func drawSurfaceBackdrop(context: GraphicsContext, size: CGSize) {
         let scale = max(0.86, min(1.32, size.width / 390))
+        drawMeadow(context: context, size: size, scale: scale)
+        drawFence(context: context, size: size)
+
+        // Hill flowers sit on the meadow bands, not the turf lip, so their
+        // stems are short and plant into the slope beneath each head.
+        let backgroundFlowers: [(CGFloat, CGFloat, CGFloat, Color, CGFloat, Double)] = [
+            (0.08, 48, 14, Color.white, 0.92, -6),
+            (0.18, 32, 11, Color(red: 1.0, green: 0.49, blue: 0.66), 0.82, 7),
+            (0.59, 28, 12, Color.white, 0.84, 5),
+            // Behind the board: the plank covers the heads, so only the
+            // sides of the posts read as a small planted cluster.
+            (0.66, 22, 11, Color(red: 1.0, green: 0.45, blue: 0.60), 0.78, -6),
+            (0.76, 18, 10, Color.white, 0.72, 4),
+            (0.98, 24, 13, Color(red: 0.98, green: 0.78, blue: 0.20), 0.88, -5)
+        ]
+        for flower in backgroundFlowers {
+            let stem = flower.2 * scale
+            let point = CGPoint(x: size.width * flower.0,
+                                y: grassY - flower.1 * scale)
+            drawDaisy(context: context, at: point, petal: flower.3,
+                      scale: flower.4 * scale, opacity: 1, tilt: flower.5,
+                      stemHeight: stem, stemLean: flower.5 * 0.16 * scale)
+        }
+    }
+
+    private func drawFence(context: GraphicsContext, size: CGSize) {
+        let scale = max(0.86, min(1.32, size.width / 390))
         let fenceTop = grassY - 78 * scale
         let fenceBottom = grassY - 9
         let wood = Color(red: 0.67, green: 0.39, blue: 0.17)
         let woodLight = Color(red: 0.83, green: 0.57, blue: 0.28)
         let woodDark = Color(red: 0.42, green: 0.23, blue: 0.10)
-
-        drawMeadow(context: context, size: size, scale: scale)
-
-        // The fence begins outside the left edge and leans gently into view.
         let fenceStart = -16 * scale
         let fenceWidth = min(size.width * 0.43, 158 * scale)
         let fencePivot = CGPoint(x: fenceStart + fenceWidth / 2,
                                  y: fenceTop + 39 * scale)
-        var fence = context
+        guard let blownFence = blownDressing(context, pivot: fencePivot,
+                                             direction: -1, size: size) else { return }
+        var fence = blownFence
         fence.translateBy(x: fencePivot.x, y: fencePivot.y)
         fence.rotate(by: .degrees(2.2))
         fence.translateBy(x: -fencePivot.x, y: -fencePivot.y)
@@ -1786,21 +1853,23 @@ private struct RabbitHoleSoil: View, Equatable {
                                control: CGPoint(x: x + 4 * scale, y: fenceTop + 22 * scale))
             fence.stroke(grain, with: .color(woodDark.opacity(0.28)), lineWidth: scale)
         }
+    }
 
-        let backgroundFlowers: [(CGFloat, CGFloat, Color, CGFloat)] = [
-            (0.08, 52, Color.white, 1.15),
-            (0.19, 35, Color(red: 1.0, green: 0.49, blue: 0.66), 1.02),
-            (0.60, 43, Color(red: 0.55, green: 0.42, blue: 0.96), 1.12),
-            (0.69, 65, Color(red: 1.0, green: 0.45, blue: 0.60), 1.30),
-            (0.91, 42, Color(red: 0.98, green: 0.78, blue: 0.20), 1.08)
-        ]
-        for flower in backgroundFlowers {
-            let point = CGPoint(x: size.width * flower.0,
-                                y: grassY - flower.1 * scale)
-            drawFlower(context: context, at: point, color: flower.2,
-                       scale: flower.3 * scale, opacity: 1)
-        }
-
+    /// First dynamite blast throws the left fence off the left edge and the
+    /// answer board off the right. `direction` is −1 (left) or +1 (right).
+    private func blownDressing(_ context: GraphicsContext, pivot: CGPoint,
+                               direction: CGFloat, size: CGSize) -> GraphicsContext? {
+        if dressingScatter >= 0.98 { return nil }
+        guard dressingScatter > 0.001 else { return context }
+        let t = dressingScatter
+        var blown = context
+        let dx = direction * t * (size.width * 0.64 + 40)
+        let lift = CGFloat(sin(Double(t) * .pi * 0.78)) * 86 + t * 26
+        blown.translateBy(x: pivot.x + dx, y: pivot.y - lift)
+        blown.rotate(by: .degrees(Double(direction) * t * (34 + t * 28)))
+        blown.translateBy(x: -pivot.x, y: -pivot.y)
+        blown.opacity = Double(max(0, 1 - t * 0.7))
+        return blown
     }
 
     private func drawMeadow(context: GraphicsContext, size: CGSize, scale: CGFloat) {
@@ -1876,18 +1945,25 @@ private struct RabbitHoleSoil: View, Equatable {
             startPoint: CGPoint(x: 0, y: grassY - 39 * scale),
             endPoint: CGPoint(x: 0, y: meadowBottom)))
 
-        // Small highlights make the three bands read as a flowered meadow,
-        // while remaining quiet enough to sit behind the game machinery.
-        for index in 0..<18 {
-            let x = size.width * (CGFloat(index) + 0.35) / 18
-            let y = grassY - (14 + CGFloat((index * 17) % 23)) * scale
-            let color = index.isMultiple(of: 3)
-                ? Color.white.opacity(0.72)
-                : Color(red: 0.94, green: 0.83, blue: 0.24).opacity(0.64)
-            context.fill(Path(ellipseIn: CGRect(x: x, y: y,
-                                                width: 3.2 * scale,
-                                                height: 2.7 * scale)),
-                         with: .color(color))
+        // Tiny stemmed blooms on the hill bands. Bare ellipses read as
+        // floating heads; a short stem plants each one in the slope.
+        let meadowPetals = [
+            Color.white.opacity(0.92),
+            Color(red: 0.98, green: 0.86, blue: 0.32).opacity(0.90),
+            Color(red: 1.00, green: 0.62, blue: 0.72).opacity(0.88)
+        ]
+        for index in 0..<10 {
+            let x = size.width * (CGFloat(index) + 0.32) / 10
+            let stem = (7 + CGFloat((index * 11) % 10)) * scale
+            let headY = grassY - (16 + CGFloat((index * 17) % 18)) * scale
+            drawDaisy(context: context,
+                      at: CGPoint(x: x, y: headY),
+                      petal: meadowPetals[index % meadowPetals.count],
+                      scale: (0.40 + CGFloat(index % 3) * 0.07) * scale,
+                      opacity: 0.86,
+                      tilt: index.isMultiple(of: 2) ? -7 : 8,
+                      stemHeight: stem,
+                      stemLean: (index.isMultiple(of: 2) ? -1.4 : 1.6) * scale)
         }
     }
 
@@ -1954,30 +2030,52 @@ private struct RabbitHoleSoil: View, Equatable {
         }
     }
 
-    private func drawFlower(context: GraphicsContext, at point: CGPoint,
-                            color: Color, scale: CGFloat, opacity: CGFloat) {
-        drawDaisy(context: context, at: point, petal: color,
-                  scale: scale, opacity: opacity, tilt: 0)
-    }
-
-    /// Short meadow daisy: oval petals around a warm centre, sitting in the turf
-    /// rather than hovering on a long stem.
+    /// Meadow daisy: oval petals around a warm centre, planted on a visible
+    /// stem whose length is chosen per bloom so the bank is not one height.
     private func drawDaisy(context: GraphicsContext, at point: CGPoint,
                            petal: Color, scale: CGFloat, opacity: CGFloat,
-                           tilt: Double) {
-        var flower = context
+                           tilt: Double, stemHeight: CGFloat,
+                           stemLean: CGFloat = 0) {
+        var planted = context
+        planted.opacity = Double(opacity)
+
+        let stemGreen = Color(red: 0.18, green: 0.50, blue: 0.12)
+        let stemLength = max(6.5 * scale, stemHeight)
+        var stem = Path()
+        stem.move(to: CGPoint(x: point.x + 0.2 * scale, y: point.y + 2.4 * scale))
+        stem.addQuadCurve(
+            to: CGPoint(x: point.x + stemLean, y: point.y + stemLength),
+            control: CGPoint(x: point.x + stemLean * 0.35 + 2.4 * scale,
+                             y: point.y + stemLength * 0.48)
+        )
+        planted.stroke(stem,
+                       with: .color(stemGreen),
+                       style: StrokeStyle(lineWidth: max(1.35, 1.7 * scale),
+                                          lineCap: .round))
+
+        if stemLength > 15 * scale {
+            let leafY = point.y + stemLength * 0.52
+            let side: CGFloat = stemLean >= 0 ? 1 : -1
+            var leaf = Path()
+            leaf.move(to: CGPoint(x: point.x, y: leafY))
+            leaf.addQuadCurve(
+                to: CGPoint(x: point.x + side * 6.2 * scale,
+                            y: leafY - 4.6 * scale),
+                control: CGPoint(x: point.x + side * 2.2 * scale,
+                                 y: leafY - 0.8 * scale)
+            )
+            leaf.addQuadCurve(
+                to: CGPoint(x: point.x + side * 0.4 * scale,
+                            y: leafY - 1.6 * scale),
+                control: CGPoint(x: point.x + side * 3.6 * scale,
+                                 y: leafY - 6.0 * scale)
+            )
+            planted.fill(leaf, with: .color(stemGreen.opacity(0.88)))
+        }
+
+        var flower = planted
         flower.translateBy(x: point.x, y: point.y)
         flower.rotate(by: .degrees(tilt))
-        flower.opacity = Double(opacity)
-
-        var stem = Path()
-        stem.move(to: CGPoint(x: 0.4 * scale, y: 3.2 * scale))
-        let groundY = max(10 * scale, grassY - point.y - 5)
-        stem.addQuadCurve(to: CGPoint(x: -0.6 * scale, y: groundY),
-                          control: CGPoint(x: 2.6 * scale, y: groundY * 0.55))
-        flower.stroke(stem,
-                      with: .color(Color(red: 0.18, green: 0.48, blue: 0.12)),
-                      style: StrokeStyle(lineWidth: 1.5 * scale, lineCap: .round))
 
         for index in 0..<8 {
             let angle = Double(index) * .pi * 2 / 8 - .pi / 2
@@ -2013,199 +2111,168 @@ private struct RabbitHoleSoil: View, Equatable {
 
     private func drawAnswerSign(context: GraphicsContext, size: CGSize) {
         let scale = max(0.86, min(1.32, size.width / 390))
-        let wood = Color(red: 0.72, green: 0.44, blue: 0.20)
-        let woodLight = Color(red: 0.93, green: 0.72, blue: 0.42)
-        let woodDark = Color(red: 0.36, green: 0.18, blue: 0.07)
-        let boardWidth = 168 * scale
-        let boardHeight = 60 * scale
+        let wood = Color(red: 0.70, green: 0.42, blue: 0.18)
+        let woodLight = Color(red: 0.90, green: 0.68, blue: 0.38)
+        let woodDark = Color(red: 0.34, green: 0.16, blue: 0.06)
+        let parchment = Color(red: 0.99, green: 0.94, blue: 0.82)
+        let parchmentDeep = Color(red: 0.93, green: 0.84, blue: 0.66)
+        let boardWidth = 142 * scale
+        let boardHeight = 58 * scale
         let centre = CGPoint(x: size.width - boardWidth / 2 - 8 * scale,
-                             y: grassY - boardHeight / 2 - 22 * scale)
-        var sign = context
+                             y: grassY - boardHeight / 2 - 16 * scale)
+        guard let blownSign = blownDressing(context, pivot: centre,
+                                            direction: 1, size: size) else { return }
+        var sign = blownSign
         sign.translateBy(x: centre.x, y: centre.y)
-        sign.rotate(by: .degrees(2.4))
+        sign.rotate(by: .degrees(2.2))
 
-        let postWidth = 7.8 * scale
-        let postInset = boardWidth * 0.30
+        let postWidth = 10.4 * scale
+        let postInset = boardWidth * 0.28
         let postXs = [-postInset, postInset]
+        let grassLine = grassY - centre.y
+        sign.drawLayer { posts in
+            // Cut the stakes at the turf so they never continue into the
+            // soil cross-section. Grass drawn afterwards hides the cut.
+            posts.clip(to: Path(CGRect(x: -boardWidth, y: -boardHeight * 1.4,
+                                       width: boardWidth * 2,
+                                       height: grassLine + boardHeight * 1.4 + 3 * scale)))
+            for px in postXs {
+                let top = -boardHeight / 2 - 4 * scale
+                let bottom = grassLine + 6 * scale
+                let stake = Path(roundedRect: CGRect(x: px - postWidth / 2,
+                                                     y: top,
+                                                     width: postWidth,
+                                                     height: bottom - top),
+                                 cornerRadius: postWidth / 2)
+                posts.fill(stake, with: .linearGradient(
+                    Gradient(colors: [woodLight, wood, woodDark]),
+                    startPoint: CGPoint(x: px - postWidth / 2, y: 0),
+                    endPoint: CGPoint(x: px + postWidth / 2, y: 0)))
+                posts.stroke(stake, with: .color(woodDark.opacity(0.72)),
+                             lineWidth: 1.05 * scale)
+                posts.fill(Path(ellipseIn: CGRect(x: px - postWidth * 0.22,
+                                                  y: top + 4 * scale,
+                                                  width: postWidth * 0.28,
+                                                  height: (bottom - top) * 0.45)),
+                           with: .color(Color.white.opacity(0.16)))
+            }
+        }
         for px in postXs {
-            var stake = Path()
-            let top = -boardHeight / 2 - 12 * scale
-            let bottom = boardHeight / 2 + 28 * scale
-            stake.move(to: CGPoint(x: px - postWidth / 2, y: top + 3 * scale))
-            stake.addQuadCurve(to: CGPoint(x: px + postWidth / 2, y: top + 3 * scale),
-                               control: CGPoint(x: px, y: top))
-            stake.addLine(to: CGPoint(x: px + postWidth / 2, y: bottom - 9 * scale))
-            stake.addLine(to: CGPoint(x: px, y: bottom + 3 * scale))
-            stake.addLine(to: CGPoint(x: px - postWidth / 2, y: bottom - 9 * scale))
-            stake.closeSubpath()
-            sign.fill(stake, with: .linearGradient(
-                Gradient(colors: [woodLight, wood, woodDark]),
-                startPoint: CGPoint(x: px - postWidth / 2, y: 0),
-                endPoint: CGPoint(x: px + postWidth / 2, y: 0)))
-            sign.stroke(stake, with: .color(woodDark.opacity(0.78)),
-                        lineWidth: 1.15 * scale)
-            var grain = Path()
-            grain.move(to: CGPoint(x: px - 1.4 * scale, y: top + 8 * scale))
-            grain.addQuadCurve(to: CGPoint(x: px + 1.1 * scale, y: bottom - 6 * scale),
-                               control: CGPoint(x: px + 2.4 * scale, y: 4 * scale))
-            sign.stroke(grain, with: .color(woodDark.opacity(0.28)),
-                        style: StrokeStyle(lineWidth: 0.8 * scale, lineCap: .round))
+            let socket = CGRect(x: px - postWidth * 0.85,
+                                y: grassLine - 4.5 * scale,
+                                width: postWidth * 1.7,
+                                height: 8 * scale)
+            sign.fill(Path(ellipseIn: socket),
+                      with: .color(Color(red: 0.28, green: 0.14, blue: 0.06).opacity(0.72)))
         }
 
-        let board = answerBoardPath(width: boardWidth, height: boardHeight,
+        let frame = answerBoardPath(width: boardWidth, height: boardHeight,
+                                    scale: scale)
+        let inset = 6.56 * scale
+        let panel = answerBoardPath(width: boardWidth - inset * 2,
+                                    height: boardHeight - inset * 2,
                                     scale: scale)
         var underside = sign
-        underside.translateBy(x: 0.8 * scale, y: 3.6 * scale)
-        underside.fill(board, with: .color(woodDark.opacity(0.90)))
+        underside.translateBy(x: 0.9 * scale, y: 3.8 * scale)
+        underside.fill(frame, with: .color(woodDark.opacity(0.90)))
 
         sign.drawLayer { layer in
-            layer.addFilter(.shadow(color: .black.opacity(0.28), radius: 3.6 * scale,
-                                    x: 1.3 * scale, y: 3.4 * scale))
-            layer.fill(board,
+            layer.addFilter(.shadow(color: .black.opacity(0.26), radius: 3.4 * scale,
+                                    x: 1.2 * scale, y: 3.2 * scale))
+            layer.fill(frame,
                        with: .linearGradient(
                         Gradient(stops: [
-                            .init(color: Color(red: 0.98, green: 0.80, blue: 0.50),
+                            .init(color: Color(red: 0.96, green: 0.76, blue: 0.46),
                                   location: 0),
-                            .init(color: woodLight, location: 0.22),
-                            .init(color: Color(red: 0.84, green: 0.56, blue: 0.28),
-                                  location: 0.72),
-                            .init(color: Color(red: 0.64, green: 0.36, blue: 0.14),
+                            .init(color: woodLight, location: 0.18),
+                            .init(color: wood, location: 0.62),
+                            .init(color: Color(red: 0.48, green: 0.24, blue: 0.08),
                                   location: 1)
                         ]),
                         startPoint: CGPoint(x: 0, y: -boardHeight / 2),
                         endPoint: CGPoint(x: 0, y: boardHeight / 2)))
         }
-        sign.stroke(board, with: .color(woodDark.opacity(0.86)),
-                    style: StrokeStyle(lineWidth: 1.8 * scale, lineJoin: .round))
+        sign.stroke(frame, with: .color(woodDark.opacity(0.82)),
+                    style: StrokeStyle(lineWidth: 1.7 * scale, lineJoin: .round))
 
-        var topBevel = Path()
-        topBevel.move(to: CGPoint(x: -boardWidth / 2 + 10 * scale,
-                                  y: -boardHeight / 2 + 4.2 * scale))
-        topBevel.addQuadCurve(to: CGPoint(x: boardWidth / 2 - 10 * scale,
-                                          y: -boardHeight / 2 + 4.8 * scale),
-                              control: CGPoint(x: 0,
-                                               y: -boardHeight / 2 + 1.6 * scale))
-        sign.stroke(topBevel, with: .color(Color.white.opacity(0.32)),
-                    style: StrokeStyle(lineWidth: 1.35 * scale, lineCap: .round))
+        var recess = sign
+        recess.translateBy(x: 0, y: 1.1 * scale)
+        recess.fill(panel, with: .color(woodDark.opacity(0.28)))
 
-        var bottomBevel = Path()
-        bottomBevel.move(to: CGPoint(x: -boardWidth / 2 + 10 * scale,
-                                     y: boardHeight / 2 - 4.2 * scale))
-        bottomBevel.addQuadCurve(to: CGPoint(x: boardWidth / 2 - 10 * scale,
-                                             y: boardHeight / 2 - 4.6 * scale),
-                                 control: CGPoint(x: 0,
-                                                  y: boardHeight / 2 - 1.6 * scale))
-        sign.stroke(bottomBevel, with: .color(woodDark.opacity(0.28)),
-                    style: StrokeStyle(lineWidth: 1.15 * scale, lineCap: .round))
+        sign.fill(panel, with: .linearGradient(
+            Gradient(colors: [parchment, parchmentDeep]),
+            startPoint: CGPoint(x: 0, y: -boardHeight / 2 + inset),
+            endPoint: CGPoint(x: 0, y: boardHeight / 2 - inset)))
+        sign.stroke(panel, with: .color(woodDark.opacity(0.16)),
+                    style: StrokeStyle(lineWidth: 0.9 * scale, lineJoin: .round))
 
-        let grainLines: [(CGFloat, CGFloat, CGFloat)] = [
-            (-16, -1.8, 0.16), (-7, 1.4, 0.12),
-            (3, -1.1, 0.14), (12, 1.2, 0.15), (18, -0.8, 0.11)
-        ]
-        for (y, bend, alpha) in grainLines {
-            var grain = Path()
-            grain.move(to: CGPoint(x: -boardWidth / 2 + 11 * scale,
-                                   y: y * scale))
-            grain.addQuadCurve(to: CGPoint(x: boardWidth / 2 - 12 * scale,
-                                           y: (y + bend * 0.4) * scale),
-                               control: CGPoint(x: -4 * scale,
-                                                y: (y + bend) * scale))
-            sign.stroke(grain, with: .color(woodDark.opacity(alpha)),
-                        style: StrokeStyle(lineWidth: 0.8 * scale, lineCap: .round))
-        }
-
-        let fasteners: [CGPoint] = [
-            CGPoint(x: -boardWidth / 2 + 11 * scale,
-                    y: -boardHeight / 2 + 9 * scale),
-            CGPoint(x: boardWidth / 2 - 11 * scale,
-                    y: -boardHeight / 2 + 9 * scale),
-            CGPoint(x: -boardWidth / 2 + 12 * scale,
-                    y: boardHeight / 2 - 9 * scale),
-            CGPoint(x: boardWidth / 2 - 12 * scale,
-                    y: boardHeight / 2 - 9 * scale)
-        ]
-        for point in fasteners {
-            sign.fill(Path(ellipseIn: CGRect(x: point.x - 1.5 * scale,
-                                             y: point.y - 1.5 * scale,
-                                             width: 3.0 * scale,
-                                             height: 3.0 * scale)),
-                      with: .radialGradient(
-                        Gradient(colors: [Color.white.opacity(0.55), woodDark]),
-                        center: point,
-                        startRadius: 0,
-                        endRadius: 1.7 * scale))
-        }
-
-        var crack = Path()
-        crack.move(to: CGPoint(x: -boardWidth / 2 + 8 * scale,
-                               y: -boardHeight / 2 + 13 * scale))
-        crack.addLine(to: CGPoint(x: -boardWidth / 2 + 16 * scale,
-                                  y: -boardHeight / 2 + 16 * scale))
-        crack.addLine(to: CGPoint(x: -boardWidth / 2 + 22 * scale,
-                                  y: -boardHeight / 2 + 12 * scale))
-        sign.stroke(crack, with: .color(woodDark.opacity(0.34)),
-                    style: StrokeStyle(lineWidth: 0.9 * scale,
-                                       lineCap: .round, lineJoin: .round))
-
-        // Dutch is the only alternate copy requested for now; every other app
-        // language deliberately receives the English fallback.
-        let lines = languageCode == "nl"
-            ? ["Pak het juiste", "antwoord!"]
-            : ["Grab the right", "answer!"]
-        let carrotReserve = 34 * scale
-        let textArea = CGRect(x: -boardWidth / 2 + 12 * scale,
-                              y: -boardHeight / 2 + 9 * scale,
-                              width: boardWidth - 24 * scale - carrotReserve,
-                              height: boardHeight - 18 * scale)
-        let ink = Color(red: 0.27, green: 0.13, blue: 0.05)
-        var fontSize = 12.6 * scale
+        let title = languageCode == "nl" ? "Pak het juiste" : "Grab the right"
+        let punch = languageCode == "nl" ? "antwoord!" : "answer!"
+        let panelBox = CGRect(x: -boardWidth / 2 + inset + 5 * scale,
+                              y: -boardHeight / 2 + inset + 3 * scale,
+                              width: boardWidth - inset * 2 - 10 * scale,
+                              height: boardHeight - inset * 2 - 6 * scale)
+        let ink = Color(red: 0.32, green: 0.16, blue: 0.06)
+        var titleSize = min(13.2 * scale, panelBox.height * 0.34)
         for _ in 0..<8 {
-            let widest = lines.map { line -> CGFloat in
-                sign.resolve(
-                    Text(line)
-                        .font(.system(size: fontSize, weight: .heavy, design: .rounded))
-                ).measure(in: CGSize(width: 480, height: 60)).width
-            }.max() ?? 0
-            if widest <= textArea.width { break }
-            fontSize *= 0.94
+            let width = sign.resolve(
+                Text(title)
+                    .font(.system(size: titleSize, weight: .heavy, design: .rounded))
+            ).measure(in: CGSize(width: 480, height: 80)).width
+            if width <= panelBox.width * 0.92 { break }
+            titleSize *= 0.94
         }
-        let lineHeight = fontSize * 1.18
-        let blockHeight = lineHeight * CGFloat(max(0, lines.count - 1))
-        let startY = textArea.midY - blockHeight / 2
-        // The complete Canvas is mirrored with the RTL gameplay world. Draw
-        // the copy through one additional local reflection so its glyphs stay
-        // readable while the physical board moves to the opposite bank.
+        let punchSize = min(titleSize * 1.08, panelBox.height * 0.38)
+        let lineGap = panelBox.height * 0.46
+        let titleY = panelBox.minY + panelBox.height * 0.30
+        let punchY = titleY + lineGap
+
         var readableText = sign
         if isRightToLeft {
             readableText.scaleBy(x: -1, y: 1)
         }
-        for (index, line) in lines.enumerated() {
+        func drawLine(_ copy: String, size: CGFloat, at point: CGPoint) {
             var resolved = sign.resolve(
-                Text(line)
-                    .font(.system(size: fontSize, weight: .heavy, design: .rounded))
+                Text(copy)
+                    .font(.system(size: size, weight: .heavy, design: .rounded))
             )
             resolved.shading = .color(ink)
-            var textShadow = resolved
-            textShadow.shading = .color(Color.black.opacity(0.18))
-            let textPoint = CGPoint(x: textArea.midX,
-                                    y: startY + CGFloat(index) * lineHeight)
-            let readableX = isRightToLeft ? -textPoint.x : textPoint.x
-            let shadowNudge = isRightToLeft ? -0.7 * scale : 0.7 * scale
-            readableText.draw(
-                textShadow,
-                at: CGPoint(x: readableX + shadowNudge,
-                            y: textPoint.y + 0.8 * scale),
-                anchor: .center
-            )
+            var shadow = resolved
+            shadow.shading = .color(Color(red: 0.42, green: 0.24, blue: 0.10).opacity(0.28))
+            let readableX = isRightToLeft ? -point.x : point.x
+            let nudge = isRightToLeft ? -0.7 * scale : 0.7 * scale
+            readableText.draw(shadow,
+                              at: CGPoint(x: readableX + nudge,
+                                          y: point.y + 0.85 * scale),
+                              anchor: .center)
             readableText.draw(resolved,
-                              at: CGPoint(x: readableX, y: textPoint.y),
+                              at: CGPoint(x: readableX, y: point.y),
                               anchor: .center)
         }
+        drawLine(title, size: titleSize, at: CGPoint(x: 0, y: titleY))
+        drawLine(punch, size: punchSize, at: CGPoint(x: 0, y: punchY))
 
-        drawCarrot(context: sign,
-                   at: CGPoint(x: boardWidth / 2 - 18 * scale, y: 2 * scale),
-                   scale: 0.62 * scale,
-                   rotation: .degrees(18))
+        let punchWidth = sign.resolve(
+            Text(punch)
+                .font(.system(size: punchSize, weight: .heavy, design: .rounded))
+        ).measure(in: CGSize(width: 480, height: 80)).width
+        let foodHeight = 16.8 * scale
+        let foodReach = min(panelBox.width * 0.38,
+                            punchWidth / 2 + foodHeight * 0.55)
+        let foodTilt = Angle.degrees(32)
+        sign.drawLayer { layer in
+            layer.clip(to: panel)
+            drawSignFood(context: layer,
+                         at: CGPoint(x: -foodReach, y: punchY + 0.4 * scale),
+                         height: foodHeight,
+                         rotation: foodTilt,
+                         mirrored: true)
+            drawSignFood(context: layer,
+                         at: CGPoint(x: foodReach, y: punchY + 0.4 * scale),
+                         height: foodHeight,
+                         rotation: foodTilt,
+                         mirrored: false)
+        }
 
         drawSignGrass(context: sign, baseY: grassY - centre.y,
                       scale: scale, postXs: postXs)
@@ -2228,16 +2295,16 @@ private struct RabbitHoleSoil: View, Equatable {
                 context.fill(Path(ellipseIn: rect),
                              with: .color(grassDark.opacity(0.90)))
             }
-            for tooth in -3...3 {
-                    let extra = CGFloat(abs(tooth)) * 1.8
-                    let centreBoost: CGFloat = tooth == 0 ? 4 : 0
+            for tooth in -4...4 {
+                    let extra = CGFloat(abs(tooth)) * 1.6
+                    let centreBoost: CGFloat = tooth == 0 ? 6 : 0
                     drawFilledGrassBlade(
                     context: context,
-                    root: CGPoint(x: postX + CGFloat(tooth) * 2.4 * scale,
-                                  y: baseY + 1.2 * scale),
-                    height: (8 + extra + centreBoost) * scale,
-                    lean: CGFloat(tooth) * 2.8 * scale,
-                    halfWidth: 1.1 * scale,
+                    root: CGPoint(x: postX + CGFloat(tooth) * 2.2 * scale,
+                                  y: baseY + 0.4 * scale),
+                    height: (11 + extra + centreBoost) * scale,
+                    lean: CGFloat(tooth) * 2.4 * scale,
+                    halfWidth: 1.25 * scale,
                     color: tooth.isMultiple(of: 2) ? grassLight : grassMid
                 )
             }
@@ -2261,99 +2328,50 @@ private struct RabbitHoleSoil: View, Equatable {
 
     private func answerBoardPath(width: CGFloat, height: CGFloat,
                                  scale: CGFloat) -> Path {
+        // Rounded rectangle with a light hand-drawn wobble — close to the
+        // wooden plaque in the reference, not a puffy two-hump blob.
+        let hw = width / 2
+        let hh = height / 2
+        let corner = min(hw, hh) * 0.36
         var board = Path()
-        board.move(to: CGPoint(x: -width / 2 + 7 * scale,
-                               y: -height / 2 + 0.8 * scale))
-        board.addQuadCurve(to: CGPoint(x: width / 2 - 6 * scale,
-                                       y: -height / 2 + 1.8 * scale),
-                           control: CGPoint(x: 1 * scale,
-                                            y: -height / 2 - 1.2 * scale))
-        board.addQuadCurve(to: CGPoint(x: width / 2 - 0.5 * scale,
-                                       y: -height / 2 + 7 * scale),
-                           control: CGPoint(x: width / 2 + 1.5 * scale,
-                                            y: -height / 2 + 2.5 * scale))
-        board.addQuadCurve(to: CGPoint(x: width / 2 - 1.8 * scale,
-                                       y: height / 2 - 6 * scale),
-                           control: CGPoint(x: width / 2 + 1.8 * scale, y: 1 * scale))
-        board.addQuadCurve(to: CGPoint(x: width / 2 - 7 * scale,
-                                       y: height / 2 - 0.5 * scale),
-                           control: CGPoint(x: width / 2 - 1 * scale,
-                                            y: height / 2 + 1.3 * scale))
-        board.addQuadCurve(to: CGPoint(x: -width / 2 + 6 * scale,
-                                       y: height / 2 - 1.2 * scale),
-                           control: CGPoint(x: -2 * scale,
-                                            y: height / 2 + 1.6 * scale))
-        board.addQuadCurve(to: CGPoint(x: -width / 2 + 0.7 * scale,
-                                       y: height / 2 - 7 * scale),
-                           control: CGPoint(x: -width / 2 - 1.6 * scale,
-                                            y: height / 2 - 1.5 * scale))
-        board.addQuadCurve(to: CGPoint(x: -width / 2 + 1.5 * scale,
-                                       y: -height / 2 + 7 * scale),
-                           control: CGPoint(x: -width / 2 - 1.5 * scale, y: 0))
-        board.addQuadCurve(to: CGPoint(x: -width / 2 + 7 * scale,
-                                       y: -height / 2 + 0.8 * scale),
-                           control: CGPoint(x: -width / 2 + 2 * scale,
-                                            y: -height / 2 + 1 * scale))
+        board.move(to: CGPoint(x: -hw + corner, y: -hh + 1.1 * scale))
+        board.addQuadCurve(to: CGPoint(x: hw - corner, y: -hh + 1.4 * scale),
+                           control: CGPoint(x: 0, y: -hh - 1.6 * scale))
+        board.addQuadCurve(to: CGPoint(x: hw - 0.4 * scale, y: -hh + corner),
+                           control: CGPoint(x: hw + 1.1 * scale, y: -hh + 0.8 * scale))
+        board.addQuadCurve(to: CGPoint(x: hw - 0.3 * scale, y: hh - corner),
+                           control: CGPoint(x: hw + 1.8 * scale, y: 0.4 * scale))
+        board.addQuadCurve(to: CGPoint(x: hw - corner, y: hh - 1.0 * scale),
+                           control: CGPoint(x: hw + 1.0 * scale, y: hh - 0.4 * scale))
+        board.addQuadCurve(to: CGPoint(x: -hw + corner, y: hh - 1.3 * scale),
+                           control: CGPoint(x: 0, y: hh + 1.5 * scale))
+        board.addQuadCurve(to: CGPoint(x: -hw + 0.4 * scale, y: hh - corner),
+                           control: CGPoint(x: -hw - 1.1 * scale, y: hh - 0.5 * scale))
+        board.addQuadCurve(to: CGPoint(x: -hw + 0.5 * scale, y: -hh + corner),
+                           control: CGPoint(x: -hw - 1.7 * scale, y: -0.2 * scale))
+        board.addQuadCurve(to: CGPoint(x: -hw + corner, y: -hh + 1.1 * scale),
+                           control: CGPoint(x: -hw - 1.0 * scale, y: -hh + 0.7 * scale))
         board.closeSubpath()
         return board
     }
 
-    private func drawCarrot(context: GraphicsContext, at point: CGPoint,
-                            scale: CGFloat, rotation: Angle) {
-        var carrot = context
-        carrot.translateBy(x: point.x, y: point.y)
-        carrot.rotate(by: rotation)
-        let point = CGPoint.zero
-        var body = Path()
-        body.move(to: CGPoint(x: point.x - 6 * scale, y: point.y - 8 * scale))
-        body.addQuadCurve(to: CGPoint(x: point.x + 7 * scale, y: point.y - 5 * scale),
-                          control: CGPoint(x: point.x + 2 * scale, y: point.y - 12 * scale))
-        body.addQuadCurve(to: CGPoint(x: point.x - 2 * scale, y: point.y + 15 * scale),
-                          control: CGPoint(x: point.x + 5 * scale, y: point.y + 7 * scale))
-        body.addQuadCurve(to: CGPoint(x: point.x - 6 * scale, y: point.y - 8 * scale),
-                          control: CGPoint(x: point.x - 7 * scale, y: point.y + 3 * scale))
-        body.closeSubpath()
-        carrot.drawLayer { layer in
-            layer.addFilter(.shadow(color: .black.opacity(0.23),
-                                    radius: 1.2 * scale,
-                                    x: 0.8 * scale, y: 1.2 * scale))
-            layer.fill(body, with: .linearGradient(
-                Gradient(colors: [Color(red: 1.0, green: 0.70, blue: 0.10),
-                                  Color(red: 0.98, green: 0.42, blue: 0.035),
-                                  Color(red: 0.82, green: 0.22, blue: 0.025)]),
-                startPoint: CGPoint(x: point.x - 5 * scale, y: point.y - 8 * scale),
-                endPoint: CGPoint(x: point.x + 3 * scale, y: point.y + 14 * scale)))
+    private func drawSignFood(context: GraphicsContext, at point: CGPoint,
+                              height: CGFloat, rotation: Angle,
+                              mirrored: Bool = false) {
+        let width = height * CGFloat(pickupStyle.canvasAspectRatio)
+        var stamp = context
+        stamp.translateBy(x: point.x, y: point.y)
+        if mirrored {
+            stamp.scaleBy(x: -1, y: 1)
         }
-        carrot.stroke(body,
-                      with: .color(Color(red: 0.58, green: 0.17, blue: 0.025)),
-                      lineWidth: 1.15 * scale)
-
-        var carrotGlint = Path()
-        carrotGlint.move(to: CGPoint(x: -3.7 * scale, y: -5.5 * scale))
-        carrotGlint.addQuadCurve(to: CGPoint(x: -1.4 * scale, y: 3.5 * scale),
-                                 control: CGPoint(x: -4.5 * scale, y: 0))
-        carrot.stroke(carrotGlint, with: .color(Color.white.opacity(0.34)),
-                      style: StrokeStyle(lineWidth: 1.0 * scale,
-                                         lineCap: .round))
-
-        for (index, shift) in ([-4, 0, 4] as [CGFloat]).enumerated() {
-            var leaf = Path()
-            leaf.move(to: CGPoint(x: point.x + shift * 0.35 * scale,
-                                  y: point.y - 7 * scale))
-            leaf.addQuadCurve(to: CGPoint(x: point.x + shift * scale,
-                                          y: point.y - 16 * scale),
-                              control: CGPoint(x: point.x + shift * 1.2 * scale,
-                                               y: point.y - 11 * scale))
-            leaf.addQuadCurve(to: CGPoint(x: point.x + shift * 0.35 * scale,
-                                          y: point.y - 7 * scale),
-                              control: CGPoint(x: point.x + shift * 0.15 * scale,
-                                               y: point.y - 12 * scale))
-            let leafColor = index == 1
-                ? Color(red: 0.30, green: 0.68, blue: 0.16)
-                : Color(red: 0.20, green: 0.54, blue: 0.11)
-            carrot.fill(leaf, with: .color(leafColor))
-            carrot.stroke(leaf, with: .color(Color(red: 0.12, green: 0.38, blue: 0.08)
-                .opacity(0.72)), lineWidth: 0.55 * scale)
+        stamp.rotate(by: rotation)
+        stamp.drawLayer { layer in
+            layer.addFilter(.shadow(color: .black.opacity(0.26),
+                                    radius: height * 0.08,
+                                    x: height * 0.04, y: height * 0.07))
+            let art = layer.resolve(Image(pickupStyle.assetName))
+            layer.draw(art, in: CGRect(x: -width / 2, y: -height / 2,
+                                       width: width, height: height))
         }
     }
 }
@@ -2724,10 +2742,11 @@ private struct CraneSprite: View {
     }
 }
 
-// MARK: - Carrot
+// MARK: - Answer pickup
 
-private struct AnswerCarrotView: View {
+private struct AnswerPickupView: View {
     let text: String
+    let style: FoodPickupStyle
     let isPad: Bool
     let isRightToLeft: Bool
     var scale: CGFloat = 1
@@ -2737,11 +2756,30 @@ private struct AnswerCarrotView: View {
     private var height: CGFloat {
         GameConfig.rabbitHoleDisplayedItemLength(isPad: isPad) * scale
     }
-    private var width: CGFloat { height * (530.0 / 677.0) }
+    private var width: CGFloat { height * CGFloat(style.canvasAspectRatio) }
+
+    private var numberColor: Color {
+        switch style.numberContrast {
+        case .light:
+            return .white
+        case .cocoa:
+            return Color(red: 0.24, green: 0.10, blue: 0.035)
+        case .plum:
+            return Color(red: 0.31, green: 0.045, blue: 0.20)
+        case .violet:
+            return Color(red: 0.19, green: 0.08, blue: 0.32)
+        }
+    }
+
+    private var numberOutline: Color {
+        style.numberContrast == .light
+            ? Color.black.opacity(0.78)
+            : Color.white.opacity(0.88)
+    }
 
     var body: some View {
         ZStack {
-            Image("carrot")
+            Image(style.assetName)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: width, height: height)
@@ -2749,14 +2787,20 @@ private struct AnswerCarrotView: View {
 
             Text(verbatim: text)
                 .font(.system(size: height * 0.20, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(numberColor)
                 .minimumScaleFactor(0.4)
                 .lineLimit(1)
-                .frame(width: width * 0.70)
-                .shadow(color: .black.opacity(0.62), radius: 1, y: 1)
-                .offset(y: height * 0.12)
+                .frame(width: width * CGFloat(style.numberWidthFraction))
+                .shadow(color: numberOutline,
+                        radius: max(0.8, height * 0.012))
+                .shadow(color: numberOutline.opacity(0.65),
+                        radius: max(0.5, height * 0.006), y: 1)
+                .offset(y: height * CGFloat(style.numberYOffsetFraction))
+                // The artwork aims its grip point at the crane. Counter-rotate
+                // only the answer so every character remains equally readable.
+                .rotationEffect(.degrees(-spin))
                 // Cancel the world reflection for the answer only. The carrot
-                // and its trajectory still mirror with the rest of gameplay.
+                // or alternate pickup and its trajectory still mirror.
                 .scaleEffect(x: isRightToLeft ? -1 : 1, y: 1)
         }
         .frame(width: width, height: height)
