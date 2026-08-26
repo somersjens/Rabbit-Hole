@@ -72,9 +72,10 @@ struct RabbitHolePlayfield: View {
     }
 
     private func grassLine(in size: CGSize) -> CGFloat {
-        let target = size.height * GameConfig.rabbitHoleGrassShare
-        let minGrass = surfaceTop + (isPad ? 132 : 100)
-        let maxGrass = size.height - bottomReserve - (isPad ? 280 : 220)
+        let share = isPad ? 0.57 : GameConfig.rabbitHoleGrassShare
+        let target = size.height * share
+        let minGrass = surfaceTop + (isPad ? 220 : 100)
+        let maxGrass = size.height - bottomReserve - (isPad ? 300 : 220)
         return min(max(target, minGrass), maxGrass)
     }
 
@@ -166,10 +167,13 @@ struct RabbitHolePlayfield: View {
 
                 RabbitHoleSky(palette: palette,
                               clock: arena.clock,
-                              amount: arena.skyAmount)
+                              amount: arena.skyAmount,
+                              habitat: HabitatKind(characterID: character.id),
+                              hudBottom: surfaceTop)
                     .opacity(Double(skyVisibility))
 
                 RabbitHoleSoil(palette: palette,
+                               characterID: character.id,
                                grassY: grassY,
                                field: field,
                                holeOpen: arena.holeOpen,
@@ -197,6 +201,16 @@ struct RabbitHolePlayfield: View {
                                pickupStyle: pickupStyle)
                     .equatable()
                     .frame(width: size.width, height: size.height)
+
+                if arena.floorIndex == 0 {
+                    HabitatAmbientMotion(
+                        kind: HabitatKind(characterID: character.id),
+                        grassY: grassY,
+                        reduceMotion: reduceMotion
+                    )
+                    .frame(width: size.width, height: size.height)
+                    .allowsHitTesting(false)
+                }
 
                 // Keep the seven animated dust glints out of the much larger
                 // procedural soil canvas. The old implementation rebuilt all
@@ -479,30 +493,52 @@ private struct RabbitHoleSky: View {
     let palette: ReefPalette
     let clock: Double
     var amount: CGFloat = 1
+    var habitat: HabitatKind = .bunny
+    /// Bottom of the question banner. The sun sits just under it so a sliver
+    /// can tuck behind the board without vanishing.
+    var hudBottom: CGFloat = 110
 
     var body: some View {
         let dusk = min(1, max(0, 1 - amount))
+        let sky = HabitatWorld.sky(for: habitat)
         ZStack(alignment: .topLeading) {
             LinearGradient(
                 colors: [
-                    Color(red: 0.27 - 0.13 * dusk,
-                          green: 0.76 - 0.24 * dusk,
-                          blue: 1.00 - 0.16 * dusk),
-                    Color(red: 0.48 - 0.16 * dusk,
-                          green: 0.86 - 0.28 * dusk,
-                          blue: 1.00 - 0.19 * dusk),
-                    Color(red: 0.77 - 0.30 * dusk,
-                          green: 0.94 - 0.34 * dusk,
-                          blue: 0.72 - 0.20 * dusk)
+                    Color(red: sky.top.0 - 0.13 * dusk,
+                          green: sky.top.1 - 0.24 * dusk,
+                          blue: sky.top.2 - 0.16 * dusk),
+                    Color(red: sky.mid.0 - 0.16 * dusk,
+                          green: sky.mid.1 - 0.28 * dusk,
+                          blue: sky.mid.2 - 0.19 * dusk),
+                    Color(red: sky.horizon.0 - 0.30 * dusk,
+                          green: sky.horizon.1 - 0.34 * dusk,
+                          blue: sky.horizon.2 - 0.20 * dusk)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            Circle()
-                .fill(Color(red: 1, green: 0.92, blue: 0.45).opacity(0.95 - 0.35 * dusk))
-                .frame(width: 64, height: 64)
-                .position(x: 56, y: 78)
-                .blur(radius: 0.4)
+            GeometryReader { proxy in
+                let sunSide = max(sky.sunSize, min(proxy.size.width, proxy.size.height) * 0.078)
+                ZStack {
+                    Circle()
+                        .fill(Color(red: sky.sun.0, green: sky.sun.1, blue: sky.sun.2)
+                            .opacity(0.28 - 0.10 * dusk))
+                        .frame(width: sunSide * 1.85, height: sunSide * 1.85)
+                        .blur(radius: sunSide * 0.22)
+                    Circle()
+                        .fill(Color(red: sky.sun.0, green: sky.sun.1, blue: sky.sun.2)
+                            .opacity(0.95 - 0.35 * dusk))
+                        .frame(width: sunSide, height: sunSide)
+                        .blur(radius: 0.4)
+                }
+                .frame(width: sunSide * 1.9, height: sunSide * 1.9)
+                // surfaceTop sits a few points under the banner. Offset the
+                // disc so most of it hangs in the sky, with a small bite
+                // tucked behind the board.
+                .position(x: proxy.size.width * sky.sunUnitX,
+                          y: hudBottom + sunSide * 0.20)
+            }
+            .allowsHitTesting(false)
             // Equal spacing and speed keep exactly three distinct clouds in
             // one loop: none can catch up with or overlap another.
             cloud(phase: 0.12, y: 0.16, scale: 1.22, speed: 0.018, dusk: dusk)
@@ -588,6 +624,7 @@ private struct RabbitPuffyCloudShape: Shape {
 
 private struct RabbitHoleSoil: View, Equatable {
     let palette: ReefPalette
+    var characterID: String = "bunny"
     let grassY: CGFloat
     let field: CGRect
     let holeOpen: CGFloat
@@ -609,8 +646,12 @@ private struct RabbitHoleSoil: View, Equatable {
     var dressingScatter: CGFloat = 0
     var pickupStyle: FoodPickupStyle = .carrot
 
+    private var habitatKind: HabitatKind { HabitatKind(characterID: characterID) }
+    private var habitatGround: HabitatGroundPalette { HabitatWorld.ground(for: habitatKind) }
+
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.palette == rhs.palette
+            && lhs.characterID == rhs.characterID
             && lhs.grassY == rhs.grassY
             && lhs.field == rhs.field
             && abs(lhs.holeOpen - rhs.holeOpen) < 0.01
@@ -676,10 +717,10 @@ private struct RabbitHoleSoil: View, Equatable {
                 drawCollapsingEarth(context: context, size: size, edges: edges,
                                     colors: colors)
             } else {
-                let soil = Path(CGRect(x: 0, y: grassY, width: size.width, height: size.height - grassY + 4))
+                let soil = surfaceSoilPath(size: size)
                 context.fill(soil, with: .linearGradient(
-                    Gradient(colors: colors),
-                    startPoint: CGPoint(x: 0, y: grassY),
+                    Gradient(colors: [habitatGround.sodSoil, top, mid, bottom]),
+                    startPoint: CGPoint(x: 0, y: grassY - 10),
                     endPoint: CGPoint(x: 0, y: size.height)
                 ))
             }
@@ -746,7 +787,7 @@ private struct RabbitHoleSoil: View, Equatable {
                 // Fence and sign keep drawing through the collapse so the
                 // shockwave can throw them off-screen instead of popping them.
                 if dressingScatter < 0.98 {
-                    drawFence(context: context, size: size)
+                    drawLeftSurfaceProp(context: context, size: size)
                     if !finaleLayout {
                         drawAnswerSign(context: context, size: size)
                     }
@@ -1073,6 +1114,32 @@ private struct RabbitHoleSoil: View, Equatable {
         drawGrassCap(context: context, size: size, x: edges.right, width: size.width - edges.right, y: grassY)
     }
 
+    private func surfaceScale(in size: CGSize) -> CGFloat {
+        HabitatDraw.scale(for: size, grassY: grassY)
+    }
+
+    /// Wavy top so the dirt rises into the turf instead of meeting it on a
+    /// hard horizontal cut.
+    private func surfaceSoilPath(size: CGSize) -> Path {
+        let scale = surfaceScale(in: size)
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: size.height + 4))
+        path.addLine(to: CGPoint(x: 0, y: grassY - 4 * scale))
+        var x: CGFloat = 0
+        while x < size.width - 0.5 {
+            let next = min(size.width, x + 36 * scale)
+            let mid = (x + next) / 2
+            let dip = (5.5 + 3.2 * sin(Double(mid) * 0.11)
+                       + 2.0 * sin(Double(mid) * 0.29 + 0.7)) * scale
+            path.addQuadCurve(to: CGPoint(x: next, y: grassY - 3 * scale),
+                              control: CGPoint(x: mid, y: grassY - 8 * scale - dip * 0.15))
+            x = next
+        }
+        path.addLine(to: CGPoint(x: size.width, y: size.height + 4))
+        path.closeSubpath()
+        return path
+    }
+
     /// Stable 0...1 hash for turf details. Independent of the floor seed so
     /// the opening meadow never shimmers while the shaft clock ticks.
     private func turfUnit(_ seed: Int) -> CGFloat {
@@ -1123,24 +1190,25 @@ private struct RabbitHoleSoil: View, Equatable {
                                x startX: CGFloat, width: CGFloat, lipY: CGFloat,
                                opacity: CGFloat, cutHole: Bool) {
         guard width > 4 else { return }
-        let scale = max(0.86, min(1.32, size.width / 390))
+        let scale = surfaceScale(in: size)
         let edges = pitEdges(in: size)
         let endX = startX + width
-        let lushLight = Color(red: 0.58, green: 0.90, blue: 0.28)
-        let lushMid = Color(red: 0.34, green: 0.74, blue: 0.16)
-        let lushDeep = Color(red: 0.16, green: 0.50, blue: 0.10)
-        let lushGlow = Color(red: 0.74, green: 0.95, blue: 0.36)
-        let sodSoil = Color(red: 0.42, green: 0.24, blue: 0.11)
-        let sodSoilDark = Color(red: 0.22, green: 0.11, blue: 0.05)
-        let sodSoilLight = Color(red: 0.56, green: 0.34, blue: 0.15)
+        let lushLight = habitatGround.lushLight
+        let lushMid = habitatGround.lushMid
+        let lushDeep = habitatGround.lushDeep
+        let lushGlow = habitatGround.lushGlow
+        let sodSoil = habitatGround.sodSoil
+        let sodSoilDark = habitatGround.sodSoilDark
+        let sodSoilLight = habitatGround.sodSoilLight
+        let bladeStep: CGFloat = habitatGround.sparseBlades ? 1.55 : 1
 
         func hidden(_ x: CGFloat, inset: CGFloat = 2) -> Bool {
             cutHole && hidesInHole(x, edges: edges, inset: inset)
         }
 
         context.drawLayer { layer in
-            layer.clip(to: Path(CGRect(x: startX - 2, y: lipY - 40 * scale,
-                                       width: width + 4, height: 68 * scale)))
+            layer.clip(to: Path(CGRect(x: startX - 2, y: lipY - 52 * scale,
+                                       width: width + 4, height: 108 * scale)))
             layer.opacity = Double(opacity)
 
             func fillBand(_ path: Path, shading: GraphicsContext.Shading) {
@@ -1154,32 +1222,32 @@ private struct RabbitHoleSoil: View, Equatable {
             }
 
             var soilLip = Path()
-            soilLip.move(to: CGPoint(x: startX, y: lipY - 1))
-            soilLip.addLine(to: CGPoint(x: endX, y: lipY - 1))
+            soilLip.move(to: CGPoint(x: startX, y: lipY - 4 * scale))
+            soilLip.addLine(to: CGPoint(x: endX, y: lipY - 4 * scale))
             let soilSteps = max(6, Int(width / (13 * scale)))
             for step in 0...soilSteps {
                 let t = CGFloat(step) / CGFloat(soilSteps)
                 let x = endX - t * width
-                let drop = (12.5 + 4.2 * sin(Double(x) * 0.19)
-                            + 2.4 * sin(Double(x) * 0.47 + 1.1)) * scale
+                let drop = (20 + 6.5 * sin(Double(x) * 0.17)
+                            + 3.4 * sin(Double(x) * 0.41 + 1.1)) * scale
                 soilLip.addLine(to: CGPoint(x: x, y: lipY + drop))
             }
             soilLip.closeSubpath()
             fillBand(soilLip, shading: .linearGradient(
-                Gradient(colors: [sodSoil, sodSoilDark]),
-                startPoint: CGPoint(x: 0, y: lipY),
-                endPoint: CGPoint(x: 0, y: lipY + 18 * scale)))
+                Gradient(colors: [sodSoil, sodSoilDark, sodSoilDark.opacity(0.92)]),
+                startPoint: CGPoint(x: 0, y: lipY - 4 * scale),
+                endPoint: CGPoint(x: 0, y: lipY + 26 * scale)))
 
             var cutFace = Path()
-            cutFace.move(to: CGPoint(x: startX, y: lipY - 0.5))
-            cutFace.addLine(to: CGPoint(x: endX, y: lipY - 0.5))
-            cutFace.addLine(to: CGPoint(x: endX, y: lipY + 3.4 * scale))
-            cutFace.addLine(to: CGPoint(x: startX, y: lipY + 3.4 * scale))
+            cutFace.move(to: CGPoint(x: startX, y: lipY - 1.2 * scale))
+            cutFace.addLine(to: CGPoint(x: endX, y: lipY - 1.2 * scale))
+            cutFace.addLine(to: CGPoint(x: endX, y: lipY + 5.5 * scale))
+            cutFace.addLine(to: CGPoint(x: startX, y: lipY + 5.5 * scale))
             cutFace.closeSubpath()
-            fillBand(cutFace, shading: .color(sodSoilLight.opacity(0.55)))
+            fillBand(cutFace, shading: .color(sodSoilLight.opacity(0.62)))
 
             var turf = Path()
-            turf.move(to: CGPoint(x: startX, y: lipY + 5 * scale))
+            turf.move(to: CGPoint(x: startX, y: lipY + 9 * scale))
             turf.addLine(to: CGPoint(x: startX, y: lipY - 16 * scale))
             var waveX = startX
             while waveX < endX - 0.5 {
@@ -1192,7 +1260,7 @@ private struct RabbitHoleSoil: View, Equatable {
                                   control: CGPoint(x: mid, y: lipY - rise))
                 waveX = next
             }
-            turf.addLine(to: CGPoint(x: endX, y: lipY + 5 * scale))
+            turf.addLine(to: CGPoint(x: endX, y: lipY + 9 * scale))
             turf.closeSubpath()
             fillBand(turf, shading: .linearGradient(
                 Gradient(colors: [lushLight, lushMid, lushDeep]),
@@ -1224,9 +1292,9 @@ private struct RabbitHoleSoil: View, Equatable {
                     let yJitter = (m - 0.5) * 2.4 * scale
 
                     let soil = CGRect(x: sodX - sodW * 0.5,
-                                      y: lipY + 1.2 * scale + yJitter * 0.4,
+                                      y: lipY + 3.2 * scale + yJitter * 0.4,
                                       width: sodW,
-                                      height: sodH * 0.58)
+                                      height: sodH * 0.78)
                     layer.fill(Path(ellipseIn: soil),
                                with: .color(sodSoilDark.opacity(0.94)))
 
@@ -1269,7 +1337,7 @@ private struct RabbitHoleSoil: View, Equatable {
             for crumb in 0..<max(4, Int(width / 18)) {
                 let x = startX + turfUnit(crumb * 13 + 5) * width
                 if hidden(x, inset: 6) { continue }
-                let y = lipY + (7 + turfUnit(crumb * 9) * 7) * scale
+                let y = lipY + (10 + turfUnit(crumb * 9) * 10) * scale
                 layer.fill(Path(ellipseIn: CGRect(x: x - 1.6 * scale,
                                                   y: y - 1.1 * scale,
                                                   width: (2.4 + turfUnit(crumb) * 2.2) * scale,
@@ -1303,11 +1371,11 @@ private struct RabbitHoleSoil: View, Equatable {
                 }
             }
 
-            drawBladeRow(step: 6.4, offset: 2.0, minH: 13, span: 10,
+            drawBladeRow(step: 6.4 * bladeStep, offset: 2.0, minH: 13, span: 10,
                          halfWidth: 1.35, leanScale: 5.5) { index in
                 index.isMultiple(of: 3) ? lushDeep : lushMid
             }
-            drawBladeRow(step: 5.1, offset: 4.4, minH: 10, span: 8,
+            drawBladeRow(step: 5.1 * bladeStep, offset: 4.4, minH: 10, span: 8,
                          halfWidth: 1.2, leanScale: 4.8) { index in
                 switch index % 3 {
                 case 0: return lushLight
@@ -1315,7 +1383,7 @@ private struct RabbitHoleSoil: View, Equatable {
                 default: return lushMid
                 }
             }
-            drawBladeRow(step: 4.6, offset: 1.2, minH: 6.5, span: 6,
+            drawBladeRow(step: 4.6 * bladeStep, offset: 1.2, minH: 6.5, span: 6,
                          halfWidth: 1.05, leanScale: 3.4) { index in
                 index.isMultiple(of: 2) ? lushGlow : lushLight
             }
@@ -1342,6 +1410,31 @@ private struct RabbitHoleSoil: View, Equatable {
                 }
                 tuftX += 21 * scale
                 tuftIndex += 1
+            }
+
+            var hangX = startX + 5 * scale
+            var hangIndex = 0
+            while hangX < endX {
+                if !hidden(hangX, inset: 4 * scale) {
+                    let n = turfUnit(hangIndex * 17 + 9)
+                    let length = (7 + n * 9) * scale
+                    let lean = ((n - 0.5) * 5.5 + 0.6 * sin(Double(hangX) * 0.19)) * scale
+                    var hang = Path()
+                    let root = CGPoint(x: hangX, y: lipY + 1.2 * scale)
+                    let tip = CGPoint(x: hangX + lean, y: lipY + length)
+                    hang.move(to: CGPoint(x: root.x - 1.05 * scale, y: root.y))
+                    hang.addQuadCurve(to: tip,
+                                      control: CGPoint(x: root.x - 0.3 * scale + lean * 0.35,
+                                                       y: root.y + length * 0.45))
+                    hang.addQuadCurve(to: CGPoint(x: root.x + 1.05 * scale, y: root.y),
+                                      control: CGPoint(x: root.x + 0.4 * scale + lean * 0.55,
+                                                       y: root.y + length * 0.38))
+                    hang.closeSubpath()
+                    layer.fill(hang, with: .color(
+                        (hangIndex.isMultiple(of: 3) ? lushDeep : lushMid).opacity(0.90)))
+                }
+                hangX += 6.8 * scale * bladeStep
+                hangIndex += 1
             }
         }
     }
@@ -1745,8 +1838,15 @@ private struct RabbitHoleSoil: View, Equatable {
         drawTurfStrip(context: context, size: size, x: 0, width: size.width,
                       lipY: grassY, opacity: opacity, cutHole: true)
 
-        let scale = max(0.86, min(1.32, size.width / 390))
+        let scale = surfaceScale(in: size)
         let edges = pitEdges(in: size)
+        if habitatKind != .bunny {
+            HabitatWorld.drawLipDetails(kind: habitatKind, context: context,
+                                        size: size, grassY: grassY,
+                                        holeLeft: edges.left, holeRight: edges.right,
+                                        holeOpen: holeOpen)
+            return
+        }
         // stemHeight is how far the head sits above the turf.
         let daisies: [(CGFloat, CGFloat, Color, CGFloat, Double)] = [
             (0.05, 14, Color.white, 0.82, -8),
@@ -1777,7 +1877,13 @@ private struct RabbitHoleSoil: View, Equatable {
     /// Surface set dressing lives behind the excavator and is made entirely
     /// from Canvas paths. That keeps it crisp without adding image assets.
     private func drawSurfaceBackdrop(context: GraphicsContext, size: CGSize) {
-        let scale = max(0.86, min(1.32, size.width / 390))
+        let scale = surfaceScale(in: size)
+        if habitatKind != .bunny {
+            HabitatWorld.drawBackdrop(kind: habitatKind, context: context,
+                                      size: size, grassY: grassY)
+            drawLeftSurfaceProp(context: context, size: size)
+            return
+        }
         drawMeadow(context: context, size: size, scale: scale)
         drawFence(context: context, size: size)
 
@@ -1803,8 +1909,18 @@ private struct RabbitHoleSoil: View, Equatable {
         }
     }
 
+    private func drawLeftSurfaceProp(context: GraphicsContext, size: CGSize) {
+        if habitatKind == .bunny {
+            drawFence(context: context, size: size)
+        } else {
+            HabitatWorld.drawLeftProp(kind: habitatKind, context: context,
+                                      size: size, grassY: grassY,
+                                      scatter: dressingScatter)
+        }
+    }
+
     private func drawFence(context: GraphicsContext, size: CGSize) {
-        let scale = max(0.86, min(1.32, size.width / 390))
+        let scale = surfaceScale(in: size)
         let fenceTop = grassY - 78 * scale
         let fenceBottom = grassY - 9
         let wood = Color(red: 0.67, green: 0.39, blue: 0.17)
@@ -1873,7 +1989,7 @@ private struct RabbitHoleSoil: View, Equatable {
     }
 
     private func drawMeadow(context: GraphicsContext, size: CGSize, scale: CGFloat) {
-        let meadowBottom = grassY - 8
+        let meadowBottom = grassY + 10
 
         var farHill = Path()
         farHill.move(to: CGPoint(x: 0, y: grassY - 52 * scale))
@@ -2110,7 +2226,7 @@ private struct RabbitHoleSoil: View, Equatable {
     }
 
     private func drawAnswerSign(context: GraphicsContext, size: CGSize) {
-        let scale = max(0.86, min(1.32, size.width / 390))
+        let scale = surfaceScale(in: size)
         let wood = Color(red: 0.70, green: 0.42, blue: 0.18)
         let woodLight = Color(red: 0.90, green: 0.68, blue: 0.38)
         let woodDark = Color(red: 0.34, green: 0.16, blue: 0.06)
@@ -2280,9 +2396,10 @@ private struct RabbitHoleSoil: View, Equatable {
 
     private func drawSignGrass(context: GraphicsContext, baseY: CGFloat,
                                scale: CGFloat, postXs: [CGFloat]) {
-        let grassDark = Color(red: 0.16, green: 0.43, blue: 0.075)
-        let grassMid = Color(red: 0.29, green: 0.66, blue: 0.12)
-        let grassLight = Color(red: 0.55, green: 0.84, blue: 0.22)
+        let grassDark = habitatGround.lushDeep
+        let grassMid = habitatGround.lushMid
+        let grassLight = habitatGround.lushLight
+        let grassGlow = habitatGround.lushGlow
 
         for postX in postXs {
             for (x, width, height) in [
@@ -2305,7 +2422,13 @@ private struct RabbitHoleSoil: View, Equatable {
                     height: (11 + extra + centreBoost) * scale,
                     lean: CGFloat(tooth) * 2.4 * scale,
                     halfWidth: 1.25 * scale,
-                    color: tooth.isMultiple(of: 2) ? grassLight : grassMid
+                    color: {
+                        switch abs(tooth) {
+                        case 0: return grassGlow
+                        case 1, 2: return grassLight
+                        default: return grassMid
+                        }
+                    }()
                 )
             }
         }
@@ -2796,9 +2919,6 @@ private struct AnswerPickupView: View {
                 .shadow(color: numberOutline.opacity(0.65),
                         radius: max(0.5, height * 0.006), y: 1)
                 .offset(y: height * CGFloat(style.numberYOffsetFraction))
-                // The artwork aims its grip point at the crane. Counter-rotate
-                // only the answer so every character remains equally readable.
-                .rotationEffect(.degrees(-spin))
                 // Cancel the world reflection for the answer only. The carrot
                 // or alternate pickup and its trajectory still mirror.
                 .scaleEffect(x: isRightToLeft ? -1 : 1, y: 1)
