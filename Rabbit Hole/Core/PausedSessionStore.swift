@@ -12,6 +12,38 @@
 
 import Foundation
 
+/// The part of a Rabbit Hole campaign that belongs to the physical playfield
+/// rather than to a math round. Keeping it with the paused session prevents a
+/// resumed run from rebuilding a fresh top floor with a fresh set of carrots.
+nonisolated public struct RabbitHoleFloorState: Codable, Equatable, Sendable {
+    /// Zero-based depth in the campaign.
+    public let floorIndex: Int
+    /// Carrots that were still playable when the run was frozen.
+    public let carrotsRemaining: Int
+    /// The original random partition of carrots over all floors. Future floors
+    /// must keep this partition too, otherwise resuming could move the finish.
+    public let carrotCounts: [Int]
+
+    public init(floorIndex: Int, carrotsRemaining: Int, carrotCounts: [Int]) {
+        self.floorIndex = floorIndex
+        self.carrotsRemaining = carrotsRemaining
+        self.carrotCounts = carrotCounts
+    }
+
+    /// Reject partial/corrupt scene data. A zero carrot count is valid while a
+    /// cleared floor's automatic explosion is waiting to run.
+    public var isValid: Bool {
+        !carrotCounts.isEmpty
+            && carrotCounts.indices.contains(floorIndex)
+            && carrotsRemaining >= 0
+            && carrotsRemaining <= carrotCounts[floorIndex]
+            && carrotCounts.allSatisfy {
+                $0 >= GameConfig.rabbitHoleMinimumCarrotCount
+                    && $0 <= GameConfig.rabbitHoleCarrotCount
+            }
+    }
+}
+
 /// A session frozen mid-play. Everything here is plain, validated data: a
 /// corrupt or outdated record is discarded rather than resumed.
 nonisolated public struct PausedSession: Codable, Equatable, Sendable {
@@ -44,6 +76,9 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
     public let discardedQuestions: Int?
     /// Wrong carrots plus player/timer-triggered dynamite explosions.
     public let rabbitHoleMistakes: Int?
+    /// Optional for compatibility with saves made before playfield depth and
+    /// carrot distribution became part of a paused run.
+    public let rabbitHoleFloorState: RabbitHoleFloorState?
 
     public init(boardID: String,
                 roundNumber: Int,
@@ -61,7 +96,8 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
                 isHeartFishAvailable: Bool? = nil,
                 hasSpentLifeCrab: Bool? = nil,
                 discardedQuestions: Int? = nil,
-                rabbitHoleMistakes: Int? = nil) {
+                rabbitHoleMistakes: Int? = nil,
+                rabbitHoleFloorState: RabbitHoleFloorState? = nil) {
         self.boardID = boardID
         self.roundNumber = roundNumber
         self.cards = cards
@@ -79,6 +115,7 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
         self.hasSpentLifeCrab = hasSpentLifeCrab
         self.discardedQuestions = discardedQuestions
         self.rabbitHoleMistakes = rabbitHoleMistakes
+        self.rabbitHoleFloorState = rabbitHoleFloorState
     }
 
     /// A record is only usable if it describes a session that can still be
@@ -96,6 +133,7 @@ nonisolated public struct PausedSession: Codable, Equatable, Sendable {
             && (correctStreak ?? 0) >= 0
             && (heartFishProgress ?? 0) >= 0
             && (heartFishTarget ?? GameConfig.lifeCrabCorrectAnswers) >= 1
+            && (rabbitHoleFloorState?.isValid ?? true)
     }
 }
 

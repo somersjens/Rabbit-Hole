@@ -67,6 +67,9 @@ final class GameViewModel: ObservableObject {
     /// Wrong carrots plus premature dynamite explosions. The arena uses this
     /// to remove only the still-unused correction carrots on the final floor.
     @Published private(set) var rabbitHoleMistakes = 0
+    /// Persistence-worthy scene state. A restored run consumes its initial
+    /// value before stocking the first visible floor; play then keeps it fresh.
+    private(set) var rabbitHoleFloorState: RabbitHoleFloorState?
     /// The sum the player just lost, held under the one that replaced it so a
     /// mistake is never silent. Nil whenever there is nothing to own up to.
     @Published private(set) var missedSum: MissedSum?
@@ -103,6 +106,8 @@ final class GameViewModel: ObservableObject {
 
     init(request: GameSessionRequest) {
         self.request = request
+        self.rabbitHoleFloorState = PausedSessionStore.shared
+            .session(request.board)?.rabbitHoleFloorState
         self.engine = MemoryGame(level: request.level,
                             mixedVariant: request.mixedVariant,
                             mode: request.mode)
@@ -146,6 +151,7 @@ final class GameViewModel: ObservableObject {
               engine.state == .intro else { return }
         engine = prepared.engine
         preparationTask = nil
+        rabbitHoleFloorState = prepared.pausedSession?.rabbitHoleFloorState
         isPaused = false
         prepareHaptics()
         PlaytimeTracker.shared.challengeStarted()
@@ -245,7 +251,10 @@ final class GameViewModel: ObservableObject {
         if skipsPersistence { return }
 #endif
         guard !hasRecordedResult,
-              let paused = engine.pausedSession(hasBonusFishPower: false)
+              let paused = engine.pausedSession(
+                hasBonusFishPower: false,
+                rabbitHoleFloorState: rabbitHoleFloorState
+              )
         else { return }
         guard paused.cards > 0 else {
             PausedSessionStore.shared.clear(request.board)
@@ -273,6 +282,7 @@ final class GameViewModel: ObservableObject {
         pendingScheduledWork = nil
         pendingScoreRewards.removeAll()
         hasBonusFishPower = false
+        rabbitHoleFloorState = nil
         streakAnnouncementID = 0
         missedSum = nil
         pendingMissedSum = nil
@@ -430,6 +440,13 @@ final class GameViewModel: ObservableObject {
         engine.recordRabbitHoleMistake()
         sync()
         haptic(.error)
+    }
+
+    /// Receives the stable, persistence-worthy portion of the arena whenever a
+    /// carrot is spent or a new floor lands.
+    func updateRabbitHoleFloorState(_ floorState: RabbitHoleFloorState) {
+        guard floorState.isValid else { return }
+        rabbitHoleFloorState = floorState
     }
 
     /// The last dynamite went off, or its fuse ran out. The session ends on

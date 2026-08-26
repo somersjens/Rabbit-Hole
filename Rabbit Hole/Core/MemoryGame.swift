@@ -295,7 +295,8 @@ nonisolated public final class MemoryGame {
 
     /// A snapshot of the session as it stands, for storing when the player
     /// leaves. Nil once the session is over — there is nothing to come back to.
-    public func pausedSession(hasBonusFishPower: Bool = false) -> PausedSession? {
+    public func pausedSession(hasBonusFishPower: Bool = false,
+                              rabbitHoleFloorState: RabbitHoleFloorState? = nil) -> PausedSession? {
         guard state != .intro, state != .gameOver else { return nil }
         return PausedSession(boardID: board.storageID,
                              roundNumber: roundNumber,
@@ -316,7 +317,8 @@ nonisolated public final class MemoryGame {
                              isHeartFishAvailable: isLifeCrabAvailable,
                              hasSpentLifeCrab: hasSpentLifeCrab,
                              discardedQuestions: discardedQuestionCount,
-                             rabbitHoleMistakes: rabbitHoleMistakeCount)
+                             rabbitHoleMistakes: rabbitHoleMistakeCount,
+                             rabbitHoleFloorState: rabbitHoleFloorState)
     }
 
     /// The tap that turns the answer cards face down and brings the question

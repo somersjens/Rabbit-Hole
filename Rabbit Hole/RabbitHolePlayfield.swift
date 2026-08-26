@@ -17,6 +17,7 @@ struct RabbitHolePlayfield: View {
     let round: GameRound?
     var remainingQuestions: [MathQuestion] = []
     var mistakeCount = 0
+    var resumeFloorState: RabbitHoleFloorState?
     var missedSum: MissedSum?
     let maximumRounds: Int
     let character: AnimalCharacter
@@ -38,6 +39,8 @@ struct RabbitHolePlayfield: View {
     let onCorrect: (UUID) -> Bool
     var onWrong: (String) -> Void = { _ in }
     var onDynamiteMistake: () -> Void = {}
+    var onFloorStateChanged: (RabbitHoleFloorState) -> Void = { _ in }
+    var onFinalFloorCleared: () -> Void = {}
     var onTimeout: () -> Void = {}
     var onSmash: () -> Void = {}
     let onShellArrived: () -> Void
@@ -220,6 +223,11 @@ struct RabbitHolePlayfield: View {
                          isPad: isPad,
                          surface: surface,
                          fieldSize: size,
+                         floorIndex: arena.floorIndex,
+                         groundContact: arena.floorDropped
+                            ? 0
+                            : max(0, 1 - arena.fallShift
+                                / (RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.72)),
                          boom: arena.boomPoint,
                          hook: arena.hookPoint,
                          entrance: arena.excavatorEntrance,
@@ -280,6 +288,7 @@ struct RabbitHolePlayfield: View {
                 arena.setRemainingQuestions(remainingQuestions,
                                             maximum: maximumRounds,
                                             mistakes: mistakeCount)
+                arena.setResumeFloorState(resumeFloorState)
                 arena.setRound(round)
                 arena.setLive(isLive)
                 arena.setReduceMotion(reduceMotion)
@@ -376,6 +385,8 @@ struct RabbitHolePlayfield: View {
         }
         arena.onWrong = onWrong
         arena.onDynamiteMistake = onDynamiteMistake
+        arena.onFloorStateChanged = onFloorStateChanged
+        arena.onFinalFloorCleared = onFinalFloorCleared
         arena.onTimeout = onTimeout
         arena.onShellArrived = onShellArrived
         arena.onDrop = onSmash
@@ -657,7 +668,7 @@ private struct RabbitHoleSoil: View, Equatable {
                 // of frame; deeper floors are dirt walls all the way up.
                 if !finaleLayout, floorIndex == 1, !collapsing {
                     drawPitRims(context: context, size: size, edges: edges,
-                                rimY: (grassY - 22) * (1 - reveal) + 10 * reveal)
+                                rimY: wallTop)
                 }
                 drawWallRoots(context: context, size: size, edges: edges,
                               wallTop: wallTop, floorY: wellEnd)
@@ -2303,6 +2314,11 @@ private struct CraneRig: View {
     let isPad: Bool
     let surface: CGRect
     let fieldSize: CGSize
+    let floorIndex: Int
+    /// Zero while the old floor is gone, one once the tracks meet the next
+    /// floor. Keeping this separate from the character art lets the loose PNG
+    /// remain untouched while its contact with the world still feels physical.
+    let groundContact: CGFloat
     let boom: CGPoint
     let hook: CGPoint
     let entrance: CGFloat
@@ -2339,6 +2355,12 @@ private struct CraneRig: View {
             boom: boom,
             isPad: isPad
         )
+        let trackContact = RabbitHoleCraneLayout.worldPoint(
+            CGPoint(x: RabbitHoleCraneLayout.canvasTracksCenterX,
+                    y: RabbitHoleCraneLayout.canvasTracksY),
+            boom: boom,
+            isPad: isPad
+        )
         let flipAnchor = UnitPoint(x: rearTrack.x / max(1, fieldSize.width),
                                    y: rearTrack.y / max(1, fieldSize.height))
         let extra = max(0, hypot(hook.x - boom.x, hook.y - boom.y)
@@ -2347,6 +2369,14 @@ private struct CraneRig: View {
                                y: pose.glue.y + downY * extra)
 
         ZStack {
+            CraneContactShadow(isPad: isPad,
+                               floorIndex: floorIndex,
+                               contact: groundContact,
+                               hop: hop,
+                               flip: flip)
+                .position(x: trackContact.x, y: trackContact.y + 1)
+                .offset(x: slide + travelX)
+
             ZStack {
                 extensionRods(from: pose.glue, to: clawGlue)
 
@@ -2370,10 +2400,17 @@ private struct CraneRig: View {
             .scaleEffect(x: 1 / max(0.55, squash), y: squash, anchor: groundAnchor)
             .rotationEffect(.degrees(tilt), anchor: groundAnchor)
             .rotationEffect(.degrees(flip), anchor: flipAnchor)
-            .shadow(color: .black.opacity(0.22), radius: 8, y: 5)
+            .offset(x: slide + travelX, y: -hop)
+
+            CraneTerrainOverlap(isPad: isPad,
+                                floorIndex: floorIndex,
+                                contact: groundContact,
+                                hop: hop,
+                                flip: flip)
+                .position(x: trackContact.x, y: trackContact.y)
+                .offset(x: slide + travelX)
         }
         .frame(width: fieldSize.width, height: fieldSize.height)
-        .offset(x: slide + travelX, y: -hop)
         .allowsHitTesting(false)
     }
 
@@ -2433,6 +2470,166 @@ private struct CraneRig: View {
                 }
                 .stroke(shine.opacity(0.7), style: StrokeStyle(lineWidth: width * 0.35, lineCap: .round))
             }
+        }
+    }
+}
+
+/// A terrain-aware shadow at the crawler contact patch. The former broad drop
+/// shadow outlined the complete transparent asset and made it read like a
+/// sticker. This low, soft shape grounds that same loose asset without baking
+/// grass or soil into any of the character PNGs.
+private struct CraneContactShadow: View {
+    let isPad: Bool
+    let floorIndex: Int
+    let contact: CGFloat
+    let hop: CGFloat
+    let flip: Double
+
+    private var isUnderground: Bool { floorIndex > 0 }
+    private var width: CGFloat { isPad ? 198 : 150 }
+    private var height: CGFloat { isPad ? 28 : 21 }
+
+    private var presence: Double {
+        let hopFade = max(0, 1 - hop / (isPad ? 42 : 32))
+        let flipFade = max(0, 1 - abs(flip) / 18)
+        return Double(max(0, min(1, contact * hopFade * CGFloat(flipFade))))
+    }
+
+    private var terrainShade: Color {
+        isUnderground
+            ? Color(red: 0.16, green: 0.095, blue: 0.045)
+            : Color(red: 0.12, green: 0.22, blue: 0.075)
+    }
+
+    var body: some View {
+        ZStack {
+            Ellipse()
+                .fill(terrainShade.opacity(isUnderground ? 0.58 : 0.46))
+                .frame(width: width, height: height)
+                .blur(radius: isPad ? 7 : 5)
+
+            // Two denser patches follow the large near crawler and the small
+            // far crawler. Breaking the core keeps it from reading as a clean
+            // UI ellipse on the organic terrain.
+            Ellipse()
+                .fill(Color.black.opacity(isUnderground ? 0.34 : 0.26))
+                .frame(width: width * 0.69, height: height * 0.31)
+                .offset(x: -width * 0.12)
+                .blur(radius: isPad ? 2.4 : 1.8)
+
+            Ellipse()
+                .fill(Color.black.opacity(isUnderground ? 0.29 : 0.21))
+                .frame(width: width * 0.27, height: height * 0.26)
+                .offset(x: width * 0.36)
+                .blur(radius: isPad ? 2.2 : 1.6)
+        }
+        .frame(width: width + 24, height: height + 18)
+        .compositingGroup()
+        .blendMode(.multiply)
+        .opacity(presence)
+        .scaleEffect(x: 0.94 + 0.06 * contact,
+                     y: 0.82 + 0.18 * contact)
+        .allowsHitTesting(false)
+    }
+}
+
+/// A few pixels of terrain cross in front of the crawler baseline. That small
+/// occlusion is what makes the otherwise independent transparent artwork feel
+/// planted in the scene: grass catches the tracks at the surface; deeper down,
+/// loose clods and stones share the floor's progressively darker earth colour.
+private struct CraneTerrainOverlap: View {
+    let isPad: Bool
+    let floorIndex: Int
+    let contact: CGFloat
+    let hop: CGFloat
+    let flip: Double
+
+    private var width: CGFloat { isPad ? 190 : 144 }
+    private var height: CGFloat { isPad ? 28 : 21 }
+    private var scale: CGFloat { isPad ? 1.28 : 1 }
+
+    private var presence: Double {
+        let hopFade = max(0, 1 - hop / (isPad ? 42 : 32))
+        let flipFade = max(0, 1 - abs(flip) / 18)
+        return Double(max(0, min(1, contact * hopFade * CGFloat(flipFade))))
+    }
+
+    private var earth: Color {
+        let depth = min(7, max(1, floorIndex))
+        return Color(red: 0.42 - Double(depth) * 0.018,
+                     green: 0.245 - Double(depth) * 0.012,
+                     blue: 0.125 - Double(depth) * 0.006)
+    }
+
+    private var earthDeep: Color {
+        let depth = min(7, max(1, floorIndex))
+        return Color(red: 0.245 - Double(depth) * 0.012,
+                     green: 0.135 - Double(depth) * 0.007,
+                     blue: 0.070 - Double(depth) * 0.003)
+    }
+
+    var body: some View {
+        Canvas { context, size in
+            if floorIndex == 0 {
+                drawGrass(context: context, size: size)
+            } else {
+                drawEarth(context: context, size: size)
+            }
+        }
+        .frame(width: width, height: height)
+        .opacity(presence)
+        .allowsHitTesting(false)
+    }
+
+    private func drawGrass(context: GraphicsContext, size: CGSize) {
+        let blades: [(CGFloat, CGFloat, CGFloat)] = [
+            (0.05, 0.72, -2), (0.13, 0.48, 2), (0.22, 0.64, -1),
+            (0.34, 0.42, 2), (0.47, 0.61, -2), (0.59, 0.45, 1),
+            (0.72, 0.68, -1), (0.84, 0.50, 2), (0.94, 0.63, -2)
+        ]
+        let baseY = size.height * 0.63
+        for (index, blade) in blades.enumerated() {
+            var path = Path()
+            let x = size.width * blade.0
+            let bladeHeight = (4.5 + 4.2 * blade.1) * scale
+            path.move(to: CGPoint(x: x, y: baseY + 2 * scale))
+            path.addQuadCurve(to: CGPoint(x: x + blade.2 * scale,
+                                          y: baseY - bladeHeight),
+                              control: CGPoint(x: x - blade.2 * 0.35 * scale,
+                                               y: baseY - bladeHeight * 0.52))
+            let color = index.isMultiple(of: 2)
+                ? Color(red: 0.19, green: 0.43, blue: 0.08)
+                : Color(red: 0.31, green: 0.57, blue: 0.12)
+            context.stroke(path, with: .color(color.opacity(0.84)),
+                           style: StrokeStyle(lineWidth: 1.35 * scale,
+                                              lineCap: .round))
+        }
+    }
+
+    private func drawEarth(context: GraphicsContext, size: CGSize) {
+        let stones: [(CGFloat, CGFloat, CGFloat)] = [
+            (0.04, 2.4, -0.5), (0.17, 3.4, 1), (0.31, 2.0, -1),
+            (0.64, 2.7, 0.5), (0.79, 3.5, -1), (0.94, 2.2, 0.5)
+        ]
+        let baseY = size.height * 0.59
+        for (index, stone) in stones.enumerated() {
+            let radius = stone.1 * scale
+            let centre = CGPoint(x: size.width * stone.0,
+                                 y: baseY + stone.2 * scale)
+            let rect = CGRect(x: centre.x - radius,
+                              y: centre.y - radius * 0.58,
+                              width: radius * 2,
+                              height: radius * 1.16)
+            context.fill(Path(ellipseIn: rect),
+                         with: .color((index.isMultiple(of: 2) ? earth : earthDeep)
+                            .opacity(0.92)))
+
+            let glint = CGRect(x: centre.x - radius * 0.43,
+                               y: centre.y - radius * 0.40,
+                               width: radius * 0.62,
+                               height: max(0.7, radius * 0.20))
+            context.fill(Path(ellipseIn: glint),
+                         with: .color(Color.white.opacity(0.12)))
         }
     }
 }

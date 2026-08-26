@@ -282,6 +282,11 @@ final class RabbitHoleArena: ObservableObject {
     var onCorrect: ((UUID) -> Bool)?
     var onWrong: ((String) -> Void)?
     var onDynamiteMistake: (() -> Void)?
+    var onFloorStateChanged: ((RabbitHoleFloorState) -> Void)?
+    /// The bottom floor ran out of collectible carrots and its bomb is now
+    /// detonating automatically. A player-triggered blast while carrots remain
+    /// deliberately does not send this event.
+    var onFinalFloorCleared: (() -> Void)?
     var onTimeout: (() -> Void)?
     var onShellArrived: (() -> Void)?
     var onDrop: (() -> Void)?
@@ -297,6 +302,12 @@ final class RabbitHoleArena: ObservableObject {
     private var remainingQuestions: [MathQuestion] = []
     private var configuredMaximum = 0
     private var floorCarrotCounts: [Int] = []
+    /// Consumed exactly once by `beginEntrance`. It restores depth before the
+    /// first resumed floor is stocked.
+    private var pendingResumeFloorState: RabbitHoleFloorState?
+    /// Exact number to stock on the restored current floor. Later floors use
+    /// their saved nominal distribution as usual.
+    private var restoredCurrentFloorCarrots: Int?
     private var wrongCarrotCount = 0
     private var reportedWrongCarrotCount = 0
     private var currentRound: GameRound?
@@ -470,6 +481,20 @@ final class RabbitHoleArena: ObservableObject {
         currentRound = round
     }
 
+    func setResumeFloorState(_ floorState: RabbitHoleFloorState?) {
+        guard let floorState,
+              floorState.isValid,
+              floorState.carrotCounts.count
+                == GameConfig.rabbitHoleFloorCount(maximum: configuredMaximum),
+              floorState.carrotCounts.reduce(0, +)
+                == configuredMaximum + GameConfig.rabbitHoleCorrectionCarrots
+        else {
+            pendingResumeFloorState = nil
+            return
+        }
+        pendingResumeFloorState = floorState
+    }
+
     func setLive(_ live: Bool) { isLive = live }
     func setReduceMotion(_ reduce: Bool) { reduceMotion = reduce }
     func setSpeedMultiplier(_ multiplier: Double) {
@@ -484,19 +509,32 @@ final class RabbitHoleArena: ObservableObject {
 
     func beginEntrance(completion: @escaping () -> Void) {
         onEntranceComplete = completion
-        floorIndex = 0
+        let resumedFloor = pendingResumeFloorState
+        pendingResumeFloorState = nil
+        if let resumedFloor {
+            floorCarrotCounts = resumedFloor.carrotCounts
+            floorCount = resumedFloor.carrotCounts.count
+            floorIndex = resumedFloor.floorIndex
+            restoredCurrentFloorCarrots = resumedFloor.carrotsRemaining
+        } else {
+            floorIndex = 0
+            restoredCurrentFloorCarrots = nil
+        }
         wrongCarrotCount = reportedWrongCarrotCount
-        if configuredMaximum > 0 {
+        if resumedFloor == nil, configuredMaximum > 0 {
             floorCarrotCounts = makeCarrotDistribution(maximum: configuredMaximum)
             floorCount = floorCarrotCounts.count
         }
-        skyAmount = 1
-        shaftReveal = 0
-        shaftScroll = 0
+        let resumesUnderground = floorIndex > 0
+        skyAmount = resumesUnderground
+            ? max(0.38, 1 - 0.16 * CGFloat(floorIndex))
+            : 1
+        shaftReveal = resumesUnderground ? 1 : 0
+        shaftScroll = resumesUnderground ? landingDepth() * CGFloat(floorIndex) : 0
         dynamiteTime = GameConfig.rabbitHoleDynamiteSeconds
         particles.removeAll()
-        holeOpen = 0
-        slabFall = 0
+        holeOpen = resumesUnderground ? 1 : 0
+        slabFall = resumesUnderground ? 1 : 0
         floorDropped = false
         fallShift = 0
         excavatorDrop = 0
@@ -520,9 +558,9 @@ final class RabbitHoleArena: ObservableObject {
         completionStartedNotified = false
         spawnedNextFloor = false
         items.removeAll()
-        mode = .entering
+        mode = resumedFloor == nil ? .entering : .swinging
         actionProgress = 0
-        excavatorEntrance = reduceMotion ? 1 : 0
+        excavatorEntrance = resumedFloor == nil && !reduceMotion ? 0 : 1
         drop = 0
         poke = 0
         heldID = nil
@@ -596,7 +634,12 @@ final class RabbitHoleArena: ObservableObject {
     func endCelebration() {
         pendingCompletion = false
         isCelebrating = false
-        if !celebrationFinished { finaleSceneActive = false }
+        // Once the result card has been invited in, the shifted surface is the
+        // committed end scene. The card deliberately appears while the last
+        // sliver of the rig is still driving out; stopping that motion shortly
+        // afterwards must not restore the centred shaft and remove its grass
+        // banks. Only a finale cancelled before its reveal returns to play.
+        if !completionRevealNotified { finaleSceneActive = false }
         if mode == .celebrating { mode = .swinging }
         objectWillChange.send()
     }
@@ -905,7 +948,9 @@ final class RabbitHoleArena: ObservableObject {
         let duration = reduceMotion ? 0.16 : GameConfig.rabbitHoleExplosionDuration
         actionProgress = min(1, actionProgress + dt / duration)
         let u = actionProgress
-        let mega = isLastFloor
+        // A completed score is terminal even if an older/bad save placed the
+        // player above the final physical floor.
+        let mega = isLastFloor || pendingCompletion
 
         if u < (mega ? 0.30 : 0.24) {
             blastPulse = CGFloat(min(1, u / (mega ? 0.10 : 0.16)))
@@ -941,7 +986,7 @@ final class RabbitHoleArena: ObservableObject {
             spawnSurfaceCollapse()
         }
 
-        if isLastFloor {
+        if isLastFloor || pendingCompletion {
             if pendingCompletion, actionProgress >= 0.25 {
                 // Launch while the fireball is still large, so the machine's
                 // first upward frame reads as a direct reaction to the blast.
@@ -1347,6 +1392,7 @@ final class RabbitHoleArena: ObservableObject {
         }
         mode = .wriggling
         actionProgress = 0
+        publishFloorState()
     }
 
     private func launchCorrect(id: UUID) {
@@ -1361,7 +1407,7 @@ final class RabbitHoleArena: ObservableObject {
         // At this exact frame the carrot has reached the fully retracted claw.
         // On the winning floor the bomb may now detonate; the toss itself is
         // preserved independently until it reaches the score counter.
-        if pendingCompletion, isLastFloor {
+        if pendingCompletion {
             beginExplosion(isFinaleLaunch: true)
         }
     }
@@ -1394,6 +1440,10 @@ final class RabbitHoleArena: ObservableObject {
     /// extra tap. A winning final floor may already be celebrating; the
     /// explosion guard deliberately leaves that mode alone.
     private func continueOrClearFloor() {
+        if pendingCompletion {
+            beginExplosion(isFinaleLaunch: true)
+            return
+        }
         let hasCarrots = items.contains {
             !$0.isDynamite && $0.isPresent && $0.flight == .none
         }
@@ -1425,11 +1475,14 @@ final class RabbitHoleArena: ObservableObject {
 
     private func beginExplosion(isFinaleLaunch: Bool = false) {
         guard mode != .exploding, mode != .falling, mode != .celebrating else { return }
+        let hasCarrots = items.contains {
+            !$0.isDynamite && $0.isPresent && $0.flight == .none
+        }
+        let clearedFinalFloor = isLastFloor && !hasCarrots
         // A bomb detonated while carrots remain is a player mistake. The
         // automatic detonation after a cleared floor has no carrots and is
         // therefore just the normal transition to the next floor.
-        if !isFinaleLaunch,
-           items.contains(where: { !$0.isDynamite && $0.isPresent }) {
+        if !isFinaleLaunch, hasCarrots {
             wrongCarrotCount += 1
             onDynamiteMistake?()
         }
@@ -1455,6 +1508,9 @@ final class RabbitHoleArena: ObservableObject {
             ?? CGPoint(x: field.midX, y: field.midY)
         spawnBlast()
         onExplode?()
+        if clearedFinalFloor {
+            onFinalFloorCleared?()
+        }
         for index in items.indices
         where items[index].isPresent && items[index].flight != .tossCorrect {
             items[index].flight = .blast
@@ -1472,6 +1528,7 @@ final class RabbitHoleArena: ObservableObject {
             }
             items[index].isPresent = true
         }
+        publishFloorState()
         onDrop?()
     }
 
@@ -1495,12 +1552,18 @@ final class RabbitHoleArena: ObservableObject {
         let nominalCount = floorCarrotCounts.indices.contains(floorIndex)
             ? floorCarrotCounts[floorIndex]
             : GameConfig.rabbitHoleMinimumCarrotCount
-        let unusedCorrections = isLastFloor
-            ? max(0, GameConfig.rabbitHoleCorrectionCarrots
-                    - min(wrongCarrotCount, GameConfig.rabbitHoleCorrectionCarrots))
-            : 0
-        let carrotCount = max(GameConfig.rabbitHoleMinimumCarrotCount,
+        let carrotCount: Int
+        if let restored = restoredCurrentFloorCarrots {
+            carrotCount = restored
+            restoredCurrentFloorCarrots = nil
+        } else {
+            let unusedCorrections = isLastFloor
+                ? max(0, GameConfig.rabbitHoleCorrectionCarrots
+                        - min(wrongCarrotCount, GameConfig.rabbitHoleCorrectionCarrots))
+                : 0
+            carrotCount = max(GameConfig.rabbitHoleMinimumCarrotCount,
                               nominalCount - unusedCorrections)
+        }
         let random = RandomSource()
         let packed = RabbitHolePlanner.makeFloor(
             remaining: remainingQuestions,
@@ -1543,6 +1606,27 @@ final class RabbitHoleArena: ObservableObject {
             )
         }
         items.append(contentsOf: lingering)
+        publishFloorState()
+    }
+
+    /// Publishes only stable campaign facts; positions, animation phases and
+    /// generated question text are deliberately rebuilt on resume.
+    private func publishFloorState() {
+        guard !floorCarrotCounts.isEmpty,
+              floorCarrotCounts.indices.contains(floorIndex) else { return }
+        let carrotsRemaining = items.reduce(into: 0) { count, item in
+            if !item.isDynamite,
+               item.isPresent,
+               item.flight == .none,
+               item.id != heldID {
+                count += 1
+            }
+        }
+        onFloorStateChanged?(RabbitHoleFloorState(
+            floorIndex: floorIndex,
+            carrotsRemaining: carrotsRemaining,
+            carrotCounts: floorCarrotCounts
+        ))
     }
 
     /// Randomly partitions `maximum + 2` over the campaign. Every floor stays

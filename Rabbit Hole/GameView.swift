@@ -85,8 +85,10 @@ struct GameView: View {
     /// Measured from the real HUD layout so the flying currency glyph can land
     /// pixel-for-pixel over its stationary twin on every device and score width.
     @State private var scoreIconCenter: CGPoint?
-    /// A completed board gets one last moment in the arena before its result
-    /// card appears. Other endings (no lives, or leaving) remain immediate.
+    /// A cleared bottom floor gets one last moment in the arena before its
+    /// result card appears, even when early carrot choices left the score below
+    /// the board maximum. Other endings (no lives, touching the final bomb, or
+    /// leaving) remain immediate.
     @State private var playsLevelCompletion = false
     /// The King's celebration has actually begun. It trails `playsLevelCompletion`
     /// by however long the crab carrying the winning answer still needs to walk
@@ -210,7 +212,7 @@ struct GameView: View {
                 showsFinale = false
                 return
             }
-            if model.result.reason == .roundsCompleted {
+            if model.result.reason == .roundsCompleted || playsLevelCompletion {
                 playsLevelCompletion = true
             } else {
                 showsResult = true
@@ -287,6 +289,7 @@ struct GameView: View {
             RabbitHolePlayfield(round: model.round,
                                 remainingQuestions: model.remainingQuestions,
                                 mistakeCount: model.rabbitHoleMistakes,
+                                resumeFloorState: model.rabbitHoleFloorState,
                                 missedSum: model.missedSum,
                                 maximumRounds: model.maximumRounds,
                                 character: character,
@@ -307,6 +310,8 @@ struct GameView: View {
                                 onCorrect: { model.select(optionID: $0) },
                                 onWrong: model.missCarrot,
                                 onDynamiteMistake: model.missDynamite,
+                                onFloorStateChanged: model.updateRabbitHoleFloorState,
+                                onFinalFloorCleared: finishClearedFinalFloor,
                                 onTimeout: model.endByTimeout,
                                 onSmash: { model.crabSmashed() },
                                 onShellArrived: model.scoreBubbleArrived,
@@ -379,6 +384,15 @@ struct GameView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             playsLevelCompletion = false
         }
+    }
+
+    /// Emptying the last physical floor is the visual end of the descent even
+    /// when the score target was missed by collecting future answers early.
+    /// Mark the animation first so publishing game over cannot put its result
+    /// card over the bomb blast.
+    private func finishClearedFinalFloor() {
+        playsLevelCompletion = true
+        model.endByTimeout()
     }
 
     // MARK: - HUD
