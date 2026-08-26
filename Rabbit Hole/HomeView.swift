@@ -143,7 +143,7 @@ struct HomeView: View {
 
         ZStack {
             ZStack {
-                AmbientReefBackground(character: character)
+                AmbientCaveBackground(character: character)
                     // The closing tutorial step softens everything except the line
                     // it is pointing at.
                     .blur(radius: showsTutorialHint ? 8 : 0)

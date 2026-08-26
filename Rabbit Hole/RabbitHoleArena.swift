@@ -99,6 +99,10 @@ enum RabbitHoleCraneLayout {
     static let canvasTracksY: CGFloat = 1447
     /// Optical centre of the two crawler tracks on the shared artwork canvas.
     static let canvasTracksCenterX: CGFloat = 500
+    /// Visible rear/lower tip of the crawler in the normal, right-facing pose.
+    /// The finale rotates around this point so its path — rather than the
+    /// padded artwork centre — can round the top lip of the shaft.
+    static let canvasTracksRear = CGPoint(x: 42, y: 1447)
     /// Same graphic as the centre toppart pose, cropped.
     static let topArt = CGSize(width: 130, height: 218)
     static let clawArt = CGSize(width: 403, height: 407)
@@ -240,6 +244,9 @@ final class RabbitHoleArena: ObservableObject {
     /// using their established coordinates; these values carry the complete
     /// rig out of the shaft, onto the right bank, and off screen.
     private(set) var finaleTravelX: CGFloat = 0
+    /// Horizontal camera travel is separate from the excavator's flight. This
+    /// lets the machine climb diagonally while the shaft stays beneath it.
+    private(set) var finaleWorldShift: CGFloat = 0
     private(set) var finaleFlip: Double = 0
     /// Reveals the original surface only when the reverse shaft trip has
     /// genuinely reached daylight. Its remaining crater sits on the left,
@@ -319,6 +326,9 @@ final class RabbitHoleArena: ObservableObject {
     private var celebrationStartFloorIndex = 0
     private var celebrationLanded = false
     private var celebrationFinished = false
+    /// The result card may enter while the final 10% of the rig is still
+    /// driving out. Kept separate from the motion's own finished flag.
+    private var completionRevealNotified = false
 
     /// One source of truth for both the artwork on the floor and the terminal
     /// explosion. `floorIndex` is zero-based; `floorCount` is a count.
@@ -498,12 +508,14 @@ final class RabbitHoleArena: ObservableObject {
         fallTravel = 0
         celebrateHop = 0
         finaleTravelX = 0
+        finaleWorldShift = 0
         finaleFlip = 0
         finaleSurfaceReveal = 0
         isCelebrating = false
         finaleSceneActive = false
         celebrationLanded = false
         celebrationFinished = false
+        completionRevealNotified = false
         pendingCompletion = false
         completionStartedNotified = false
         spawnedNextFloor = false
@@ -529,12 +541,10 @@ final class RabbitHoleArena: ObservableObject {
         onLevelCompletionStarted = started
         onLevelCompletionFinished = finished
 
-        // Completing the last sum can arrive while its carrot is still being
-        // tossed. Do not replace that state with `.celebrating`: doing so
-        // prevents `beginExplosion` from ever running and leaves the final
-        // dynamite visibly sitting at the bottom of the shaft. The celebration
-        // request first forces the terminal blast; `stepExplode` starts the
-        // flight only after the fireball has finished.
+        // Completing the last sum can arrive while its carrot and claw are
+        // still being raised. Keep that action alive: `finishCorrectToss`
+        // naturally detonates the final bomb after the claw is fully home.
+        // Only an already-idle arena needs the explosion started here.
         guard !pendingCompletion, !celebrationFinished, mode != .celebrating else { return }
         isCelebrating = true
         pendingCompletion = true
@@ -543,7 +553,7 @@ final class RabbitHoleArena: ObservableObject {
             started()
         }
 
-        if mode != .exploding && mode != .falling {
+        if mode == .swinging, heldID == nil, drop <= 0.001 {
             beginExplosion(isFinaleLaunch: true)
         }
         objectWillChange.send()
@@ -557,17 +567,20 @@ final class RabbitHoleArena: ObservableObject {
         celebrationStartFloorIndex = floorIndex
         celebrationLanded = false
         celebrationFinished = false
+        completionRevealNotified = false
         celebrateHop = 0
         finaleTravelX = 0
+        finaleWorldShift = 0
         finaleFlip = 0
         finaleSurfaceReveal = 0
         excavatorSquash = 1
         excavatorTilt = 0
 
-        // Nothing from the destroyed bottom may travel with the rabbit. In
-        // particular this removes the green pocket slab and the old bomb from
-        // the finale scene; only the empty shaft and blast particles remain.
-        items.removeAll()
+        // Nothing from the destroyed bottom may travel with the rabbit. The
+        // single winning carrot is the exception: it was already launched
+        // from the fully retracted claw and may finish its flight to the HUD
+        // while the explosion and ascent begin underneath it.
+        items.removeAll { $0.flight != .tossCorrect }
         pocketRests.removeAll()
         pocketLayout = RabbitHoleLayout(units: [], dynamiteIndex: -1)
         dynamitePocketIndex = -1
@@ -929,7 +942,7 @@ final class RabbitHoleArena: ObservableObject {
         }
 
         if isLastFloor {
-            if pendingCompletion, actionProgress >= 0.58 {
+            if pendingCompletion, actionProgress >= 0.25 {
                 // Launch while the fireball is still large, so the machine's
                 // first upward frame reads as a direct reaction to the blast.
                 startCelebrationAfterExplosion()
@@ -1054,16 +1067,36 @@ final class RabbitHoleArena: ObservableObject {
     }
 
     private func stepCelebrate(_ dt: Double) {
-        actionProgress = min(1, actionProgress + dt / GameConfig.rabbitHoleYayDuration)
+        let finaleDuration = GameConfig.rabbitHoleYayDuration
+        actionProgress = min(1, actionProgress + dt / finaleDuration)
         let u = actionProgress
 
-        let ascentEnd = reduceMotion ? 0.46 : 0.56
-        let jumpEnd = reduceMotion ? 0.68 : 0.79
-        let landingEnd = reduceMotion ? 0.80 : 0.87
-        let landingX = size.width * (isPad ? 0.31 : 0.43)
+        let ascentEnd = reduceMotion ? 0.44 : 0.83 / finaleDuration
+        // Preserve the flight timing, then reserve a real 0.8 seconds for the
+        // complete touchdown-and-drive movement requested for the finale.
+        let jumpEnd = reduceMotion ? 0.68 : (finaleDuration - 0.80) / finaleDuration
+        let maximumWorldShift = size.width * 0.48
+        // Use the exact same right-hand pit corner as the finale terrain. The
+        // rear crawler point is the rig's flip anchor, so translating that
+        // point onto the shifted lip makes the last part of the somersault
+        // genuinely turn around the earth corner instead of the left wall.
+        let lipInset = max(18, size.width * 0.06)
+        let rearTrackX = RabbitHoleCraneLayout.worldPoint(
+            RabbitHoleCraneLayout.canvasTracksRear,
+            boom: boomPoint,
+            isPad: isPad
+        ).x
+        let shiftedRightLipX = size.width - lipInset - maximumWorldShift
+        let landingX = max(0, shiftedRightLipX - rearTrackX)
+        let ascentTargetX = max(0,
+            landingX - RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.10)
         let exitX = size.width + RabbitHoleCraneLayout.displayedCanvasSize(isPad: isPad).width
-        let shaftFlightLift = min(surface.height * 0.74,
-                                  RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 1.28)
+        // The artwork lives on a generously padded authoring canvas. Using a
+        // full machine-height here makes the visible digger fly far above the
+        // bank. The reversed shaft supplies the sense of distance; the rig
+        // itself only needs a compact lift to clear the lip during its flip.
+        let shaftFlightLift = min(surface.height * 0.36,
+                                  RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.56)
         // One continuous clockwise revolution starts at the explosion and is
         // completed at touchdown. This avoids the old upright ascent followed
         // by a disconnected, mechanical-looking spin above ground.
@@ -1076,7 +1109,12 @@ final class RabbitHoleArena: ObservableObject {
             // downward journey accumulated one `landingDepth` per floor in
             // `shaftScroll`; running that value back to zero sends every wall
             // root and stratum past the rabbit in the opposite direction.
-            let t = smoothstep(u / ascentEnd)
+            let ascentRaw = min(1, max(0, u / ascentEnd))
+            // A blast is an impulse: retain a little smooth acceleration but
+            // give the first frames enough velocity that the rig visibly
+            // reacts as soon as the deliberate 0.2-second pause has elapsed.
+            let easedAscent = 1 - pow(1 - ascentRaw, 2.4)
+            let t = smoothstep(ascentRaw) * 0.55 + easedAscent * 0.45
             let remaining = celebrationStartShaftScroll * CGFloat(1 - t)
             let floorTravel = max(1, landingDepth())
             let remainingFloors = max(0, remaining / floorTravel)
@@ -1090,13 +1128,22 @@ final class RabbitHoleArena: ObservableObject {
             // visible before the machine crosses the opening.
             finaleSurfaceReveal = CGFloat(smoothstep((t - 0.66) / 0.34))
 
-            finaleTravelX = 0
             // The rabbit itself leaves the blast and climbs into the upper
             // part of the viewport. After that the camera follows it through
             // the long empty shaft; importantly, no floor is attached to this
             // transform, so the destroyed bottom remains behind below.
-            let ascentRaw = min(1, max(0, u / ascentEnd))
-            let screenRise = 1 - pow(1 - ascentRaw, 3.2)
+            let screenRise = 1 - pow(1 - ascentRaw, 4.0)
+            // Normalised progress makes the diagonal identical whether the
+            // reversed shaft contains four floors or eight. The scenery may
+            // scroll farther, but the screen-space launch still meets the lip.
+            let diagonalProgress = pow(ascentRaw, 0.78)
+            finaleTravelX = ascentTargetX * CGFloat(diagonalProgress)
+            // Bring the right lip towards the tracked crawler point during
+            // the latter half of the climb. By the top turn both coordinates
+            // already describe the same screen-space corner, preventing the
+            // inverted machine from hanging outside the left edge.
+            let cameraLead = smoothstep((ascentRaw - 0.48) / 0.52)
+            finaleWorldShift = maximumWorldShift * CGFloat(cameraLead)
             celebrateHop = shaftFlightLift * CGFloat(screenRise)
                 + CGFloat(sin(t * .pi * 7)) * 3 * CGFloat(1 - t)
             finaleFlip = continuousFlip
@@ -1106,38 +1153,73 @@ final class RabbitHoleArena: ObservableObject {
         } else if u < jumpEnd {
             // Continue the same revolution along a cubic arc from the top of
             // the empty shaft to the right-hand grass bank.
-            let t = smoothstep((u - ascentEnd) / max(0.001, jumpEnd - ascentEnd))
+            let t = min(1, max(0,
+                (u - ascentEnd) / max(0.001, jumpEnd - ascentEnd)))
             shaftScroll = 0
             shaftReveal = 0
             floorIndex = 1
             skyAmount = 1
             finaleSurfaceReveal = 1
+            let remainingX = landingX - ascentTargetX
+            let arcDuration = max(0.001, jumpEnd - ascentEnd)
+            // Match the exact tangent of the rising rear-track point. The
+            // boomerang-like horizontal corner at the top came from the old
+            // control point suddenly tripling that incoming velocity.
+            let incomingVelocity = ascentTargetX * 0.78 / CGFloat(ascentEnd)
+            let matchedControlX = incomingVelocity * CGFloat(arcDuration) / 3
             let arc = cubic(
-                CGPoint(x: 0, y: shaftFlightLift),
-                CGPoint(x: landingX * 0.14, y: shaftFlightLift * 1.34),
-                CGPoint(x: landingX * 0.78, y: shaftFlightLift * 1.12),
+                CGPoint(x: ascentTargetX, y: shaftFlightLift),
+                CGPoint(x: ascentTargetX + matchedControlX,
+                        y: shaftFlightLift),
+                CGPoint(x: landingX - remainingX * 0.18,
+                        y: shaftFlightLift * 0.45),
                 CGPoint(x: landingX, y: 0),
                 t
             )
             finaleTravelX = arc.x
+            finaleWorldShift = maximumWorldShift
             celebrateHop = arc.y
             finaleFlip = continuousFlip
             excavatorSquash = 1
             excavatorTilt = 0
-        } else if u < landingEnd {
-            let t = (u - jumpEnd) / max(0.001, landingEnd - jumpEnd)
-            let damp = exp(-4.4 * t)
+        } else {
+            let driveRaw = min(1, max(0,
+                (u - jumpEnd) / max(0.001, 1 - jumpEnd)))
+            let t2 = driveRaw * driveRaw
+            let t3 = t2 * driveRaw
+
+            // Cubic Hermite travel inherits the horizontal velocity of the
+            // flight arc at touchdown. There is therefore no stationary frame
+            // between landing and driving, yet the rig still eases to rest
+            // after it has cleared the screen.
+            let remainingX = landingX - ascentTargetX
+            let arcDuration = max(0.001, jumpEnd - ascentEnd)
+            let driveDuration = max(0.001, 1 - jumpEnd)
+            let touchdownVelocity = remainingX * 0.54 / CGFloat(arcDuration)
+            let startTangent = touchdownVelocity * CGFloat(driveDuration)
+            let h00 = 2 * t3 - 3 * t2 + 1
+            let h10 = t3 - 2 * t2 + driveRaw
+            let h01 = -2 * t3 + 3 * t2
+
+            // Landing compression and the first part of the drive overlap.
+            // This preserves the impact without parking the tracks on the bank.
+            let landingT = min(1, driveRaw / 0.34)
+            let damp = exp(-4.4 * landingT)
             shaftScroll = 0
             shaftReveal = 0
             floorIndex = 1
             skyAmount = 1
             finaleSurfaceReveal = 1
-            finaleTravelX = landingX
-            celebrateHop = CGFloat(abs(sin(t * .pi * 2)) * 7 * damp)
+            finaleTravelX = landingX * CGFloat(h00)
+                + startTangent * CGFloat(h10)
+                + exitX * CGFloat(h01)
+            finaleWorldShift = maximumWorldShift
+            celebrateHop = CGFloat(abs(sin(landingT * .pi * 2)) * 7 * damp)
             finaleFlip = reduceMotion ? 0 : 360
-            excavatorSquash = 1 - CGFloat(sin(t * .pi) * 0.12 * damp)
-            excavatorTilt = 0
-            if !celebrationLanded, t >= 0.08 {
+            excavatorSquash = 1 - CGFloat(sin(landingT * .pi) * 0.12 * damp)
+                + CGFloat(sin(driveRaw * .pi * 8)) * 0.012 * CGFloat(1 - driveRaw)
+            excavatorTilt = sin(driveRaw * .pi * 6) * 0.8 * (1 - driveRaw)
+            if !celebrationLanded, landingT >= 0.08 {
                 celebrationLanded = true
                 let tracks = RabbitHoleCraneLayout.worldPoint(
                     CGPoint(x: RabbitHoleCraneLayout.canvasTracksCenterX,
@@ -1147,24 +1229,26 @@ final class RabbitHoleArena: ObservableObject {
                 )
                 spawnLandingDust(atX: tracks.x + landingX)
             }
-        } else {
-            let t = smoothstep((u - landingEnd) / max(0.001, 1 - landingEnd))
-            shaftScroll = 0
-            shaftReveal = 0
-            floorIndex = 1
-            skyAmount = 1
-            finaleSurfaceReveal = 1
-            finaleTravelX = landingX + (exitX - landingX) * CGFloat(t)
-            celebrateHop = 0
-            finaleFlip = reduceMotion ? 0 : 360
-            excavatorSquash = 1 + CGFloat(sin(t * .pi * 8)) * 0.012 * CGFloat(1 - t)
-            excavatorTilt = sin(t * .pi * 6) * 0.8 * (1 - t)
+
+            // Trigger the card when only the last 10% of the visible rig is
+            // still inside the right edge. The generous transparent authoring
+            // canvas is deliberately excluded from this measurement.
+            let visibleRigWidth = RabbitHoleCraneLayout
+                .displayedCanvasSize(isPad: isPad).width * 0.79
+            let ninetyPercentOutX = size.width - rearTrackX - visibleRigWidth * 0.10
+            if !completionRevealNotified, finaleTravelX >= ninetyPercentOutX {
+                completionRevealNotified = true
+                onLevelCompletionFinished?()
+            }
         }
 
         if actionProgress >= 1, !celebrationFinished {
             celebrationFinished = true
             isCelebrating = false
-            onLevelCompletionFinished?()
+            if !completionRevealNotified {
+                completionRevealNotified = true
+                onLevelCompletionFinished?()
+            }
         }
     }
 
@@ -1274,6 +1358,12 @@ final class RabbitHoleArena: ObservableObject {
         items[index].flightTo = scoreTarget ?? CGPoint(x: size.width * 0.16, y: 64)
         mode = .tossingCorrect
         actionProgress = 0
+        // At this exact frame the carrot has reached the fully retracted claw.
+        // On the winning floor the bomb may now detonate; the toss itself is
+        // preserved independently until it reaches the score counter.
+        if pendingCompletion, isLastFloor {
+            beginExplosion(isFinaleLaunch: true)
+        }
     }
 
     private func launchWrong(id: UUID) {
@@ -1352,14 +1442,21 @@ final class RabbitHoleArena: ObservableObject {
         blastPulse = isLastFloor ? 0.32 : 0.2
         shake = reduceMotion ? 0 : (isLastFloor ? 20 : 12)
         collapseSpawned = false
-        heldID = nil
+        // The winning carrot may already be travelling to the HUD. Retain its
+        // identity so `moveFlights` can award it on arrival; every other kind
+        // of explosion still releases the claw normally.
+        let preservesWinningToss = heldID.flatMap { held in
+            items.first(where: { $0.id == held })?.flight == .tossCorrect
+        } ?? false
+        if !preservesWinningToss { heldID = nil }
         drop = 0
         poke = 0
         blastOrigin = items.first(where: { $0.isDynamite })?.position
             ?? CGPoint(x: field.midX, y: field.midY)
         spawnBlast()
         onExplode?()
-        for index in items.indices where items[index].isPresent {
+        for index in items.indices
+        where items[index].isPresent && items[index].flight != .tossCorrect {
             items[index].flight = .blast
             items[index].flightAge = 0
             items[index].flightFrom = items[index].position
@@ -1533,6 +1630,19 @@ final class RabbitHoleArena: ObservableObject {
                 items[index].spin = u * 200
                 let endScale = (isPad ? 34 : 26) / GameConfig.rabbitHoleCarrotSize(isPad: isPad)
                 items[index].scale = 1 + (endScale - 1) * CGFloat(u * u)
+                // A normal toss is completed by `stepTossCorrect`. During the
+                // finale that mode has already become `.exploding`, so finish
+                // the preserved score flight here instead.
+                if u >= 1, mode != .tossingCorrect {
+                    let id = items[index].id
+                    items[index].isPresent = false
+                    items[index].opacity = 0
+                    items[index].flight = .none
+                    if heldID == id {
+                        heldID = nil
+                        onShellArrived?()
+                    }
+                }
             case .tossWrong:
                 let from = items[index].flightFrom
                 let to = items[index].flightTo

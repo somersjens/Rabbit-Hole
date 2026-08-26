@@ -123,7 +123,8 @@ nonisolated public enum GameConfig {
     public static let rabbitHoleExplosionDuration = 0.80
     public static let rabbitHoleFallDuration = 1.00
     public static let rabbitHoleEntranceDuration = 0.90
-    public static let rabbitHoleYayDuration = 1.60
+    /// Finale flight (1.18 s) followed by an unhurried 0.8-second drive-off.
+    public static let rabbitHoleYayDuration = 1.98
 
     /// How long a crab needs from its corner to the King. The whole round is
     /// read, judged and acted on inside this window, so it is the single most

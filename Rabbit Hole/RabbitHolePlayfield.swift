@@ -165,7 +165,7 @@ struct RabbitHolePlayfield: View {
                                finaleSurfaceProgress: arena.finaleSurfaceReveal,
                                finaleCameraShift: arena.finaleSceneActive
                                    ? min(size.width * 0.48,
-                                         max(0, arena.finaleTravelX) * 1.1)
+                                         max(0, arena.finaleWorldShift))
                                    : 0)
                     .equatable()
                     .frame(width: size.width, height: size.height)
@@ -2334,8 +2334,13 @@ private struct CraneRig: View {
         let clawSize = RabbitHoleCraneLayout.clawSize(isPad: isPad)
         let canvasSize = RabbitHoleCraneLayout.displayedCanvasSize(isPad: isPad)
         let canvasCenter = RabbitHoleCraneLayout.canvasFrameCenter(boom: boom, isPad: isPad)
-        let flipAnchor = UnitPoint(x: canvasCenter.x / max(1, fieldSize.width),
-                                   y: canvasCenter.y / max(1, fieldSize.height))
+        let rearTrack = RabbitHoleCraneLayout.worldPoint(
+            RabbitHoleCraneLayout.canvasTracksRear,
+            boom: boom,
+            isPad: isPad
+        )
+        let flipAnchor = UnitPoint(x: rearTrack.x / max(1, fieldSize.width),
+                                   y: rearTrack.y / max(1, fieldSize.height))
         let extra = max(0, hypot(hook.x - boom.x, hook.y - boom.y)
                         - RabbitHoleCraneLayout.restHang(isPad: isPad))
         let clawGlue = CGPoint(x: pose.glue.x + downX * extra,
