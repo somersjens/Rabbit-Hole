@@ -39,7 +39,7 @@ struct ResultView: View {
     /// the player runs out of lives, every three bubbles advance to the next
     /// encouraging message, capped at the tenth message.
     private var encouragement: String {
-        guard !isCompleted else { return L(key: "game.end.completionSubtitle") }
+        guard !isCompleted else { return FoodCatalog.completionLine(for: character.id) }
         let index = min(max(levelScore, 0) / 3, 9)
         return L(key: "game.encouragement.\(index)")
     }
@@ -92,6 +92,7 @@ struct ResultView: View {
                     .allowsHitTesting(false)
             }
         }
+        .currencyIcon(for: character)
         .onAppear {
             withAnimation(.spring(response: 0.46, dampingFraction: 0.82)) {
                 isPresented = true

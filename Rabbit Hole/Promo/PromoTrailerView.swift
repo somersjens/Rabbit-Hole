@@ -97,6 +97,7 @@ struct PromoTrailerView: View {
         }
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .currencyIcon(for: character)
         .statusBarHidden(true)
         .onChange(of: model.streakAnnouncementID) { id in
             guard id > 0, director.revealsStreakBoost else { return }

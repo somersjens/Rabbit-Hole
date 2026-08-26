@@ -221,6 +221,7 @@ struct HomeView: View {
         }
         .animation(.easeInOut(duration: Self.handoffDuration), value: presentsSessionInline)
         .coordinateSpace(name: "home")
+        .currencyIcon(for: character)
         .fullScreenCover(item: presentedCoverSelection, onDismiss: handleSessionDismissed) { item in
             gameSession(for: item)
         }

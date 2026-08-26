@@ -9,58 +9,63 @@
 
 import SwiftUI
 
-/// The game's currency. A player collects carrots: underground, on the menu
-/// totals, on the level cards and in the shop. One glyph, used everywhere, so
-/// the same thing is never drawn two ways.
+/// The game's currency. What a player collects is whatever their character
+/// eats, so the counter matches that animal: the bunny banks carrots, the frog
+/// flies, the penguin fish. The artwork is Hungry Frog's `fly_currency` and
+/// `currency_2`…`currency_10`, looked up by character ID so the catalog order
+/// here (bunny first) cannot hand an animal the wrong food.
 enum Currency {
-    /// Identifies the currency glyph where a view has to tell it apart from an
-    /// SF Symbol. It is drawn by `CurrencyIcon`, not loaded from the catalog.
-    static let icon = "carrot"
-}
+    /// The bunny's carrot. Also the icon wherever the currency is spoken of in
+    /// general rather than in one character's world — the Premium screen sells
+    /// the whole cast, so it counts in carrots for all of them.
+    static let icon = "currency_3"
 
-/// The glyph used anywhere a carrot count is shown. It is drawn rather than
-/// loaded, so it stays crisp from the 9-point level card up to the flying
-/// reward, and it takes the surrounding foreground style exactly as the old
-/// template image did.
-struct CurrencyIcon: View {
-    let size: CGFloat
-
-    var body: some View {
-        CarrotShape()
-            .fill(.foreground, style: FillStyle(eoFill: true))
-            .frame(width: size, height: size)
+    static func icon(for characterID: String) -> String {
+        FoodCatalog.food(for: characterID).currencyIconName
     }
 }
 
-/// A cartoon carrot: a tapered root with three leaves, one silhouette so it
-/// colours with whatever foreground the counter is using.
-struct CarrotShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let w = rect.width
-        let h = rect.height
-        func point(_ x: Double, _ y: Double) -> CGPoint {
-            CGPoint(x: rect.minX + w * x, y: rect.minY + h * y)
-        }
+private struct CurrencyIconKey: EnvironmentKey {
+    static let defaultValue = Currency.icon
+}
 
-        var path = Path()
-        // Leaves.
-        path.move(to: point(0.50, 0.22))
-        path.addQuadCurve(to: point(0.22, 0.02), control: point(0.28, 0.20))
-        path.addQuadCurve(to: point(0.50, 0.22), control: point(0.40, 0.08))
-        path.move(to: point(0.50, 0.22))
-        path.addQuadCurve(to: point(0.50, 0.00), control: point(0.42, 0.10))
-        path.addQuadCurve(to: point(0.50, 0.22), control: point(0.58, 0.10))
-        path.move(to: point(0.50, 0.22))
-        path.addQuadCurve(to: point(0.78, 0.02), control: point(0.72, 0.20))
-        path.addQuadCurve(to: point(0.50, 0.22), control: point(0.60, 0.08))
+extension EnvironmentValues {
+    /// Which currency artwork every `CurrencyIcon` below this point draws.
+    /// Carried in the environment rather than passed down: the counters sit
+    /// deep inside level cards, HUD chips and celebration swarms, and all of
+    /// them belong to whichever character owns the screen they are on.
+    var currencyIcon: String {
+        get { self[CurrencyIconKey.self] }
+        set { self[CurrencyIconKey.self] = newValue }
+    }
+}
 
-        // Root.
-        path.move(to: point(0.32, 0.26))
-        path.addQuadCurve(to: point(0.50, 0.98), control: point(0.18, 0.62))
-        path.addQuadCurve(to: point(0.68, 0.26), control: point(0.82, 0.62))
-        path.addQuadCurve(to: point(0.32, 0.26), control: point(0.50, 0.20))
-        path.closeSubpath()
-        return path
+extension View {
+    /// Hands this screen the character's own food to count in.
+    func currencyIcon(for character: AnimalCharacter) -> some View {
+        environment(\.currencyIcon, Currency.icon(for: character.id))
+    }
+
+    /// Pins a screen back to the carrot, whatever character is selected.
+    func carrotCurrencyIcon() -> some View {
+        environment(\.currencyIcon, Currency.icon)
+    }
+}
+
+/// The artwork used anywhere a currency count is shown. It is rendered as a
+/// template so existing character-theme colors continue to apply.
+struct CurrencyIcon: View {
+    let size: CGFloat
+
+    @Environment(\.currencyIcon) private var iconName
+
+    var body: some View {
+        Image(iconName)
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 

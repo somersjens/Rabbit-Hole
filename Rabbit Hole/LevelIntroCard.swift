@@ -15,7 +15,7 @@ import SwiftUI
 /// text always matches the questions the player will actually get.
 enum LevelIntro {
     /// Title plus the three explanation lines for a level.
-    static func info(for board: LevelBoard) -> (title: String, bullets: [String]) {
+    static func info(for board: LevelBoard, characterID: String) -> (title: String, bullets: [String]) {
         let level = board.level
         let n = max(1, level.index)
 
@@ -50,8 +50,10 @@ enum LevelIntro {
         // order button — and picking the right card out of the ones on offer.
         let levelLine = modeLine(for: board)
 
-        // Line three: what there is to collect here.
-        let cardsLine = L("levelIntro.cardsBullet \(board.maximum)")
+        // Line three: what there is to collect here. Each food has its own
+        // whole sentence rather than a noun dropped into a shared one, so a
+        // language can decline the noun, move it, or reword around it.
+        let cardsLine = FoodCatalog.collectionLine(for: characterID, count: board.maximum)
 
         return (title, [topicLine, levelLine, cardsLine])
     }
@@ -130,11 +132,11 @@ struct LevelIntroCard: View {
     private var portraitSize: CGFloat { 70 * scale }
 
     var body: some View {
-        let info = LevelIntro.info(for: board)
+        let info = LevelIntro.info(for: board, characterID: theme.id)
         let features = [
             IntroFeature(icon: LevelIntro.symbol(for: level), text: info.bullets[0]),
             IntroFeature(number: level.cardNumber, text: info.bullets[1]),
-            IntroFeature(icon: Currency.icon, text: info.bullets[2])
+            IntroFeature(icon: Currency.icon(for: theme.id), text: info.bullets[2])
         ]
 
         return ZStack {
@@ -217,6 +219,7 @@ struct LevelIntroCard: View {
                 .scrollBounceBehavior(.basedOnSize)
             }
         }
+        .currencyIcon(for: theme)
     }
 
     /// What the big button promises. The walkthrough takes precedence over
@@ -331,7 +334,7 @@ struct LevelIntroCard: View {
                         .minimumScaleFactor(0.48)
                         .allowsTightening(true)
                 } else {
-                    if feature.icon == Currency.icon {
+                    if feature.icon == Currency.icon(for: theme.id) {
                         CurrencyIcon(size: 28 * textScale * featureIconScale)
                     } else {
                         Image(systemName: feature.icon)

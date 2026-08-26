@@ -97,6 +97,10 @@ struct PremiumView: View {
                     .padding(.trailing, isPad ? 28 : 18)
             }
         }
+        // The store sells the whole cast at once and quotes every unlock in the
+        // same unit, so it keeps counting in carrots no matter which animal is
+        // selected or previewed here.
+        .carrotCurrencyIcon()
         .animation(.easeInOut(duration: 0.25), value: previewCharacterID)
         .animation(.spring(response: 0.42, dampingFraction: 0.7), value: premium.isPremium)
         .onAppear {

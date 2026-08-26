@@ -182,6 +182,7 @@ struct GameView: View {
                 .zIndex(3)
             }
         }
+        .currencyIcon(for: character)
         .animation(.easeInOut(duration: 0.28), value: model.isGameOver)
         .animation(.easeInOut(duration: 0.25), value: showsIntro)
         .onAppear {
