@@ -30,7 +30,7 @@ struct RabbitHolePlayfield: View {
     let isStreakBoostActive: Bool
     let playsLevelCompletion: Bool
     let reduceMotion: Bool
-    var tutorialPlan = CrabTutorialPlan()
+    var tutorialPlan = RabbitHoleTutorialPlan()
     var reservesTutorialMessage = false
     let topReserve: CGFloat
     let bottomReserve: CGFloat
@@ -49,7 +49,7 @@ struct RabbitHolePlayfield: View {
     let onKingEntranceComplete: () -> Void
     var onLevelCompletionStarted: () -> Void = {}
     let onLevelCompletionFinished: () -> Void
-    var onTutorialEvent: (CrabTutorialEvent) -> Void = { _ in }
+    var onTutorialEvent: (RabbitHoleTutorialEvent) -> Void = { _ in }
     var onGuardedArrival: ((UUID) -> Bool)? = nil
     var onSmashedGuard: (() -> Bool)? = nil
     var onBreach: (() -> Void)? = nil
@@ -281,6 +281,14 @@ struct RabbitHolePlayfield: View {
                 RabbitHoleParticles(particles: arena.particles)
                     .allowsHitTesting(false)
 
+                if tutorialPlan.showsAimGuide,
+                   let guideEnd = arena.tutorialGuideEndPoint {
+                    TutorialHookGuide(start: arena.hookPoint,
+                                      end: guideEnd,
+                                      isPad: isPad)
+                        .allowsHitTesting(false)
+                }
+
                 CraneRig(character: character,
                          isPad: isPad,
                          surface: surface,
@@ -353,6 +361,7 @@ struct RabbitHolePlayfield: View {
             .environment(\.layoutDirection, .leftToRight)
             .onAppear {
                 bindArena()
+                arena.setCharacterID(character.id)
                 arena.setPickupStyle(pickupStyle)
                 arena.layout(size: size, field: field, surface: surface, isPad: isPad)
                 arena.setRemainingQuestions(remainingQuestions,
@@ -364,7 +373,7 @@ struct RabbitHolePlayfield: View {
                 arena.setReduceMotion(reduceMotion)
                 arena.setSpeedMultiplier(1)
                 arena.setScoreTarget(localScoreTarget(scoreTarget, in: proxy))
-                arena.setTutorialActive(tutorialPlan.isActive)
+                arena.applyTutorial(tutorialPlan)
                 arena.setRunning(isRunning)
                 if playsKingEntrance {
                     arena.beginEntrance(completion: onKingEntranceComplete)
@@ -388,6 +397,7 @@ struct RabbitHolePlayfield: View {
                 arena.setScoreTarget(localScoreTarget(target, in: proxy))
             }
             .onChange(of: character.id) { _ in
+                arena.setCharacterID(character.id)
                 arena.setPickupStyle(pickupStyle)
             }
             .onChange(of: isRightToLeft) { _ in
@@ -404,15 +414,8 @@ struct RabbitHolePlayfield: View {
         }
         .onChange(of: isLive) { live in arena.setLive(live) }
         .onChange(of: isRunning) { running in arena.setRunning(running) }
-        .onChange(of: tutorialPlan.isActive) { active in
-            arena.setTutorialActive(active)
-            skipCrabOnlySteps(tutorialPlan)
-        }
-        .onChange(of: tutorialPlan.wantsLifeCrab) { wants in
-            if wants { onTutorialEvent(.lifeCrabArrived) }
-        }
-        .onChange(of: tutorialPlan.wantsBonusCrab) { wants in
-            if wants { onTutorialEvent(.caughtBonusCrab) }
+        .onChange(of: tutorialPlan) { plan in
+            arena.applyTutorial(plan)
         }
         .onChange(of: playsKingEntrance) { shouldPlay in
             if shouldPlay { arena.beginEntrance(completion: onKingEntranceComplete) }
@@ -441,11 +444,16 @@ struct RabbitHolePlayfield: View {
     @ViewBuilder
     private func floorItem(_ item: RabbitHoleItem) -> some View {
         if item.isDynamite {
-            DynamiteStickView(item: item,
-                              seconds: item.flight == .blast ? 0 : arena.dynamiteTime,
-                              isPad: isPad,
-                              isRightToLeft: isRightToLeft,
-                              clock: arena.clock)
+            ZStack {
+                DynamiteStickView(item: item,
+                                  seconds: item.flight == .blast ? 0 : arena.dynamiteTime,
+                                  isPad: isPad,
+                                  isRightToLeft: isRightToLeft,
+                                  clock: arena.clock)
+                if tutorialPlan.shieldsDynamite, item.flight == .none {
+                    DynamiteShieldView(isPad: isPad, clock: arena.clock)
+                }
+            }
                 .scaleEffect(item.scale)
                 .opacity(item.opacity)
         } else {
@@ -473,13 +481,6 @@ struct RabbitHolePlayfield: View {
         arena.onDrop = onSmash
         arena.onExplode = { AppAudio.shared.playFlamethrower() }
         arena.onTutorialEvent = onTutorialEvent
-    }
-
-    /// The walkthrough still talks about helper crabs. Those never spawn here,
-    /// so those two steps close themselves the moment they are asked for.
-    private func skipCrabOnlySteps(_ plan: CrabTutorialPlan) {
-        if plan.wantsLifeCrab { onTutorialEvent(.lifeCrabArrived) }
-        if plan.wantsBonusCrab { onTutorialEvent(.caughtBonusCrab) }
     }
 }
 
@@ -2580,11 +2581,18 @@ private struct CraneRig: View {
     private var slide: CGFloat { (1 - entrance) * (-surface.width * 0.7) }
 
     /// Transform around the track contact point, so squash and landing tilt do
-    /// not make the supposedly stationary machine slide vertically.
+    /// not make the supposedly stationary machine slide vertically. Derived from
+    /// the boom so underground lift, grass nestle and landing squash share one
+    /// contact.
     private var groundAnchor: UnitPoint {
-        UnitPoint(x: boom.x / max(1, fieldSize.width),
-                  y: (surface.maxY + RabbitHoleCraneLayout.trackSink(isPad: isPad))
-                    / max(1, fieldSize.height))
+        let contactY = RabbitHoleCraneLayout.worldPoint(
+            CGPoint(x: RabbitHoleCraneLayout.canvasTracksCenterX,
+                    y: RabbitHoleCraneLayout.canvasTracksY),
+            boom: boom,
+            isPad: isPad
+        ).y
+        return UnitPoint(x: boom.x / max(1, fieldSize.width),
+                         y: contactY / max(1, fieldSize.height))
     }
 
     var body: some View {
@@ -2791,8 +2799,9 @@ private struct CraneContactShadow: View {
 
 /// A few pixels of underground terrain cross in front of the crawler baseline.
 /// That small occlusion makes the otherwise independent transparent artwork
-/// feel planted: loose clods and stones share the floor's progressively darker
-/// earth colour. Surface grass is part of the stationary meadow instead.
+/// feel planted: a soil-coloured wash stains the dark track pads, then loose
+/// clods share the floor's progressively darker earth colour. Surface grass
+/// is part of the stationary meadow instead.
 private struct CraneTerrainOverlap: View {
     let isPad: Bool
     let floorIndex: Int
@@ -2800,8 +2809,8 @@ private struct CraneTerrainOverlap: View {
     let hop: CGFloat
     let flip: Double
 
-    private var width: CGFloat { isPad ? 190 : 144 }
-    private var height: CGFloat { isPad ? 28 : 21 }
+    private var width: CGFloat { isPad ? 198 : 152 }
+    private var height: CGFloat { isPad ? 34 : 26 }
     private var scale: CGFloat { isPad ? 1.28 : 1 }
 
     private var presence: Double {
@@ -2825,20 +2834,44 @@ private struct CraneTerrainOverlap: View {
     }
 
     var body: some View {
-        Canvas { context, size in
-            drawEarth(context: context, size: size)
+        ZStack {
+            Canvas { context, size in
+                drawWash(context: context, size: size)
+            }
+            .compositingGroup()
+            .blendMode(.multiply)
+
+            Canvas { context, size in
+                drawClods(context: context, size: size)
+            }
         }
         .frame(width: width, height: height)
         .opacity(presence)
         .allowsHitTesting(false)
     }
 
-    private func drawEarth(context: GraphicsContext, size: CGSize) {
+    /// Stains the underside of the tracks with the floor colour so the dark
+    /// rubber edge reads as sitting in dirt instead of a cut-out sprite.
+    private func drawWash(context: GraphicsContext, size: CGSize) {
+        let pad = Path(ellipseIn: CGRect(x: size.width * 0.02,
+                                         y: size.height * 0.28,
+                                         width: size.width * 0.96,
+                                         height: size.height * 0.70))
+        context.fill(pad, with: .color(earth.opacity(0.42)))
+
+        let lip = Path(ellipseIn: CGRect(x: size.width * 0.10,
+                                         y: size.height * 0.48,
+                                         width: size.width * 0.80,
+                                         height: size.height * 0.46))
+        context.fill(lip, with: .color(earthDeep.opacity(0.38)))
+    }
+
+    private func drawClods(context: GraphicsContext, size: CGSize) {
         let stones: [(CGFloat, CGFloat, CGFloat)] = [
             (0.04, 2.4, -0.5), (0.17, 3.4, 1), (0.31, 2.0, -1),
             (0.64, 2.7, 0.5), (0.79, 3.5, -1), (0.94, 2.2, 0.5)
         ]
-        let baseY = size.height * 0.59
+        let baseY = size.height * 0.62
         for (index, stone) in stones.enumerated() {
             let radius = stone.1 * scale
             let centre = CGPoint(x: size.width * stone.0,
@@ -2849,14 +2882,14 @@ private struct CraneTerrainOverlap: View {
                               height: radius * 1.16)
             context.fill(Path(ellipseIn: rect),
                          with: .color((index.isMultiple(of: 2) ? earth : earthDeep)
-                            .opacity(0.92)))
+                            .opacity(0.78)))
 
             let glint = CGRect(x: centre.x - radius * 0.43,
                                y: centre.y - radius * 0.40,
                                width: radius * 0.62,
                                height: max(0.7, radius * 0.20))
             context.fill(Path(ellipseIn: glint),
-                         with: .color(Color.white.opacity(0.12)))
+                         with: .color(Color.white.opacity(0.10)))
         }
     }
 }
@@ -2944,6 +2977,76 @@ private struct AnswerPickupView: View {
 }
 
 // MARK: - Dynamite
+
+/// A live preview of the path the claw will take if the player taps now.
+/// Both endpoints come from the arena's real grab geometry, so the guide never
+/// teaches an approximation that differs from the actual hook.
+private struct TutorialHookGuide: View {
+    let start: CGPoint
+    let end: CGPoint
+    let isPad: Bool
+
+    var body: some View {
+        Canvas { context, _ in
+            var path = Path()
+            path.move(to: start)
+            path.addLine(to: end)
+            context.stroke(path,
+                           with: .color(.white.opacity(0.92)),
+                           style: StrokeStyle(lineWidth: isPad ? 4 : 3,
+                                              lineCap: .round,
+                                              dash: isPad ? [4, 10] : [3, 8]))
+
+            let radius: CGFloat = isPad ? 11 : 8
+            let target = Path(ellipseIn: CGRect(x: end.x - radius,
+                                                y: end.y - radius,
+                                                width: radius * 2,
+                                                height: radius * 2))
+            context.fill(target, with: .color(.white.opacity(0.18)))
+            context.stroke(target,
+                           with: .color(.white.opacity(0.95)),
+                           style: StrokeStyle(lineWidth: isPad ? 3 : 2,
+                                              dash: [3, 4]))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Clearly blocks the tutorial bomb without hiding it. The double translucent
+/// shell reads as a protective bubble, while the slow pulse keeps it visibly
+/// separate from ordinary floor decoration.
+private struct DynamiteShieldView: View {
+    let isPad: Bool
+    let clock: Double
+
+    private var size: CGFloat { isPad ? 150 : 98 }
+
+    var body: some View {
+        let pulse = 1 + CGFloat(sin(clock * 2.4)) * 0.025
+        ZStack {
+            Circle()
+                .fill(Color.cyan.opacity(0.14))
+                .overlay {
+                    Circle().stroke(Color.white.opacity(0.92), lineWidth: isPad ? 4 : 3)
+                }
+                .overlay {
+                    Circle()
+                        .stroke(Color.cyan.opacity(0.78), lineWidth: isPad ? 2.5 : 2)
+                        .padding(isPad ? 8 : 6)
+                }
+                .shadow(color: Color.cyan.opacity(0.55), radius: isPad ? 12 : 8)
+
+            Image(systemName: "shield.fill")
+                .font(.system(size: isPad ? 31 : 21, weight: .bold))
+                .foregroundStyle(.white.opacity(0.92), Color.cyan.opacity(0.72))
+                .offset(y: size * 0.34)
+        }
+        .frame(width: size, height: size)
+        .scaleEffect(pulse)
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+    }
+}
 
 private struct DynamiteStickView: View {
     let item: RabbitHoleItem

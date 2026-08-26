@@ -115,6 +115,24 @@ enum RabbitHoleCraneLayout {
     static let topGlue = UnitPoint(x: 0.496, y: 0.959)
     static func trackSink(isPad: Bool) -> CGFloat { isPad ? 16 : 12 }
 
+    /// Downward shift of the machine relative to sitting `canvasTracksY` on
+    /// the surface line. Grass nestles the near tracks; underground the
+    /// rear-crawler curl sits on the dirt lip — in the sand, not above it.
+    /// `undergroundMix` is 0 on the meadow and 1 once the tracks meet a pit
+    /// floor, so the claw, grab length and landing squash travel with it.
+    static func terrainSink(isPad: Bool, undergroundMix: CGFloat, characterID: String) -> CGFloat {
+        let grass = trackSink(isPad: isPad)
+        let mix = max(0, min(1, undergroundMix))
+        guard mix > 0.0001 else { return grass }
+        let kit = ExcavatorKit.kit(for: characterID)
+        let scale = canvasScale(isPad: isPad)
+        // Plant the rear curl a few points into the sand so the pads meet
+        // the lip. The near tracks sit a little lower (three-quarter view).
+        let curlPlant: CGFloat = isPad ? 4 : 3
+        let pit = curlPlant + (canvasTracksY - kit.canvasRearContact.y) * scale
+        return grass + (pit - grass) * mix
+    }
+
     /// The iPad playfield is substantially wider than the phone canvas. Keep
     /// the operator/excavator visually dominant there instead of applying the
     /// former, almost phone-sized 214-point crop.
@@ -313,7 +331,7 @@ final class RabbitHoleArena: ObservableObject {
     var onShellArrived: (() -> Void)?
     var onDrop: (() -> Void)?
     var onExplode: (() -> Void)?
-    var onTutorialEvent: ((CrabTutorialEvent) -> Void)?
+    var onTutorialEvent: ((RabbitHoleTutorialEvent) -> Void)?
     var onEntranceComplete: (() -> Void)?
     var onLevelCompletionStarted: (() -> Void)?
     var onLevelCompletionFinished: (() -> Void)?
@@ -337,6 +355,7 @@ final class RabbitHoleArena: ObservableObject {
     private var field: CGRect = .zero
     private var surface: CGRect = .zero
     private var isPad = false
+    private var characterID = "bunny"
     private var pickupStyle = FoodPickupStyle.carrot
     private var isLive = false
     private var reduceMotion = false
@@ -351,7 +370,7 @@ final class RabbitHoleArena: ObservableObject {
     private var grabbedCorrect = false
     private var pendingCompletion = false
     private var completionStartedNotified = false
-    private var tutorialArmed = false
+    private var tutorialPlan = RabbitHoleTutorialPlan()
     private var spawnedNextFloor = false
     private var collapseSpawned = false
     private var fallTravel: CGFloat = 0
@@ -391,11 +410,31 @@ final class RabbitHoleArena: ObservableObject {
 
     var boomPoint: CGPoint {
         // The boom's right-hand pin sits just left of centre on iPad so the
-        // wider surface retains the phone composition.
+        // wider surface retains the phone composition. Underground terrain
+        // sink is applied here so the claw, grab length, landing squash and
+        // shadow all travel with the machine.
         CGPoint(x: surface.minX + surface.width * RabbitHoleCraneLayout.boomUnitX(isPad: isPad),
                 y: surface.maxY - RabbitHoleCraneLayout.pinHeightAboveTracks(isPad: isPad)
-                    + RabbitHoleCraneLayout.trackSink(isPad: isPad)
+                    + RabbitHoleCraneLayout.terrainSink(isPad: isPad,
+                                                        undergroundMix: undergroundMix,
+                                                        characterID: characterID)
                     + excavatorDrop)
+    }
+
+    /// 0 on the meadow, 1 once the tracks meet an underground floor. Eases in
+    /// during the fall so the machine does not hop at the blast, and eases
+    /// out as the finale returns to grass.
+    private var undergroundMix: CGFloat {
+        if finaleSceneActive {
+            return max(0, min(1, 1 - finaleSurfaceReveal))
+        }
+        guard floorIndex > 0 else { return 0 }
+        if mode == .falling {
+            let travel = fallTravel > 0 ? fallTravel : landingDepth()
+            guard travel > 1 else { return 1 }
+            return max(0, min(1, 1 - fallShift / travel))
+        }
+        return 1
     }
 
     /// Rest hang is the trolley on the boom pin. Grab hang reaches the chosen
@@ -490,6 +529,19 @@ final class RabbitHoleArena: ObservableObject {
         }
     }
 
+    /// The endpoint of the real drop the arena would start at this instant.
+    /// Used only by step two's dotted aiming guide.
+    var tutorialGuideEndPoint: CGPoint? {
+        guard tutorialPlan.showsAimGuide, mode == .swinging else { return nil }
+        let lengths = ropeLengths
+        if let id = itemAlongRay(angle: swingAngle, maxLength: lengths.grab),
+           let item = items.first(where: { $0.id == id }) {
+            return gripPoint(of: item)
+        }
+        return CGPoint(x: boomPoint.x + CGFloat(sin(swingAngle) * lengths.grab),
+                       y: boomPoint.y + CGFloat(cos(swingAngle) * lengths.grab))
+    }
+
     // MARK: - Layout
 
     func layout(size: CGSize, field: CGRect, surface: CGRect, isPad: Bool) {
@@ -501,6 +553,13 @@ final class RabbitHoleArena: ObservableObject {
         if hookX == 0.5 || hookX == 0 {
             hookX = field.midX
         }
+        objectWillChange.send()
+    }
+
+    func setCharacterID(_ id: String) {
+        guard characterID != id else { return }
+        characterID = id
+        repositionRests()
         objectWillChange.send()
     }
 
@@ -557,7 +616,25 @@ final class RabbitHoleArena: ObservableObject {
         // an approximate corner target.
         if let target { scoreTarget = target }
     }
-    func setTutorialActive(_ active: Bool) { tutorialArmed = active }
+    func applyTutorial(_ plan: RabbitHoleTutorialPlan) {
+        guard tutorialPlan != plan else { return }
+        tutorialPlan = plan
+
+        switch plan.step {
+        case .launchHook:
+            installTutorialItems([],
+                                 layout: RabbitHoleLayout(units: [], dynamiteIndex: -1))
+        case .catchFirstCarrot:
+            spawnTutorialFirstCarrot()
+        case .clearPracticeFloor:
+            spawnTutorialPracticeFloor()
+        case .triggerDynamite:
+            dynamiteTime = GameConfig.rabbitHoleDynamiteSeconds
+        case .ready, .none:
+            break
+        }
+        objectWillChange.send()
+    }
 
     func beginEntrance(completion: @escaping () -> Void) {
         onEntranceComplete = completion
@@ -835,7 +912,8 @@ final class RabbitHoleArena: ObservableObject {
     }
 
     private func stepSwing(_ dt: Double) {
-        if items.contains(where: { $0.isDynamite && $0.isPresent && $0.flight == .none }),
+        if !tutorialPlan.shapesArena,
+           items.contains(where: { $0.isDynamite && $0.isPresent && $0.flight == .none }),
            !items.contains(where: { !$0.isDynamite && $0.isPresent && $0.flight == .none }) {
             beginExplosion()
             return
@@ -885,6 +963,7 @@ final class RabbitHoleArena: ObservableObject {
     /// drop. The old full-artwork rectangle included transparent space and the
     /// fuse, which made nearby correct lanes explode too readily.
     private func dynamiteTouchesHook(from start: CGPoint, to end: CGPoint) -> Bool {
+        guard !tutorialPlan.shieldsDynamite else { return false }
         let claw = RabbitHoleCraneLayout.clawSize(isPad: isPad)
         let itemHeight = GameConfig.rabbitHoleDisplayedItemLength(isPad: isPad)
         let travel = hypot(end.x - start.x, end.y - start.y)
@@ -997,6 +1076,10 @@ final class RabbitHoleArena: ObservableObject {
                 items[index].flight = .none
             }
             heldID = nil
+            if tutorialPlan.step == .catchFirstCarrot
+                || tutorialPlan.step == .clearPracticeFloor {
+                onTutorialEvent?(.finishedCarrot)
+            }
             continueOrClearFloor()
         }
     }
@@ -1368,6 +1451,7 @@ final class RabbitHoleArena: ObservableObject {
     }
 
     private func tickFuse(_ dt: Double) {
+        guard tutorialPlan.runsFuse else { return }
         guard items.contains(where: { $0.isDynamite && $0.isPresent && $0.flight == .none }) else { return }
         guard mode != .exploding, mode != .falling, mode != .celebrating, mode != .entering else { return }
         dynamiteTime = max(0, dynamiteTime - dt)
@@ -1386,7 +1470,8 @@ final class RabbitHoleArena: ObservableObject {
         let ux = CGFloat(sin(angle))
         let uy = CGFloat(cos(angle))
         var scored: [(id: UUID, isDynamite: Bool, dAngle: Double, along: CGFloat, perp: CGFloat)] = []
-        for item in items where item.isPresent && item.flight == .none {
+        for item in items where item.isPresent && item.flight == .none
+            && !(tutorialPlan.shieldsDynamite && item.isDynamite) {
             let grip = gripPoint(of: item)
             let dx = grip.x - pivot.x
             let dy = grip.y - pivot.y
@@ -1442,15 +1527,10 @@ final class RabbitHoleArena: ObservableObject {
                 counted = onCorrect?(optionID) ?? false
             }
             if !counted { grabbedCorrect = false }
-            if tutorialArmed { onTutorialEvent?(.clearedWave) }
         } else {
             grabbedCorrect = false
             wrongCarrotCount += 1
             onWrong?(item.text)
-            if tutorialArmed {
-                onTutorialEvent?(.smashedWrongCrab)
-                onTutorialEvent?(.clearedWave)
-            }
         }
         mode = .wriggling
         actionProgress = 0
@@ -1495,6 +1575,9 @@ final class RabbitHoleArena: ObservableObject {
             onShellArrived?()
         }
         heldID = nil
+        if tutorialPlan.step == .catchFirstCarrot || tutorialPlan.step == .clearPracticeFloor {
+            onTutorialEvent?(.finishedCarrot)
+        }
         continueOrClearFloor()
     }
 
@@ -1509,7 +1592,7 @@ final class RabbitHoleArena: ObservableObject {
         let hasCarrots = items.contains {
             !$0.isDynamite && $0.isPresent && $0.flight == .none
         }
-        if hasCarrots {
+        if hasCarrots || tutorialPlan.shapesArena {
             resumeSwing()
         } else {
             beginExplosion()
@@ -1533,10 +1616,14 @@ final class RabbitHoleArena: ObservableObject {
         swingClock = (phase / (2 * .pi)) * period
         swingAngle = dropAngle
         mode = .swinging
+        if tutorialPlan.step == .launchHook {
+            onTutorialEvent?(.practisedHook)
+        }
     }
 
     private func beginExplosion(isFinaleLaunch: Bool = false) {
         guard mode != .exploding, mode != .falling, mode != .celebrating else { return }
+        let completesTutorialDynamite = tutorialPlan.step == .triggerDynamite
         let hasCarrots = items.contains {
             !$0.isDynamite && $0.isPresent && $0.flight == .none
         }
@@ -1570,6 +1657,9 @@ final class RabbitHoleArena: ObservableObject {
             ?? CGPoint(x: field.midX, y: field.midY)
         spawnBlast()
         onExplode?()
+        if completesTutorialDynamite {
+            onTutorialEvent?(.triggeredDynamite)
+        }
         if clearedFinalFloor {
             onFinalFloorCleared?()
         }
@@ -1594,10 +1684,110 @@ final class RabbitHoleArena: ObservableObject {
         onDrop?()
     }
 
+    // MARK: - Tutorial stocking
+
+    /// Step two uses one answer exactly at the visual centre of the dirt. No
+    /// bomb or other pocket is present yet.
+    private func spawnTutorialFirstCarrot() {
+        let layout = RabbitHoleLayout(units: [CGPoint(x: 0.5, y: 0.5)],
+                                      dynamiteIndex: -1)
+        let answer = currentRound?.question.correctAnswer
+            ?? remainingQuestions.first?.correctAnswer
+            ?? ""
+        let rest = layout.point(index: 0, in: field)
+        installTutorialItems([
+            makeTutorialItem(kind: .carrot,
+                             text: answer,
+                             index: 0,
+                             rest: rest)
+        ], layout: layout)
+    }
+
+    /// Step three has four real question answers and one protected bomb. The
+    /// bomb takes the far outer lane, making it read as a corner hazard while
+    /// keeping every object on the arena's genuine swing geometry.
+    private func spawnTutorialPracticeFloor() {
+        let random = RandomSource()
+        var layout = RabbitHolePlanner.makeLayout(
+            floorIndex: floorIndex,
+            field: field,
+            pivot: boomPoint,
+            itemRadius: GameConfig.rabbitHoleItemRadius(isPad: isPad),
+            carrotLength: GameConfig.rabbitHoleCarrotLength(isPad: isPad),
+            random: random
+        )
+        let bombIndex = max(0, layout.units.count - 1)
+        layout.dynamiteIndex = bombIndex
+        let carrotIndices = [1, 3, 4, 6].filter { $0 < layout.units.count && $0 != bombIndex }
+        var answers = Array(remainingQuestions.prefix(4).map(\.correctAnswer))
+        let fallback = currentRound?.question.correctAnswer ?? answers.first ?? ""
+        while answers.count < carrotIndices.count { answers.append(fallback) }
+
+        var tutorialItems = zip(carrotIndices, answers).map { pair in
+            let (index, answer) = pair
+            return makeTutorialItem(kind: .carrot,
+                                    text: answer,
+                                    index: index,
+                                    rest: layout.point(index: index, in: field))
+        }
+        tutorialItems.append(
+            makeTutorialItem(kind: .dynamite,
+                             text: "",
+                             index: bombIndex,
+                             rest: layout.point(index: bombIndex, in: field))
+        )
+        dynamiteTime = GameConfig.rabbitHoleDynamiteSeconds
+        installTutorialItems(tutorialItems, layout: layout)
+        // Four is a valid ordinary floor count, so an interrupted tutorial can
+        // resume coherently instead of restoring the unrelated floor that was
+        // briefly stocked before the walkthrough began.
+        publishFloorState()
+    }
+
+    private func makeTutorialItem(kind: RabbitHoleItem.Kind,
+                                  text: String,
+                                  index: Int,
+                                  rest: CGPoint) -> RabbitHoleItem {
+        RabbitHoleItem(
+            id: UUID(),
+            kind: kind,
+            text: text,
+            index: index,
+            isFinalDynamite: false,
+            isPresent: true,
+            rest: rest,
+            position: rest,
+            scale: 1,
+            spin: {
+                if case .dynamite = kind { return -8 }
+                return facingDegrees(at: rest)
+            }(),
+            opacity: 1,
+            flight: .none,
+            flightAge: 0,
+            flightDuration: 1,
+            flightFrom: rest,
+            flightTo: rest,
+            blastVelocity: .zero
+        )
+    }
+
+    private func installTutorialItems(_ newItems: [RabbitHoleItem],
+                                      layout: RabbitHoleLayout) {
+        items = newItems
+        pocketLayout = layout
+        pocketRests = newItems.map(\.rest)
+        dynamitePocketIndex = layout.dynamiteIndex
+        heldID = nil
+        dropTargetID = nil
+        dropGrabLength = 0
+    }
+
     /// Lays a floor whenever the pockets are empty, and again during the
     /// entrance walk so Play Again — which already has its sums before the
     /// digger walks on — does not open on bare soil.
     private func restockFloorIfNeeded() {
+        guard !tutorialPlan.shapesArena else { return }
         guard mode != .falling, mode != .exploding, mode != .celebrating else { return }
         guard !remainingQuestions.isEmpty else { return }
         guard items.isEmpty || mode == .entering else { return }
@@ -1674,6 +1864,9 @@ final class RabbitHoleArena: ObservableObject {
     /// Publishes only stable campaign facts; positions, animation phases and
     /// generated question text are deliberately rebuilt on resume.
     private func publishFloorState() {
+        guard !tutorialPlan.shapesArena || tutorialPlan.step == .clearPracticeFloor else {
+            return
+        }
         guard !floorCarrotCounts.isEmpty,
               floorCarrotCounts.indices.contains(floorIndex) else { return }
         let carrotsRemaining = items.reduce(into: 0) { count, item in

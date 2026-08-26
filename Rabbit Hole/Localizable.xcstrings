@@ -120109,6 +120109,96 @@
         }
       }
     },
+    "tutorial.rabbitHole.step.1" : {
+      "comment" : "Rabbit Hole walkthrough step 1 of 5: practise launching the empty digging hook.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap anywhere to launch your digging hook!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik ergens om je graafhaak af te schieten!"
+          }
+        }
+      }
+    },
+    "tutorial.rabbitHole.step.2" : {
+      "comment" : "Rabbit Hole walkthrough step 2 of 5: time the hook to catch the first carrot.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There’s a carrot! Tap at the right moment to grab it."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daar is een wortel! Klik op het juiste moment om hem te pakken."
+          }
+        }
+      }
+    },
+    "tutorial.rabbitHole.step.3" : {
+      "comment" : "Rabbit Hole walkthrough step 3 of 5: collect the four carrots that match the current question.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great job! Now grab the carrot that matches the question above."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goed bezig! Pak nu steeds de wortel die bij de vraag hierboven past."
+          }
+        }
+      }
+    },
+    "tutorial.rabbitHole.step.4" : {
+      "comment" : "Rabbit Hole walkthrough step 4 of 5: touch the dynamite or wait for its 60-second timer.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch out, dynamite! Touch it to see what happens… or wait for the timer to run out!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas op, dynamiet! Raak het aan om te zien wat er gebeurt… of wacht tot de timer afloopt!"
+          }
+        }
+      }
+    },
+    "tutorial.rabbitHole.step.5" : {
+      "comment" : "Rabbit Hole walkthrough step 5 of 5: normal gameplay has started; this message disappears after five seconds.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You’re ready! Grab all the carrots before the dynamite goes off!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je bent er klaar voor! Pak alle wortels voordat het dynamiet afgaat!"
+          }
+        }
+      }
+    },
     "tutorial.step.1" : {
       "comment" : "Walkthrough step 1 of 10: only wrong answers walk in, and tapping one costs nothing yet. Spoken to a young child, one or two short sentences.",
       "extractionState" : "manual",

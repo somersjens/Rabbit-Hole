@@ -66,7 +66,7 @@ struct GameView: View {
     @ObservedObject private var language = LanguageManager.shared
     @StateObject private var model: GameViewModel
     /// The walkthrough. Inert until a run is actually started with it armed.
-    @StateObject private var tutorial = TutorialController()
+    @StateObject private var tutorial = RabbitHoleTutorialController()
 
     /// The window's safe area, sampled once the view is on screen — never from
     /// inside `body`; see `ScreenSafeArea`.
@@ -254,7 +254,7 @@ struct GameView: View {
             // tutorial.
             if isTutorialArmed, model.state != .intro {
                 isTutorialArmed = false
-                tutorial.begin(model: model)
+                tutorial.begin()
             }
         }
     }

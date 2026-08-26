@@ -95,6 +95,128 @@ enum CrabTutorialEvent {
     case lifeCrabArrived
 }
 
+// MARK: - Rabbit Hole walkthrough
+
+/// The five lessons used by Rabbit Hole. Unlike the legacy crab walkthrough,
+/// every transition is driven by something the digging hook actually did.
+enum RabbitHoleTutorialStep: Int, CaseIterable, Identifiable {
+    case launchHook = 1
+    case catchFirstCarrot
+    case clearPracticeFloor
+    case triggerDynamite
+    case ready
+
+    var id: Int { rawValue }
+    var messageKey: String { "tutorial.rabbitHole.step.\(rawValue)" }
+    var next: RabbitHoleTutorialStep? {
+        RabbitHoleTutorialStep(rawValue: rawValue + 1)
+    }
+}
+
+/// The small set of arena rules that differ while a lesson is on screen.
+/// A nil step is ordinary gameplay.
+struct RabbitHoleTutorialPlan: Equatable {
+    var step: RabbitHoleTutorialStep?
+
+    var shapesArena: Bool { step != nil && step != .ready }
+    var shieldsDynamite: Bool { step == .clearPracticeFloor }
+    var showsAimGuide: Bool { step == .catchFirstCarrot }
+    var runsFuse: Bool { step == .triggerDynamite || step == .ready || step == nil }
+}
+
+enum RabbitHoleTutorialEvent {
+    /// The first empty hook has completed its full down-and-up movement.
+    case practisedHook
+    /// A carrot has completed its normal score/throw-away flight.
+    case finishedCarrot
+    /// The protected tutorial dynamite was touched or its fuse expired.
+    case triggeredDynamite
+}
+
+/// Drives the Rabbit Hole-specific five-step lesson. Scoring and question
+/// progression remain owned by `GameViewModel`; this controller only changes
+/// which physical objects the arena presents and waits for their events.
+@MainActor
+final class RabbitHoleTutorialController: ObservableObject {
+    @Published private(set) var step: RabbitHoleTutorialStep?
+    @Published private(set) var plan = RabbitHoleTutorialPlan()
+    @Published private(set) var reservesMessageArea = false
+
+    private var practiceCarrotsFinished = 0
+    private var generation = 0
+
+    var message: String? { step.map { L(key: $0.messageKey) } }
+
+    func begin() {
+        guard step == nil else { return }
+        generation &+= 1
+        practiceCarrotsFinished = 0
+        reservesMessageArea = true
+        // The new walkthrough finishes in the arena; it no longer owes the
+        // menu the legacy crab tutorial's tenth, score-pointer step.
+        GameSettings.tutorialHomeHintPending = false
+        enter(.launchHook)
+    }
+
+    func handle(_ event: RabbitHoleTutorialEvent) {
+        guard let step else { return }
+        switch (step, event) {
+        case (.launchHook, .practisedHook),
+             (.catchFirstCarrot, .finishedCarrot),
+             (.triggerDynamite, .triggeredDynamite):
+            advance()
+        case (.clearPracticeFloor, .finishedCarrot):
+            practiceCarrotsFinished += 1
+            if practiceCarrotsFinished >= 4 { advance() }
+        default:
+            break
+        }
+    }
+
+    func finish() {
+        guard step != nil else { return }
+        generation &+= 1
+        withAnimation(.easeOut(duration: 0.32)) {
+            step = nil
+            plan = RabbitHoleTutorialPlan()
+        }
+    }
+
+    func cancel() {
+        guard step != nil else { return }
+        generation &+= 1
+        step = nil
+        plan = RabbitHoleTutorialPlan()
+        reservesMessageArea = false
+    }
+
+    private func advance() {
+        guard let next = step?.next else {
+            finish()
+            return
+        }
+        enter(next)
+    }
+
+    private func enter(_ step: RabbitHoleTutorialStep) {
+        generation &+= 1
+        let token = generation
+        withAnimation(.spring(response: 0.44, dampingFraction: 0.86)) {
+            self.step = step
+            self.plan = RabbitHoleTutorialPlan(step: step)
+        }
+
+        // Normal play begins immediately at step five; only its message stays
+        // for five seconds before the tutorial releases the screen entirely.
+        if step == .ready {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                guard let self, self.generation == token, self.step == .ready else { return }
+                self.finish()
+            }
+        }
+    }
+}
+
 // MARK: - Controller
 
 /// Runs the script: holds the current step, hands the arena its plan, and moves
