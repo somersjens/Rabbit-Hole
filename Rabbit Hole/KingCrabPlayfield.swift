@@ -2603,6 +2603,9 @@ private struct CelebrationCanvas: View {
         // Synchronous, for the same reason as the effects canvas: an
         // asynchronously rendered pass can trail the animals by a frame.
         Canvas(opaque: false, rendersAsynchronously: true) { context, _ in
+            // Low-power/thermal state is constant for this drawing pass. It
+            // used to be queried once for every bubble in a finale shower.
+            let constrained = ArenaPerformanceBudget.isConstrained
             for speck in specks {
                 // They pop in rather than appearing at full size.
                 let scale = min(1, CGFloat(speck.age / 0.18))
@@ -2611,7 +2614,8 @@ private struct CelebrationCanvas: View {
                 case .shell:
                     draw(shell: speck, scale: scale, in: &context)
                 case .bubble:
-                    draw(bubble: speck, scale: scale, in: &context)
+                    draw(bubble: speck, scale: scale,
+                         constrained: constrained, in: &context)
                 }
             }
         }
@@ -2632,6 +2636,7 @@ private struct CelebrationCanvas: View {
     }
 
     private func draw(bubble speck: CelebrationSpeck, scale: CGFloat,
+                      constrained: Bool,
                       in context: inout GraphicsContext) {
         let radius = speck.radius * scale
         let rect = CGRect(x: speck.position.x - radius, y: speck.position.y - radius,
@@ -2639,7 +2644,7 @@ private struct CelebrationCanvas: View {
         let path = Path(ellipseIn: rect)
         // Radial gradients per speck dominate the finale pass; under pressure
         // a flat fill keeps the shower readable without the GPU tax.
-        if ArenaPerformanceBudget.isConstrained {
+        if constrained {
             context.fill(path, with: .color(.white.opacity(0.34)))
         } else {
             context.fill(

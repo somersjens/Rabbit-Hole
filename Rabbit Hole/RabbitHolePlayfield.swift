@@ -146,7 +146,9 @@ struct RabbitHolePlayfield: View {
                     .allowsHitTesting(false)
                 }
 
-                RabbitHoleSky(palette: palette, clock: arena.clock, amount: arena.skyAmount)
+                RabbitHoleSky(palette: palette,
+                              clock: arena.clock,
+                              amount: arena.skyAmount)
                     .opacity(Double(skyVisibility))
 
                 RabbitHoleSoil(palette: palette,
@@ -160,7 +162,6 @@ struct RabbitHolePlayfield: View {
                                shaftReveal: arena.shaftReveal,
                                shaftScroll: arena.shaftScroll,
                                skyAmount: arena.skyAmount,
-                               clock: arena.clock,
                                languageCode: language.effective.code,
                                isRightToLeft: isRightToLeft,
                                carrotPockets: arena.items
@@ -176,6 +177,27 @@ struct RabbitHolePlayfield: View {
                                    : 0)
                     .equatable()
                     .frame(width: size.width, height: size.height)
+
+                // Keep the seven animated dust glints out of the much larger
+                // procedural soil canvas. The old implementation rebuilt all
+                // strata, rocks, roots, grass and wall details around 12 times
+                // per second solely to change these seven opacities.
+                if arena.floorIndex > 0 {
+                    RabbitHoleSunbeamSparkles(
+                        grassY: grassY,
+                        floorDropped: arena.floorDropped,
+                        fallShift: arena.fallShift,
+                        shaftReveal: arena.shaftReveal,
+                        skyAmount: arena.skyAmount,
+                        clock: arena.clock,
+                        finaleLayout: arena.finaleSceneActive,
+                        finaleCameraShift: arena.finaleSceneActive
+                            ? min(size.width * 0.48, max(0, arena.finaleWorldShift))
+                            : 0
+                    )
+                    .frame(width: size.width, height: size.height)
+                    .allowsHitTesting(false)
+                }
 
                 let soilTop = grassY + arena.fallShift
                 let leafPoke: CGFloat = isPad ? 34 : 26
@@ -550,7 +572,6 @@ private struct RabbitHoleSoil: View, Equatable {
     let shaftReveal: CGFloat
     let shaftScroll: CGFloat
     let skyAmount: CGFloat
-    let clock: Double
     let languageCode: String
     let isRightToLeft: Bool
     var carrotPockets: [CGPoint] = []
@@ -571,7 +592,6 @@ private struct RabbitHoleSoil: View, Equatable {
             && abs(lhs.shaftReveal - rhs.shaftReveal) < 0.008
             && abs(lhs.shaftScroll - rhs.shaftScroll) < 0.4
             && abs(lhs.skyAmount - rhs.skyAmount) < 0.02
-            && abs(lhs.clock - rhs.clock) < 0.08
             && lhs.languageCode == rhs.languageCode
             && lhs.isRightToLeft == rhs.isRightToLeft
             && lhs.carrotPockets == rhs.carrotPockets
@@ -1490,14 +1510,6 @@ private struct RabbitHoleSoil: View, Equatable {
             endPoint: CGPoint(x: size.width / 2, y: origin + shaftH)
         ))
 
-        for i in 0..<7 {
-            let t = CGFloat(i) / 6
-            let x = edges.left + 16 + t * (edges.right - edges.left - 32)
-            let y = origin + 18 + CGFloat((i * 37) % 80) / 80 * min(shaftH * 0.45, 80)
-            let spark = Path(ellipseIn: CGRect(x: x, y: y, width: 3.5, height: 3.5))
-            let sparkle = (0.16 + 0.10 * sin(clock * 2.2 + Double(i))) * Double(strength)
-            context.fill(spark, with: .color(Color.white.opacity(sparkle)))
-        }
     }
 
     private func drawWallRoots(context: GraphicsContext, size: CGSize,
@@ -2346,6 +2358,48 @@ private struct RabbitHoleSoil: View, Equatable {
     }
 }
 
+/// The moving glints are deliberately their own tiny canvas. Everything that
+/// determines their position is shared with `RabbitHoleSoil.drawSunbeam`, so
+/// separating the render pass does not change their appearance or placement.
+private struct RabbitHoleSunbeamSparkles: View {
+    let grassY: CGFloat
+    let floorDropped: Bool
+    let fallShift: CGFloat
+    let shaftReveal: CGFloat
+    let skyAmount: CGFloat
+    let clock: Double
+    let finaleLayout: Bool
+    let finaleCameraShift: CGFloat
+
+    var body: some View {
+        Canvas { context, size in
+            let inset = max(18, size.width * 0.06)
+            let shift = finaleLayout
+                ? min(size.width * 0.48, max(0, finaleCameraShift))
+                : 0
+            let left = inset - shift
+            let right = size.width - inset - shift
+            let wallTop = grassY * (1 - min(1, max(0, shaftReveal)))
+            let origin = max(0, wallTop)
+            let floorY = floorDropped ? size.height + 4 : grassY + fallShift
+            let shaftHeight = max(8, min(floorY, grassY + 8) - origin)
+            let strength = max(0.38, min(1, skyAmount / 0.84))
+
+            for index in 0..<7 {
+                let progress = CGFloat(index) / 6
+                let x = left + 16 + progress * (right - left - 32)
+                let y = origin + 18
+                    + CGFloat((index * 37) % 80) / 80 * min(shaftHeight * 0.45, 80)
+                let rect = CGRect(x: x, y: y, width: 3.5, height: 3.5)
+                let opacity = (0.16 + 0.10 * sin(clock * 2.2 + Double(index)))
+                    * Double(strength)
+                context.fill(Path(ellipseIn: rect),
+                             with: .color(Color.white.opacity(opacity)))
+            }
+        }
+    }
+}
+
 // MARK: - Crane
 
 private struct CraneRig: View {
@@ -2417,10 +2471,14 @@ private struct CraneRig: View {
                 .offset(x: slide + travelX)
 
             ZStack {
-                extensionRods(from: pose.glue, to: clawGlue)
-
                 cabStack(size: canvasSize)
                     .position(x: canvasCenter.x, y: canvasCenter.y)
+
+                // The telescoping rails leave the top assembly and pass in
+                // front of the cab/operator artwork on their way to the claw.
+                // Their order is visual, not physical: placing them before the
+                // large cab textures hid the rails behind the character.
+                extensionRods(from: pose.glue, to: clawGlue)
 
                 CraneSprite(name: "claw",
                             size: clawSize,

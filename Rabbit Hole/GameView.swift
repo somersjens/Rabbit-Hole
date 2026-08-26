@@ -347,7 +347,11 @@ struct GameView: View {
         }
         .ignoresSafeArea()
         .onPreferenceChange(ScoreCounterCenterPreferenceKey.self) { center in
-            scoreCounterCenter = center
+            // During overlay transitions SwiftUI can briefly reduce the
+            // preference tree to `nil`. Retain the last real HUD measurement;
+            // a carrot may already be in the claw while a pause/finale layout
+            // pass is happening and still has to land on this exact counter.
+            if let center { scoreCounterCenter = center }
         }
     }
 

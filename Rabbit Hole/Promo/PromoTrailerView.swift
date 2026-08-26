@@ -125,7 +125,7 @@ struct PromoTrailerView: View {
             if finished { onFinished?() }
         }
         .onPreferenceChange(ScoreCounterCenterPreferenceKey.self) { center in
-            scoreCounterCenter = center
+            if let center { scoreCounterCenter = center }
         }
         .background {
             GeometryReader { proxy in

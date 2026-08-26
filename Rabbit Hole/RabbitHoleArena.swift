@@ -139,7 +139,17 @@ enum RabbitHoleCraneLayout {
         clawSize(isPad: isPad).height * (clawGripY - clawTopY)
     }
 
+    /// Rest geometry is invariant for a device class. It is consulted by both
+    /// simulation and rendering several times per frame, so keep the authored
+    /// result instead of solving the same trolley pose repeatedly.
+    private static let phoneRestHang = calculateRestHang(isPad: false)
+    private static let padRestHang = calculateRestHang(isPad: true)
+
     static func restHang(isPad: Bool) -> Double {
+        isPad ? padRestHang : phoneRestHang
+    }
+
+    private static func calculateRestHang(isPad: Bool) -> Double {
         let pose = trolleyPose(boom: .zero, angle: 0, isPad: isPad)
         return Double(hypot(pose.glue.x, pose.glue.y) + clawTopToGrip(isPad: isPad))
     }
@@ -152,15 +162,18 @@ enum RabbitHoleCraneLayout {
     static let topLeft = TopKeyframe(centroid: CGPoint(x: 1057.2, y: 975.8))
     static let topCenter = TopKeyframe(centroid: CGPoint(x: 1186.0, y: 1012.0))
     static let topRight = TopKeyframe(centroid: CGPoint(x: 1289.6, y: 949.3))
+    private static let topLeftPolar = polar(topLeft.centroid)
+    private static let topCenterPolar = polar(topCenter.centroid)
+    private static let topRightPolar = polar(topRight.centroid)
 
     /// World pose of the trolley. A quadratic through the three poses keeps the
     /// authored centre without pausing there; polar space keeps it on the hub.
     static func trolleyPose(boom: CGPoint, angle: Double, isPad: Bool) -> (centroid: CGPoint, rotation: Double, glue: CGPoint, hang: Double) {
         let amp = max(0.001, GameConfig.rabbitHoleSwingAmplitude)
         let t = max(-1, min(1, angle / amp))
-        let left = polar(topLeft.centroid)
-        let mid = polar(topCenter.centroid)
-        let right = polar(topRight.centroid)
+        let left = topLeftPolar
+        let mid = topCenterPolar
+        let right = topRightPolar
         let hang = quadLerp(left.angle, mid.angle, right.angle, t)
         let radius = quadLerp(left.radius, mid.radius, right.radius, t)
         let centroidCanvas = cartesian(radius: radius, angle: hang)
@@ -504,7 +517,13 @@ final class RabbitHoleArena: ObservableObject {
         _ = multiplier
         speedMultiplier = 1
     }
-    func setScoreTarget(_ target: CGPoint?) { scoreTarget = target }
+    func setScoreTarget(_ target: CGPoint?) {
+        // Preference values can briefly disappear while the start/pause card
+        // or another overlay is being laid out. Keep the last measured HUD
+        // centre so a carrot launched in that transition never falls back to
+        // an approximate corner target.
+        if let target { scoreTarget = target }
+    }
     func setTutorialActive(_ active: Bool) { tutorialArmed = active }
 
     func beginEntrance(completion: @escaping () -> Void) {
@@ -532,7 +551,11 @@ final class RabbitHoleArena: ObservableObject {
         shaftReveal = resumesUnderground ? 1 : 0
         shaftScroll = resumesUnderground ? landingDepth() * CGFloat(floorIndex) : 0
         dynamiteTime = GameConfig.rabbitHoleDynamiteSeconds
-        particles.removeAll()
+        particles.removeAll(keepingCapacity: true)
+        // The largest finale can overlap blast debris with the collapsing
+        // floor. Reserving that short-lived working set prevents Array growth
+        // and copies during the most frame-sensitive moment of the level.
+        particles.reserveCapacity(224)
         holeOpen = resumesUnderground ? 1 : 0
         slabFall = resumesUnderground ? 1 : 0
         floorDropped = false
@@ -557,7 +580,8 @@ final class RabbitHoleArena: ObservableObject {
         pendingCompletion = false
         completionStartedNotified = false
         spawnedNextFloor = false
-        items.removeAll()
+        items.removeAll(keepingCapacity: true)
+        items.reserveCapacity(12)
         mode = resumedFloor == nil ? .entering : .swinging
         actionProgress = 0
         excavatorEntrance = resumedFloor == nil && !reduceMotion ? 0 : 1
@@ -1759,7 +1783,10 @@ final class RabbitHoleArena: ObservableObject {
     }
 
     private func moveParticles(_ dt: Double) {
-        for index in particles.indices.reversed() {
+        // Update in place, then compact once. Removing from the middle for
+        // every expired particle shifted the remaining array repeatedly at
+        // exactly the moment an explosion expires many particles together.
+        for index in particles.indices {
             particles[index].age += dt
             particles[index].position.x += particles[index].velocity.width * dt
             particles[index].position.y += particles[index].velocity.height * dt
@@ -1781,10 +1808,8 @@ final class RabbitHoleArena: ObservableObject {
                 particles[index].velocity.height += 380 * dt
                 particles[index].spin += dt * 90
             }
-            if particles[index].age >= particles[index].life {
-                particles.remove(at: index)
-            }
         }
+        particles.removeAll { $0.age >= $0.life }
     }
 
     private func spawnUnstickDust(at origin: CGPoint) {
