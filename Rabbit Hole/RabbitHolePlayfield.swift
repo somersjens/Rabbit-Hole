@@ -59,6 +59,9 @@ struct RabbitHolePlayfield: View {
     @ObservedObject private var language = LanguageManager.shared
 
     private var palette: ReefPalette { ReefPalette.palette(for: character) }
+    private var isRightToLeft: Bool {
+        language.layoutDirection == .rightToLeft
+    }
 
     private var surfaceTop: CGFloat {
         topReserve + (isPad ? 8 : 4)
@@ -159,6 +162,7 @@ struct RabbitHolePlayfield: View {
                                skyAmount: arena.skyAmount,
                                clock: arena.clock,
                                languageCode: language.effective.code,
+                               isRightToLeft: isRightToLeft,
                                carrotPockets: arena.items
                                    .filter { !$0.isDynamite }
                                    .map(\.rest),
@@ -274,6 +278,11 @@ struct RabbitHolePlayfield: View {
             .offset(x: arena.shake > 0.4 ? sin(arena.clock * 92) * arena.shake : 0,
                     y: arena.shake > 0.4 ? cos(arena.clock * 74) * arena.shake * 0.55 : 0)
             .frame(width: size.width, height: size.height)
+            // Gameplay has its own spatial direction. Mirror the complete
+            // world in RTL so every layered excavator part, its hook physics,
+            // the entrance, terrain dressing and finale stay in lockstep.
+            // Numeric/text layers counter-mirror themselves where they draw.
+            .scaleEffect(x: isRightToLeft ? -1 : 1, y: 1)
             .contentShape(Rectangle())
 #if canImport(UIKit)
             .overlay(HoleTapView { _ in arena.tap() })
@@ -317,6 +326,9 @@ struct RabbitHolePlayfield: View {
             .onChange(of: scoreTarget) { target in
                 arena.setScoreTarget(localScoreTarget(target, in: proxy))
             }
+            .onChange(of: isRightToLeft) { _ in
+                arena.setScoreTarget(localScoreTarget(scoreTarget, in: proxy))
+            }
         }
         .onChange(of: HoleSession(remaining: remainingQuestions,
                                   round: round,
@@ -357,7 +369,9 @@ struct RabbitHolePlayfield: View {
     private func localScoreTarget(_ global: CGPoint?, in proxy: GeometryProxy) -> CGPoint? {
         guard let global else { return nil }
         let origin = proxy.frame(in: .global).origin
-        return CGPoint(x: global.x - origin.x, y: global.y - origin.y)
+        let localX = global.x - origin.x
+        return CGPoint(x: isRightToLeft ? proxy.size.width - localX : localX,
+                       y: global.y - origin.y)
     }
 
     @ViewBuilder
@@ -366,12 +380,14 @@ struct RabbitHolePlayfield: View {
             DynamiteStickView(item: item,
                               seconds: item.flight == .blast ? 0 : arena.dynamiteTime,
                               isPad: isPad,
+                              isRightToLeft: isRightToLeft,
                               clock: arena.clock)
                 .scaleEffect(item.scale)
                 .opacity(item.opacity)
         } else {
             AnswerCarrotView(text: item.text,
                              isPad: isPad,
+                             isRightToLeft: isRightToLeft,
                              scale: item.scale,
                              spin: item.spin,
                              opacity: item.opacity)
@@ -536,6 +552,7 @@ private struct RabbitHoleSoil: View, Equatable {
     let skyAmount: CGFloat
     let clock: Double
     let languageCode: String
+    let isRightToLeft: Bool
     var carrotPockets: [CGPoint] = []
     var dynamitePocket: CGPoint?
     var finaleLayout = false
@@ -556,6 +573,7 @@ private struct RabbitHoleSoil: View, Equatable {
             && abs(lhs.skyAmount - rhs.skyAmount) < 0.02
             && abs(lhs.clock - rhs.clock) < 0.08
             && lhs.languageCode == rhs.languageCode
+            && lhs.isRightToLeft == rhs.isRightToLeft
             && lhs.carrotPockets == rhs.carrotPockets
             && lhs.dynamitePocket == rhs.dynamitePocket
             && lhs.finaleLayout == rhs.finaleLayout
@@ -2142,6 +2160,13 @@ private struct RabbitHoleSoil: View, Equatable {
         let lineHeight = fontSize * 1.18
         let blockHeight = lineHeight * CGFloat(max(0, lines.count - 1))
         let startY = textArea.midY - blockHeight / 2
+        // The complete Canvas is mirrored with the RTL gameplay world. Draw
+        // the copy through one additional local reflection so its glyphs stay
+        // readable while the physical board moves to the opposite bank.
+        var readableText = sign
+        if isRightToLeft {
+            readableText.scaleBy(x: -1, y: 1)
+        }
         for (index, line) in lines.enumerated() {
             var resolved = sign.resolve(
                 Text(line)
@@ -2152,11 +2177,17 @@ private struct RabbitHoleSoil: View, Equatable {
             textShadow.shading = .color(Color.black.opacity(0.18))
             let textPoint = CGPoint(x: textArea.midX,
                                     y: startY + CGFloat(index) * lineHeight)
-            sign.draw(textShadow,
-                      at: CGPoint(x: textPoint.x + 0.7 * scale,
-                                  y: textPoint.y + 0.8 * scale),
-                      anchor: .center)
-            sign.draw(resolved, at: textPoint, anchor: .center)
+            let readableX = isRightToLeft ? -textPoint.x : textPoint.x
+            let shadowNudge = isRightToLeft ? -0.7 * scale : 0.7 * scale
+            readableText.draw(
+                textShadow,
+                at: CGPoint(x: readableX + shadowNudge,
+                            y: textPoint.y + 0.8 * scale),
+                anchor: .center
+            )
+            readableText.draw(resolved,
+                              at: CGPoint(x: readableX, y: textPoint.y),
+                              anchor: .center)
         }
 
         drawCarrot(context: sign,
@@ -2640,6 +2671,7 @@ private struct CraneSprite: View {
 private struct AnswerCarrotView: View {
     let text: String
     let isPad: Bool
+    let isRightToLeft: Bool
     var scale: CGFloat = 1
     var spin: Double = 0
     var opacity: Double = 1
@@ -2665,6 +2697,9 @@ private struct AnswerCarrotView: View {
                 .frame(width: width * 0.70)
                 .shadow(color: .black.opacity(0.62), radius: 1, y: 1)
                 .offset(y: height * 0.12)
+                // Cancel the world reflection for the answer only. The carrot
+                // and its trajectory still mirror with the rest of gameplay.
+                .scaleEffect(x: isRightToLeft ? -1 : 1, y: 1)
         }
         .frame(width: width, height: height)
         .rotationEffect(.degrees(spin))
@@ -2679,6 +2714,7 @@ private struct DynamiteStickView: View {
     let item: RabbitHoleItem
     let seconds: Double
     let isPad: Bool
+    let isRightToLeft: Bool
     let clock: Double
 
     private var height: CGFloat {
@@ -2713,7 +2749,8 @@ private struct DynamiteStickView: View {
 
                 BombTimerDisplay(time: time,
                                  isFinal: item.isFinalDynamite,
-                                 bombRotation: item.spin)
+                                 bombRotation: item.spin,
+                                 isRightToLeft: isRightToLeft)
                     .frame(width: size.width, height: size.height)
 
                 if seconds > 0, seconds <= 5 {
@@ -2805,6 +2842,7 @@ private struct BombTimerDisplay: View {
     let time: Int
     let isFinal: Bool
     let bombRotation: Double
+    let isRightToLeft: Bool
 
     var body: some View {
         GeometryReader { proxy in
@@ -2819,6 +2857,10 @@ private struct BombTimerDisplay: View {
                 // the corners of two wide digits stay inside the cream panel.
                 .frame(width: size.height * (isFinal ? 0.215 : 0.155),
                        height: size.height * (isFinal ? 0.160 : 0.150))
+                // Applied before the counter-rotation: after the bomb and the
+                // complete gameplay world rotate/reflect, the digits remain
+                // upright and retain their normal left-to-right order.
+                .scaleEffect(x: isRightToLeft ? -1 : 1, y: 1)
                 // The position follows the rotated label, while the digits
                 // counter-rotate so the countdown itself remains upright.
                 .rotationEffect(.degrees(-bombRotation))

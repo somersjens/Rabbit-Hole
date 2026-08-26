@@ -156,7 +156,7 @@ struct PremiumView: View {
                         .resizable()
                         .scaledToFit()
                         .scaleEffect(1.10)
-                        .offset(x: heroSize * 0.08, y: -heroSize * 0.07)
+                        .offset(x: heroSize * 0.08, y: -heroSize * 0.05)
                         .frame(width: heroSize * 0.88, height: heroSize * 0.88)
                         .shadow(color: character.deepColor.opacity(0.25), radius: 14, y: 8)
                         .id(previewCharacterID)
@@ -334,8 +334,8 @@ struct PremiumView: View {
     /// artwork follows the column instead, inset so it sits inside the chip's
     /// width the way the iPhone one does rather than touching the cell edges.
     ///
-    /// The excavator art sits left and low on its canvas, so a small up/right
-    /// shift puts the animal in the optical middle of the chip.
+    /// The excavator art sits left and low on its canvas, so a small right shift
+    /// and restrained upward correction put it in the optical middle of the chip.
     @ViewBuilder
     private func characterArtwork(for animal: AnimalCharacter) -> some View {
         if isPad {
@@ -346,7 +346,7 @@ struct PremiumView: View {
                         .resizable()
                         .scaledToFit()
                         .scaleEffect(1.16)
-                        .offset(x: 5, y: -6)
+                        .offset(x: 5, y: -3)
                 }
                 .clipped()
                 .padding(.horizontal, 11)
@@ -355,7 +355,7 @@ struct PremiumView: View {
                 .resizable()
                 .scaledToFit()
                 .scaleEffect(1.16)
-                .offset(x: 3, y: -4)
+                .offset(x: 3, y: -2)
                 .frame(width: 44, height: 44)
                 .clipped()
                 .frame(maxWidth: .infinity)
