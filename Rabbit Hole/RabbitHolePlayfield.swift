@@ -255,7 +255,8 @@ struct RabbitHolePlayfield: View {
                         if (item.isPresent || item.flight != .none),
                            item.flight != .blast,
                            item.flight != .tossCorrect,
-                           item.flight != .tossWrong {
+                           item.flight != .tossWrong,
+                           item.id != arena.heldItemID {
                             floorItem(item)
                                 .position(x: item.position.x,
                                           y: item.position.y + arena.fallShift)
@@ -325,6 +326,20 @@ struct RabbitHolePlayfield: View {
                          tilt: arena.excavatorTilt,
                          flip: arena.finaleFlip,
                          hookWiggle: arena.hookWiggle)
+
+                // A pickup attached to the claw belongs in front of the cab
+                // and character. Static pickups remain buried behind the rig.
+                ForEach(arena.items) { item in
+                    if item.id == arena.heldItemID,
+                       (item.isPresent || item.flight != .none),
+                       item.flight == .none {
+                        floorItem(item)
+                            .position(x: item.position.x,
+                                      y: item.position.y + arena.fallShift)
+                            .transaction { $0.animation = nil }
+                            .allowsHitTesting(false)
+                    }
+                }
 
                 ForEach(arena.items) { item in
                     if item.flight == .tossCorrect || item.flight == .tossWrong {

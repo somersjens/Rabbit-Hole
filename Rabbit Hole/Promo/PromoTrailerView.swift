@@ -97,8 +97,8 @@ struct PromoTrailerView: View {
             }
         }
         .onChange(of: director.transformationToken) { _ in
-            transformGlow = 1
-            withAnimation(.easeOut(duration: 0.58)) { transformGlow = 0 }
+            transformGlow = 0.9
+            withAnimation(.easeOut(duration: 0.22)) { transformGlow = 0 }
         }
         .onChange(of: director.showsIcon) { showing in
             if showing {

@@ -25,7 +25,8 @@ final class PromoDirector: ObservableObject {
         case warning
         case dynamiteApproach
         case falling
-        case bunnyLandingTransform
+        case bunnyMidflight
+        case bunnyLanding
         case rapid15
         case waitRapid15
         case rapid18
@@ -114,9 +115,14 @@ final class PromoDirector: ObservableObject {
         }
     }
 
-    private func switchCharacter(to id: String, next: Phase) {
+    private func switchCharacter(to id: String,
+                                 next: Phase,
+                                 celebratesUnlock: Bool = false) {
         characterID = id
-        transformationToken &+= 1
+        if celebratesUnlock {
+            transformationToken &+= 1
+            AppAudio.shared.playCharacterUnlock()
+        }
         enter(next)
     }
 
@@ -158,7 +164,9 @@ final class PromoDirector: ObservableObject {
             }
             if twelveGone, arena.mode == .swinging {
                 headline = PromoScript.headlineUnlock
-                switchCharacter(to: "octopus", next: .octopusTransform)
+                switchCharacter(to: "octopus",
+                                next: .octopusTransform,
+                                celebratesUnlock: true)
             }
 
         case .octopusTransform:
@@ -189,7 +197,6 @@ final class PromoDirector: ObservableObject {
 
         case .penguinTransform:
             if phaseElapsed >= 0.55 {
-                arena.promoKeepOnly(answer: "52")
                 headline = PromoScript.headlineDynamite
                 showsDynamiteArrow = true
                 enter(.warning)
@@ -210,12 +217,17 @@ final class PromoDirector: ObservableObject {
             }
 
         case .falling:
-            if arena.floorIndex == 1, arena.mode == .swinging {
-                switchCharacter(to: "bunny", next: .bunnyLandingTransform)
+            if arena.mode == .falling, arena.actionProgress >= 0.18 {
+                switchCharacter(to: "bunny", next: .bunnyMidflight)
             }
 
-        case .bunnyLandingTransform:
-            if phaseElapsed >= 0.48 {
+        case .bunnyMidflight:
+            if arena.floorIndex == 1, arena.mode == .swinging {
+                enter(.bunnyLanding)
+            }
+
+        case .bunnyLanding:
+            if phaseElapsed >= 0.18 {
                 arena.promoSetActionRate(1.65)
                 enter(.rapid15)
             }

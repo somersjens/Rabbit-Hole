@@ -100,9 +100,9 @@ enum PromoScript {
     /// answers are arranged so each target is reached by the ordinary hook.
     static let firstFloorByPocket: [Int: String] = [
         0: "18",
-        1: "56",
-        2: "13",
-        3: "52",
+        1: "13",
+        2: "52",
+        3: "56",
         // pocket 4 is dynamite
         5: "48",
         6: "12",

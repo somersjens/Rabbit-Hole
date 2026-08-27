@@ -389,6 +389,7 @@ final class RabbitHoleArena: ObservableObject {
     /// production motion curves used by the arena.
     private var promoActionRate: Double = 1
     private var promoPreparedFloor: (byPocket: [Int: String], isFinal: Bool)?
+    private var promoSwingsDuringScoreFlight = false
     var promoDefersFinaleUntilScore = false
 #endif
 
@@ -479,6 +480,7 @@ final class RabbitHoleArena: ObservableObject {
     }
 
     var currentAnswer: String? { currentRound?.question.correctAnswer }
+    var heldItemID: UUID? { heldID }
 
     /// Every pickup uses the same displayed canvas and answer size. Its own
     /// normalized grip height places the claw just above opaque artwork.
@@ -1587,6 +1589,12 @@ final class RabbitHoleArena: ObservableObject {
         items[index].flightTo = scoreTarget ?? CGPoint(x: size.width * 0.16, y: 64)
         mode = .tossingCorrect
         actionProgress = 0
+#if DEBUG
+        if promoSwingsDuringScoreFlight, !pendingCompletion {
+            resumeSwing(preservingHeldItem: true)
+            return
+        }
+#endif
         // At this exact frame the carrot has reached the fully retracted claw.
         // On the winning floor the bomb may now detonate; the toss itself is
         // preserved independently until it reaches the score counter.
@@ -1643,12 +1651,12 @@ final class RabbitHoleArena: ObservableObject {
         }
     }
 
-    private func resumeSwing() {
+    private func resumeSwing(preservingHeldItem: Bool = false) {
         drop = 0
         poke = 0
         dropGrabLength = 0
         hookWiggle = 0
-        heldID = nil
+        if !preservingHeldItem { heldID = nil }
         let amp = GameConfig.rabbitHoleSwingAmplitude
         let ratio = max(-1, min(1, dropAngle / amp))
         let period = GameConfig.rabbitHoleSwingPeriod / max(0.001, speedMultiplier)
@@ -1923,6 +1931,7 @@ final class RabbitHoleArena: ObservableObject {
         floorCount = 2
         floorCarrotCounts = [7, 3]
         promoDefersFinaleUntilScore = true
+        promoSwingsDuringScoreFlight = true
     }
 
     func promoPrepareFloor(byPocket: [Int: String], isFinal: Bool) {
@@ -2170,6 +2179,11 @@ final class RabbitHoleArena: ObservableObject {
                     if heldID == id {
                         heldID = nil
                         onShellArrived?()
+#if DEBUG
+                        if promoSwingsDuringScoreFlight, mode == .swinging {
+                            continueOrClearFloor()
+                        }
+#endif
                     }
                 }
             case .tossWrong:
