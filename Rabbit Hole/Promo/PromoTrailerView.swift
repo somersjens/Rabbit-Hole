@@ -6,41 +6,35 @@ import UIKit
 
 struct PromoTrailerRoot: View {
     var body: some View {
-        PromoTrailerView(
-            format: PromoMode.format,
-            onFinished: {
-                Task { await PromoCaptureController.shared.finish() }
+        PromoTrailerView(format: PromoMode.format)
+            .statusBarHidden(true)
+            .onAppear {
+                AppLayout.promoForcePad = PromoMode.format.isPad
+                // The capture must never inherit the simulator or tester's
+                // language. This routes both Text and code-resolved strings to
+                // the English catalog before the first rendered frame.
+                LanguageManager.shared.override = .english
+                PromoCaptureController.shared.prepareAudio()
             }
-        )
-        .statusBarHidden(true)
-        .onAppear {
-            AppLayout.promoForcePad = PromoMode.format.isPad
-            PromoCaptureController.shared.prepareAudio()
-        }
     }
 }
 
 struct PromoTrailerView: View {
     let format: PromoFormat
-    var onFinished: (() -> Void)?
 
     @StateObject private var model: GameViewModel
     @StateObject private var director: PromoDirector
     @State private var scoreCounterCenter: CGPoint?
-    @State private var showsStreakBanner = false
-    @State private var streakBannerToken = 0
     @State private var playsLevelCompletion = false
     @State private var showsFinale = false
-    @State private var iconRotation: Double = -26
-    @State private var iconScale: CGFloat = 0.42
+    @State private var iconRotation: Double = -18
+    @State private var iconScale: CGFloat = 0.46
     @State private var sampledTop: CGFloat = 0
     @State private var sampledBottom: CGFloat = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var transformGlow: Double = 0
 
-    init(format: PromoFormat,
-         onFinished: (() -> Void)? = nil) {
+    init(format: PromoFormat) {
         self.format = format
-        self.onFinished = onFinished
         let model = GameViewModel(request: PromoScript.sessionRequest)
         _model = StateObject(wrappedValue: model)
         _director = StateObject(wrappedValue: PromoDirector(model: model))
@@ -50,79 +44,74 @@ struct PromoTrailerView: View {
     private var character: AnimalCharacter {
         CharacterCatalog.character(id: director.characterID)
     }
-    private var hudHeight: CGFloat { isPad ? 44 : 34 }
-    private var insets: ScreenSafeArea {
-        ScreenSafeArea(top: max(sampledTop, format.safeTop),
-                       bottom: max(sampledBottom, format.safeBottom),
-                       leading: 0, trailing: 0)
-    }
+    private var controlSize: CGFloat { isPad ? 44 : 34 }
+    private var hudStackHeight: CGFloat { controlSize * 2 + (isPad ? 8 : 6) }
+    private var topInset: CGFloat { max(sampledTop, format.safeTop) }
+    private var bottomInset: CGFloat { max(sampledBottom, format.safeBottom) }
 
     var body: some View {
-        let topInset = insets.top
         ZStack {
             LinearGradient(colors: [character.skyColor, character.tintColor],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
-            playfield(topInset: topInset)
+            playfield
                 .blur(radius: director.blursPlayfield ? 7 : 0)
-                .animation(.easeOut(duration: 0.5), value: director.blursPlayfield)
+                .animation(.easeOut(duration: 0.45), value: director.blursPlayfield)
 
-            hud(topInset: topInset)
+            hud
                 .opacity(showsFinale || director.showsIcon ? 0 : 1)
                 .animation(.easeOut(duration: 0.22), value: showsFinale)
 
-            if showsStreakBanner, !director.showsIcon {
-                StreakBoostBanner(character: character, isPad: isPad)
-                    .padding(.top, speechBubbleTop(topInset: topInset)
-                             + (isPad ? 96 : 74) + (isPad ? 8 : 6))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .transition(.scale(scale: 0.65).combined(with: .opacity))
-                    .allowsHitTesting(false)
-            }
-
-            if let headline = director.headline, !director.showsIcon, !showsFinale {
+            if let headline = director.headline, !showsFinale, !director.showsIcon {
                 PromoSpeechBubble(text: headline, character: character, isPad: isPad)
                     .padding(.horizontal, isPad ? 36 : 18)
-                    .padding(.top, speechBubbleTop(topInset: topInset))
+                    .padding(.top, topInset + hudStackHeight + (isPad ? 24 : 18))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
-                    .animation(.easeInOut(duration: 0.28), value: director.headline)
                     .allowsHitTesting(false)
             }
 
-            if director.showsIcon {
-                iconOverlay
+            if transformGlow > 0.001, !director.showsIcon {
+                RadialGradient(colors: [Color.white.opacity(0.88),
+                                        character.color.opacity(0.38),
+                                        .clear],
+                               center: .center,
+                               startRadius: 8,
+                               endRadius: isPad ? 310 : 220)
+                    .opacity(transformGlow)
+                    .blendMode(.screen)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
             }
+
+            if director.showsIcon { iconOverlay }
         }
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .currencyIcon(for: character)
         .statusBarHidden(true)
-        .onChange(of: model.streakAnnouncementID) { id in
-            guard id > 0, director.revealsStreakBoost else { return }
-            showStreakBanner(for: id)
-        }
-        .onChange(of: director.revealsStreakBoost) { reveal in
-            if reveal, model.streakAnnouncementID > 0 {
-                showStreakBanner(for: model.streakAnnouncementID)
-            }
-        }
         .onChange(of: model.isGameOver) { isOver in
             if isOver, model.result.reason == .roundsCompleted {
                 playsLevelCompletion = true
             }
         }
+        .onChange(of: director.transformationToken) { _ in
+            transformGlow = 1
+            withAnimation(.easeOut(duration: 0.58)) { transformGlow = 0 }
+        }
         .onChange(of: director.showsIcon) { showing in
             if showing {
-                withAnimation(.spring(response: 0.78, dampingFraction: 0.82)) {
+                withAnimation(.spring(response: 0.76, dampingFraction: 0.82)) {
                     iconRotation = 0
                     iconScale = 1
                 }
             }
         }
         .onChange(of: director.isFinished) { finished in
-            if finished { onFinished?() }
+            if finished {
+                Task { await PromoCaptureController.shared.finish() }
+            }
         }
         .onPreferenceChange(ScoreCounterCenterPreferenceKey.self) { center in
             if let center { scoreCounterCenter = center }
@@ -134,102 +123,88 @@ struct PromoTrailerView: View {
                         sampledTop = proxy.safeAreaInsets.top
                         sampledBottom = proxy.safeAreaInsets.bottom
                     }
-                    .onChange(of: proxy.safeAreaInsets.top) { value in
-                        sampledTop = value
-                    }
-            }
-        }
-        .onAppear {
-            director.onGameplayReady = {
-                PromoCaptureController.shared.markReady()
+                    .onChange(of: proxy.safeAreaInsets.top) { sampledTop = $0 }
+                    .onChange(of: proxy.safeAreaInsets.bottom) { sampledBottom = $0 }
             }
         }
         .persistentSystemOverlays(.hidden)
     }
 
-    private func playfield(topInset: CGFloat) -> some View {
-        KingCrabPlayfield(round: model.round,
-                          missedSum: nil,
-                          maximumRounds: model.maximumRounds,
-                          character: character,
-                          isPad: isPad,
-                          isLive: model.acceptsInput,
-                          isRunning: true,
-                          playsKingEntrance: false,
-                          hasBonusPower: model.hasBonusFishPower,
-                          isLifeCrabAvailable: false,
-                          isStreakBoostActive: director.revealsStreakBoost,
-                          playsLevelCompletion: playsLevelCompletion,
-                          reduceMotion: false,
-                          reservesTutorialMessage: true,
-                          topReserve: topInset + hudHeight + (isPad ? 22 : 18),
-                          bottomReserve: insets.bottom,
-                          scoreTarget: scoreCounterCenter,
-                          onGuardedArrival: { model.select(optionID: $0) },
-                          onSmashedGuard: model.smashGuardedAnswer,
-                          onBreach: { _ = model.absorbBreach() },
-                          onSmash: { _ in model.crabSmashed() },
-                          onSweep: model.kingSweeps,
-                          onShellArrived: model.scoreBubbleArrived,
-                          onBonusCrabCaught: model.catchBonusFish,
-                          onLifeCrabArrived: model.catchLifeCrab,
-                          onKingEntranceComplete: {},
-                          onLevelCompletionStarted: {
-                              showsFinale = true
-                              director.markFinaleStarted()
-                          },
-                          onLevelCompletionFinished: {
-                              director.markCompletionFinished()
-                          },
-                          onPromoArenaReady: { arena in
-                              director.attach(arena)
-                          })
+    private var playfield: some View {
+        RabbitHolePlayfield(round: model.round,
+                            remainingQuestions: model.remainingQuestions,
+                            mistakeCount: model.rabbitHoleMistakes,
+                            resumeFloorState: nil,
+                            missedSum: nil,
+                            maximumRounds: model.maximumRounds,
+                            character: character,
+                            isPad: isPad,
+                            isLive: model.acceptsInput,
+                            isRunning: true,
+                            playsKingEntrance: false,
+                            isStreakBoostActive: false,
+                            playsLevelCompletion: playsLevelCompletion,
+                            reduceMotion: false,
+                            reservesTutorialMessage: true,
+                            showsPromoDynamiteArrow: director.showsDynamiteArrow,
+                            topReserve: topInset + hudStackHeight + (isPad ? 18 : 12),
+                            bottomReserve: bottomInset,
+                            scoreTarget: scoreCounterCenter,
+                            onCorrect: { model.select(optionID: $0) },
+                            onWrong: model.missCarrot,
+                            onDynamiteMistake: model.missDynamite,
+                            onFloorStateChanged: { _ in },
+                            onFinalFloorCleared: {},
+                            onTimeout: model.endByTimeout,
+                            onExtensionStarted: model.rabbitHoleExtensionStarted,
+                            onItemContact: model.rabbitHoleItemContact,
+                            onShellArrived: model.scoreBubbleArrived,
+                            onKingEntranceComplete: {},
+                            onLevelCompletionStarted: { showsFinale = true },
+                            onLevelCompletionFinished: director.markCompletionFinished,
+                            onPromoArenaReady: { arena in
+                                director.attach(arena)
+                                beginCaptureWhenReady()
+                            })
             .ignoresSafeArea()
     }
 
-    private func hud(topInset: CGFloat) -> some View {
-        ZStack {
-            ZStack {
-                Circle()
-                    .fill(RabbitHoleHUDStyle.questionInterior)
-
-                Text(verbatim: LN(model.cards))
-                    .font(.system(size: isPad ? 28 : 21, weight: .heavy, design: .rounded))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .padding(3)
-                    .modifier(NumericCountTransition(value: Double(model.cards)))
-            }
-            .frame(width: hudHeight, height: hudHeight)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: ScoreCounterCenterPreferenceKey.self,
-                        value: CGPoint(x: proxy.frame(in: .global).midX,
-                                       y: proxy.frame(in: .global).midY)
-                    )
-                }
-            }
-            .foregroundStyle(character.deepColor)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: model.cards)
-
-            HStack(spacing: 10) {
+    private var hud: some View {
+        HStack(alignment: .top, spacing: isPad ? 12 : 8) {
+            VStack(spacing: isPad ? 8 : 6) {
                 Circle()
                     .fill(character.deepColor)
-                    .frame(width: hudHeight, height: hudHeight)
-                    .overlay {
-                        FilledPauseGlyph(isPad: isPad)
+                    .frame(width: controlSize, height: controlSize)
+                    .overlay { FilledPauseGlyph(isPad: isPad) }
+
+                ZStack {
+                    Circle().fill(RabbitHoleHUDStyle.questionInterior)
+                    Text(verbatim: LN(model.cards))
+                        .font(.system(size: isPad ? 28 : 21,
+                                      weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(character.deepColor)
+                        .modifier(PromoNumericCountTransition(value: Double(model.cards)))
+                }
+                .frame(width: controlSize, height: controlSize)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: ScoreCounterCenterPreferenceKey.self,
+                            value: CGPoint(x: proxy.frame(in: .global).midX,
+                                           y: proxy.frame(in: .global).midY)
+                        )
                     }
-
-                Spacer(minLength: 0)
-
-                LivesView(lives: model.livesRemaining,
-                          character: character,
-                          isPad: isPad,
-                          glyphSize: isPad ? 34 : 26,
-                          rowHeight: hudHeight)
+                }
             }
+
+            RabbitHoleQuestionBanner(prompt: model.round?.question.prompt ?? "",
+                                     roundID: model.round?.id,
+                                     accent: character.color,
+                                     deep: character.deepColor,
+                                     isPad: isPad)
+                .frame(maxWidth: .infinity)
+                .frame(height: hudStackHeight)
         }
         .padding(.leading, isPad ? 28 : 16)
         .padding(.trailing, isPad ? 28 : 16)
@@ -239,44 +214,39 @@ struct PromoTrailerView: View {
     }
 
     private var iconOverlay: some View {
-        let side = min(format.pointSize.width, format.pointSize.height) * (isPad ? 0.42 : 0.48)
-        return ZStack {
-            Color.black.opacity(0.12)
-            Image("app_icon_trailer")
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: side, height: side)
-                .clipShape(RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous))
-                .shadow(color: .black.opacity(0.35), radius: 22, y: 14)
-                .rotationEffect(.degrees(iconRotation))
-                .scaleEffect(iconScale)
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height) * (isPad ? 0.43 : 0.50)
+            ZStack {
+                Color.black.opacity(0.12)
+                Image("app_icon_trailer")
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: side, height: side)
+                    .clipShape(RoundedRectangle(cornerRadius: side * 0.2237,
+                                                style: .continuous))
+                    .shadow(color: .black.opacity(0.34), radius: 22, y: 14)
+                    .rotationEffect(.degrees(iconRotation))
+                    .scaleEffect(iconScale)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
     }
 
-    private func questionBandTop(topInset: CGFloat) -> CGFloat {
-        topInset + hudHeight + (isPad ? 16 : 12) + (isPad ? 12 : 8)
-    }
-
-    private func speechBubbleTop(topInset: CGFloat) -> CGFloat {
-        questionBandTop(topInset: topInset)
-            + ArenaConfig.bannerHeight(isPad: isPad) + (isPad ? 10 : 8)
-    }
-
-    private func showStreakBanner(for token: Int) {
-        guard token > 0, token != streakBannerToken || !showsStreakBanner else { return }
-        streakBannerToken = token
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.68)) {
-            showsStreakBanner = true
+    private func beginCaptureWhenReady() {
+#if canImport(UIKit)
+        DispatchQueue.main.async {
+            guard let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap(\.windows)
+                .first(where: \.isKeyWindow) else { return }
+            PromoCaptureController.shared.start(view: window,
+                                                format: format,
+                                                onStarted: director.start)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
-            guard streakBannerToken == token else { return }
-            withAnimation(.easeOut(duration: 0.25)) {
-                showsStreakBanner = false
-            }
-        }
+#endif
     }
 }
 
@@ -286,46 +256,27 @@ private struct PromoSpeechBubble: View {
     let isPad: Bool
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text(verbatim: text)
-                .font(.system(size: isPad ? 22 : 16, weight: .heavy, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(character.deepColor)
-                .padding(.horizontal, isPad ? 22 : 16)
-                .padding(.vertical, isPad ? 14 : 10)
-                .frame(maxWidth: isPad ? 560 : 360)
-                .background(
-                    RoundedRectangle(cornerRadius: isPad ? 22 : 18, style: .continuous)
-                        .fill(.white.opacity(0.96))
-                        .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: isPad ? 22 : 18, style: .continuous)
-                        .stroke(character.deepColor.opacity(0.18), lineWidth: 1.5)
-                )
-
-            PromoBubbleTail()
-                .fill(Color.white.opacity(0.96))
-                .frame(width: isPad ? 26 : 20, height: isPad ? 14 : 11)
-                .offset(y: -1)
-        }
+        Text(verbatim: text)
+            .font(.system(size: isPad ? 22 : 16, weight: .heavy, design: .rounded))
+            .multilineTextAlignment(.center)
+            .foregroundStyle(character.deepColor)
+            .padding(.horizontal, isPad ? 22 : 16)
+            .padding(.vertical, isPad ? 14 : 10)
+            .frame(maxWidth: isPad ? 560 : 360)
+            .background {
+                RoundedRectangle(cornerRadius: isPad ? 22 : 18, style: .continuous)
+                    .fill(.white.opacity(0.96))
+                    .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: isPad ? 22 : 18, style: .continuous)
+                    .stroke(character.deepColor.opacity(0.18), lineWidth: 1.5)
+            }
     }
 }
 
-private struct PromoBubbleTail: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.closeSubpath()
-        return path
-    }
-}
-
-private struct NumericCountTransition: ViewModifier {
+private struct PromoNumericCountTransition: ViewModifier {
     let value: Double
-
     func body(content: Content) -> some View {
         if #available(iOS 17.0, *) {
             content.contentTransition(.numericText(value: value))
@@ -334,5 +285,4 @@ private struct NumericCountTransition: ViewModifier {
         }
     }
 }
-
 #endif

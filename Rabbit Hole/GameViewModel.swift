@@ -545,7 +545,6 @@ final class GameViewModel: ObservableObject {
 #if DEBUG
         if skipsPersistence {
             if engine.state == .gameOver, engine.gameOverReason != .quit {
-                AppAudio.shared.playSessionComplete()
                 result = engine.result
             }
             return

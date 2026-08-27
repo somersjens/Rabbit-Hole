@@ -93,7 +93,8 @@ final class PromoRecorder: NSObject {
 
     private func saveSnapshot(elapsed: Double) {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let folder = documents.appendingPathComponent("promo-frames", isDirectory: true)
+        let folder = documents.appendingPathComponent("promo-frames-\(self.format.rawValue)",
+                                                       isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let ms = Int((elapsed * 1000).rounded())
         let url = folder.appendingPathComponent(String(format: "t-%05d.jpg", ms))
@@ -167,7 +168,8 @@ final class PromoRecorder: NSObject {
 final class PromoCaptureController {
     static let shared = PromoCaptureController()
 
-    private var didMarkReady = false
+    private var format: PromoFormat?
+    private var didStart = false
 
     func prepareAudio() {
         if !AppAudio.shared.gameSoundsEnabled { AppAudio.shared.toggleGameSounds() }
@@ -176,42 +178,47 @@ final class PromoCaptureController {
         // Status bar is hidden by `.statusBarHidden(true)` on PromoTrailerView.
     }
 
-    func markReady() {
-        guard !didMarkReady else { return }
-        didMarkReady = true
-        PromoAudioLog.markStart()
-        var extra: [String: Any] = [
-            "format": PromoMode.format.rawValue,
-            "width": PromoMode.format.outputPixels.width,
-            "height": PromoMode.format.outputPixels.height
-        ]
-        if let window = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow) {
-            let height = max(1, window.bounds.height)
-            extra["cropTop"] = window.safeAreaInsets.top / height
-            extra["cropBottom"] = window.safeAreaInsets.bottom / height
-        } else {
-            extra["cropTop"] = PromoMode.format.isPad ? 0.0 : 0.068
-            extra["cropBottom"] = 0.0
+    func start(view: UIView,
+               format: PromoFormat,
+               onStarted: @escaping () -> Void) {
+        guard !didStart else { return }
+        didStart = true
+        self.format = format
+        _ = view
+        // Let the system's launch cross-fade settle before defining frame one.
+        // External simulator recording is already rolling by this point; the
+        // epoch marker lets the offline exporter trim the pre-roll precisely.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) { [weak self] in
+            guard let self else { return }
+            PromoAudioLog.reset()
+            PromoAudioLog.markStart()
+            self.writeMarker(name: "rabbit-hole-promo-ready.json", status: "recording", extra: [
+                "format": format.rawValue,
+                "width": Int(format.outputPixels.width),
+                "height": Int(format.outputPixels.height),
+                "language": LanguageManager.shared.effective.code,
+                "startedAtEpoch": Date().timeIntervalSince1970
+            ])
+            onStarted()
         }
-        writeMarker(name: "king-crab-promo-ready.json", status: "ready", extra: extra)
     }
 
     func finish() async {
+        guard let format else { return }
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let cuesURL = documents.appendingPathComponent("king-crab-promo-cues.json")
+        let cuesURL = documents.appendingPathComponent("rabbit-hole-promo-cues-\(format.rawValue).json")
         let cues = PromoAudioLog.snapshot()
         if let data = try? JSONSerialization.data(withJSONObject: cues, options: [.prettyPrinted]) {
             try? data.write(to: cuesURL)
         }
-        writeMarker(name: "king-crab-promo-done.json", status: "done", extra: [
+        writeMarker(name: "rabbit-hole-promo-done.json", status: "done", extra: [
             "cues": cuesURL.lastPathComponent,
-            "format": PromoMode.format.rawValue,
-            "width": PromoMode.format.outputPixels.width,
-            "height": PromoMode.format.outputPixels.height,
+            "format": format.rawValue,
+            "width": Int(format.outputPixels.width),
+            "height": Int(format.outputPixels.height),
             "elapsed": PromoAudioLog.elapsed,
+            "endedAtEpoch": Date().timeIntervalSince1970,
+            "language": LanguageManager.shared.effective.code,
             "muxed": false
         ])
     }
@@ -241,13 +248,16 @@ enum PromoAudioMux {
     private static let sfxFiles: [String: (file: String, volume: Float)] = [
         "correct": ("sfx_correct", 0.14),
         "wrong": ("sfx_wrong", 0.11),
+        "explosion": ("sfx_explosion", 0.34),
+        "extensionMoveOut": ("sfx_extension_move_out", 0.32),
+        "itemContact": ("sfx_item_contact", 0.42),
         "cardFlip": ("sfx_card_flip", 0.10),
         "cardReveal": ("sfx_card_reveal", 0.19),
         "doubleCard": ("sfx_double_card", 0.18),
         "doubleScore": ("sfx_double_score", 0.15),
         "flamethrower": ("sfx_flamethrower", 0.31),
         "sessionComplete": ("sfx_level_complete", 0.10),
-        "cardTotal": ("score_increase", 1.0),
+        "cardTotal": ("score_increase_in_game", 0.76),
         "sessionStart": ("sfx_session_start", 0.16)
     ]
 

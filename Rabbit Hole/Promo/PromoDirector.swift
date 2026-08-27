@@ -2,77 +2,98 @@
 import Foundation
 import SwiftUI
 import Combine
-#if canImport(UIKit)
-import UIKit
-#endif
 
-/// Drives the live arena through the teaser beats. Every throw, spawn and
-/// character change goes through production entry points.
+/// Drives one continuous live Rabbit Hole run. A target is tapped only when
+/// the production swing ray genuinely owns it; the director never teleports
+/// the hook or skips a pickup/score phase.
 @MainActor
 final class PromoDirector: ObservableObject {
     enum Phase: Equatable {
-        case waitingForWave
-        case openingWait
-        case q1Throws(Int)
-        case waitForQ2
-        case showcase(Int)
-        case q2Pressure
-        case q2Recover(Int)
-        case waitStreak
-        case tapHelper
-        case waitGold
-        case goldThrows(Int)
-        case waitCompletion
+        case waitingForCapture
+        case entrance
+        case firstApproach
+        case waitScore15
+        case secondApproach
+        case waitWrong12
+        case octopusTransform
+        case octopusApproach
+        case waitScore18
+        case frogTransform
+        case frogApproach
+        case waitScore56
+        case penguinTransform
+        case warning
+        case dynamiteApproach
+        case falling
+        case bunnyLandingTransform
+        case rapid15
+        case waitRapid15
+        case rapid18
+        case waitRapid18
+        case rapid13
+        case waitRapid13
+        case finale
         case icon
         case done
     }
 
-    @Published private(set) var phase: Phase = .waitingForWave
-    @Published var characterID = "crab"
-    @Published var headline: String? = PromoScript.headlineThrow
-    @Published var showsIcon = false
-    @Published var blursPlayfield = false
-    @Published var isFinished = false
-    /// Streak colour, speed and banner wait until the last Q2 smash has landed.
-    @Published var revealsStreakBoost = false
+    @Published private(set) var phase: Phase = .waitingForCapture
+    @Published private(set) var characterID = "bunny"
+    @Published private(set) var headline: String? = PromoScript.headlineGrab
+    @Published private(set) var showsDynamiteArrow = false
+    @Published private(set) var showsIcon = false
+    @Published private(set) var blursPlayfield = false
+    @Published private(set) var isFinished = false
+    @Published private(set) var transformationToken = 0
 
     let model: GameViewModel
-    private(set) weak var arena: KingCrabArena?
+    private(set) weak var arena: RabbitHoleArena?
+    var onReadyForCapture: (() -> Void)?
 
+    private var timer: Timer?
     private var startedAt: TimeInterval = 0
     private var phaseStartedAt: TimeInterval = 0
-    private var timer: Timer?
-    var onGameplayReady: (() -> Void)?
-
-    private var attached = false
     private var completionFinished = false
-    private var didSignalReady = false
-    private var finaleStartedAt: TimeInterval?
+    private var hasAttached = false
 
-    var elapsed: Double { CACurrentMediaTime() - startedAt }
     private var phaseElapsed: Double { CACurrentMediaTime() - phaseStartedAt }
+    private var elapsed: Double { CACurrentMediaTime() - startedAt }
+    private var timeout: Double {
+        ProcessInfo.processInfo.arguments.contains("-RabbitHolePromoDiagnosticTimeout") ? 15 : 55
+    }
 
     init(model: GameViewModel) {
         self.model = model
     }
 
-    func attach(_ arena: KingCrabArena) {
-        guard !attached else { return }
-        attached = true
+    func attach(_ arena: RabbitHoleArena) {
+        guard !hasAttached else { return }
+        hasAttached = true
         self.arena = arena
-        arena.promoSuppressesBonusPlan = true
-        arena.promoSuppressesRefill = true
-        arena.promoDefersRushScoring = true
-        arena.promoEntryAssignment = PromoScript.entryAssignment
-        model.beginPromo(cards: 2, streak: 3, rounds: PromoScript.rounds)
+        arena.promoConfigureTwoFloorRun()
+        arena.promoPrepareFloor(byPocket: PromoScript.firstFloorByPocket, isFinal: false)
+        model.beginPromo(cards: 0, streak: 0, rounds: PromoScript.rounds)
+        onReadyForCapture?()
+    }
+
+    /// Called after the exact-size AVAssetWriter has accepted its first
+    /// session. The ordinary entrance is therefore frame one of the trailer.
+    func start() {
+        guard timer == nil, let arena else { return }
         startedAt = CACurrentMediaTime()
-        enter(.waitingForWave)
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.tick()
-            }
+        enter(.entrance)
+        // `beginPromo` publishes its first remaining-question set through
+        // SwiftUI. That update may legitimately stock an idle arena before
+        // capture begins, so arm the authored floor again at the exact reset
+        // boundary that consumes it.
+        arena.promoPrepareFloor(byPocket: PromoScript.firstFloorByPocket,
+                                isFinal: false)
+        arena.beginEntrance(completion: {})
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { self?.tick() }
         }
-        RunLoop.main.add(timer!, forMode: .common)
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     func stop() {
@@ -84,211 +105,182 @@ final class PromoDirector: ObservableObject {
         completionFinished = true
     }
 
-    func markFinaleStarted() {
-        guard finaleStartedAt == nil else { return }
-        finaleStartedAt = CACurrentMediaTime()
-    }
-
     private func enter(_ phase: Phase) {
         self.phase = phase
         phaseStartedAt = CACurrentMediaTime()
-        switch phase {
-        case .waitingForWave, .openingWait, .q1Throws, .waitForQ2:
-            headline = PromoScript.headlineThrow
-        case .showcase:
-            headline = PromoScript.headlineUnlock
-        case .q2Pressure, .q2Recover, .waitStreak, .tapHelper:
-            headline = PromoScript.headlineShells
-        case .waitGold, .goldThrows, .waitCompletion, .icon, .done:
-            headline = nil
+        PromoAudioLog.record("phase:\(String(describing: phase))")
+        if phase == .secondApproach, let arena {
+            PromoAudioLog.record("items:\(arena.promoItemSummary)")
         }
+    }
+
+    private func switchCharacter(to id: String, next: Phase) {
+        characterID = id
+        transformationToken &+= 1
+        enter(next)
     }
 
     private func tick() {
         guard let arena, !isFinished else { return }
-        if elapsed > 70, phase != .done, phase != .icon, phase != .waitCompletion {
-            enter(.icon)
+        if elapsed > timeout, phase != .icon, phase != .done {
+            PromoAudioLog.record("timeout:\(String(describing: phase))")
+            revealIcon()
             return
         }
+
         switch phase {
-        case .waitingForWave:
-            if unansweredWalkingCount(in: arena) >= 4 {
-                enter(.openingWait)
-                if !didSignalReady {
-                    didSignalReady = true
-                    onGameplayReady?()
-                }
+        case .waitingForCapture:
+            break
+
+        case .entrance:
+            if arena.mode == .swinging {
+                enter(.firstApproach)
             }
-        case .openingWait:
-            if firstWaveWellInView(in: arena) || phaseElapsed >= 4.4 {
-                enter(.q1Throws(0))
+
+        case .firstApproach:
+            if phaseElapsed >= 0.65, arena.promoTapAnswer("15") {
+                enter(.waitScore15)
             }
-        case .q1Throws(let index):
-            let answers = PromoScript.q1Wrong
-            guard answers.indices.contains(index) else {
-                enter(.waitForQ2)
-                return
+
+        case .waitScore15:
+            if model.cards >= 1, arena.mode == .swinging {
+                enter(.secondApproach)
             }
-            if index == 0 || phaseElapsed >= 1.02 {
-                if arena.promoTapAnswer(answers[index]) {
-                    if index + 1 < answers.count {
-                        enter(.q1Throws(index + 1))
-                    } else {
-                        enter(.waitForQ2)
-                    }
-                }
+
+        case .secondApproach:
+            if phaseElapsed >= 0.20, arena.promoTapAnswer("12") {
+                enter(.waitWrong12)
             }
-        case .waitForQ2:
-            if hasReachedKing("15", in: arena) {
+
+        case .waitWrong12:
+            let twelveGone = !arena.items.contains {
+                !$0.isDynamite && $0.isPresent && AnswerValue($0.text) == AnswerValue("12")
+            }
+            if twelveGone, arena.mode == .swinging {
                 headline = PromoScript.headlineUnlock
-                enter(.showcase(1))
-            } else if phaseElapsed >= 4.2 {
-                enter(.showcase(1))
+                switchCharacter(to: "octopus", next: .octopusTransform)
             }
-        case .showcase(let step):
-            applyShowcase(step: step)
-            if phaseElapsed >= 1.38 {
-                if step < 4 {
-                    enter(.showcase(step + 1))
-                } else {
-                    enter(.q2Pressure)
-                }
+
+        case .octopusTransform:
+            if phaseElapsed >= 0.55 { enter(.octopusApproach) }
+
+        case .octopusApproach:
+            if phaseElapsed >= 0.25, arena.promoTapAnswer("18") {
+                enter(.waitScore18)
             }
-        case .q2Pressure:
-            applyCharacter("crab")
-            headline = PromoScript.headlineShells
-            let lowerReady = PromoScript.q2LowerWrong.allSatisfy {
-                crabProgress($0, in: arena) >= 0.74
+
+        case .waitScore18:
+            if model.cards >= 2, arena.mode == .swinging {
+                switchCharacter(to: "frog", next: .frogTransform)
             }
-            if lowerReady || phaseElapsed >= 0.28 {
-                enter(.q2Recover(0))
+
+        case .frogTransform:
+            if phaseElapsed >= 0.55 { enter(.frogApproach) }
+
+        case .frogApproach:
+            if phaseElapsed >= 0.25, arena.promoTapAnswer("56") {
+                enter(.waitScore56)
             }
-        case .q2Recover(let index):
-            recoverQuestion2(index: index, arena: arena)
-        case .waitStreak:
-            if hasReachedKing("56", in: arena) {
-                revealsStreakBoost = true
-                if phaseElapsed >= 0.35 {
-                    enter(.waitGold)
-                }
-            } else if phaseElapsed >= 4.8 {
-                revealsStreakBoost = hasReachedKing("56", in: arena)
-                enter(.waitGold)
+
+        case .waitScore56:
+            if model.cards >= 3, arena.mode == .swinging {
+                switchCharacter(to: "penguin", next: .penguinTransform)
             }
-        case .tapHelper:
-            enter(.waitGold)
-        case .waitGold:
-            headline = nil
-            let goldReady = arena.crabs.contains { $0.isGolden && $0.phase == .walking }
-            if goldReady, phaseElapsed >= 2.0 {
-                enter(.goldThrows(0))
-            } else if phaseElapsed >= 3.4 {
-                enter(.goldThrows(0))
+
+        case .penguinTransform:
+            if phaseElapsed >= 0.55 {
+                arena.promoKeepOnly(answer: "52")
+                headline = PromoScript.headlineDynamite
+                showsDynamiteArrow = true
+                enter(.warning)
             }
-        case .goldThrows(let index):
-            let answers = PromoScript.q3Wrong
-            guard answers.indices.contains(index) else {
-                enter(.waitCompletion)
-                return
-            }
-            let gap = index == 0 ? 0.0 : 0.16
-            if phaseElapsed >= gap {
-                if arena.promoTapAnswer(answers[index]) {
-                    if index + 1 < answers.count {
-                        enter(.goldThrows(index + 1))
-                    } else {
-                        enter(.waitCompletion)
-                    }
-                }
-            }
-        case .waitCompletion:
-            let hop = ArenaConfig.kingHopDuration
-            let settle = ArenaConfig.kingHopSettle
-            let exit = ArenaConfig.kingExitDuration
-            let iconAt = hop + settle + exit * 0.12
-            if let start = finaleStartedAt, CACurrentMediaTime() - start >= iconAt {
-                enter(.icon)
-            } else if let age = arena.king.farewellAge, age >= iconAt {
-                enter(.icon)
-            } else if completionFinished, phaseElapsed >= 0.2 {
-                enter(.icon)
-            } else if phaseElapsed >= 14 {
-                enter(.icon)
-            }
-        case .icon:
-            if !showsIcon {
-                withAnimation(.easeOut(duration: 0.45)) {
-                    blursPlayfield = true
-                }
-                withAnimation(.spring(response: 0.72, dampingFraction: 0.78)) {
-                    showsIcon = true
-                }
-            }
+
+        case .warning:
             if phaseElapsed >= 2.0 {
+                showsDynamiteArrow = false
+                arena.promoPrepareFloor(byPocket: PromoScript.lowerFloorByPocket,
+                                        isFinal: true)
+                enter(.dynamiteApproach)
+            }
+
+        case .dynamiteApproach:
+            if arena.promoTapDynamite() {
+                headline = nil
+                enter(.falling)
+            }
+
+        case .falling:
+            if arena.floorIndex == 1, arena.mode == .swinging {
+                switchCharacter(to: "bunny", next: .bunnyLandingTransform)
+            }
+
+        case .bunnyLandingTransform:
+            if phaseElapsed >= 0.48 {
+                arena.promoSetActionRate(1.65)
+                enter(.rapid15)
+            }
+
+        case .rapid15:
+            if phaseElapsed >= 0.18, arena.promoTapAnswer("15") {
+                enter(.waitRapid15)
+            }
+
+        case .waitRapid15:
+            if model.cards >= 4, arena.mode == .swinging {
+                enter(.rapid18)
+            }
+
+        case .rapid18:
+            if phaseElapsed >= 0.10, arena.promoTapAnswer("18") {
+                enter(.waitRapid18)
+            }
+
+        case .waitRapid18:
+            if model.cards >= 5, arena.mode == .swinging {
+                enter(.rapid13)
+            }
+
+        case .rapid13:
+            if phaseElapsed >= 0.10, arena.promoTapAnswer("13") {
+                enter(.waitRapid13)
+            }
+
+        case .waitRapid13:
+            if model.cards >= 6 {
+                enter(.finale)
+            }
+
+        case .finale:
+            if completionFinished {
+                revealIcon()
+            }
+
+        case .icon:
+            if phaseElapsed >= 2.35 {
                 enter(.done)
             }
+
         case .done:
             isFinished = true
             stop()
         }
     }
 
-    private func recoverQuestion2(index: Int, arena: KingCrabArena) {
-        switch index {
-        case 0:
-            if arena.promoTapAnswer(PromoScript.q2LowerWrong[0]) {
-                enter(.q2Recover(1))
-            }
-        case 1:
-            if phaseElapsed >= 0.11, arena.promoTapAnswer(PromoScript.q2LowerWrong[1]) {
-                enter(.q2Recover(2))
-            }
-        case 2:
-            if phaseElapsed >= 0.20, arena.promoTapAnswer(PromoScript.q2TopWrong) {
-                enter(.waitStreak)
-            }
-        default:
-            enter(.waitStreak)
+    private func revealIcon() {
+        guard phase != .icon, phase != .done else { return }
+        // Promo sessions suppress the engine's early completion cue. Let the
+        // icon become visibly established before the sound begins.
+        headline = nil
+        showsDynamiteArrow = false
+        withAnimation(.easeOut(duration: 0.42)) {
+            blursPlayfield = true
         }
-    }
-
-    private func applyShowcase(step: Int) {
-        let ids = PromoScript.characterIDs
-        let id = ids.indices.contains(step) ? ids[step] : "crab"
-        applyCharacter(id)
-    }
-
-    private func applyCharacter(_ id: String) {
-        guard characterID != id else { return }
-        characterID = id
-    }
-
-    private func unansweredWalkingCount(in arena: KingCrabArena) -> Int {
-        arena.crabs.filter { $0.phase == .walking && !$0.hasAnswered }.count
-    }
-
-    private func firstWaveWellInView(in arena: KingCrabArena) -> Bool {
-        ["15", "16", "14", "24"].allSatisfy { text in
-            guard let crab = arena.crabs.first(where: {
-                $0.text == text && $0.phase == .walking
-            }) else { return false }
-            return crab.progress >= crab.entryProgress + 0.34
+        withAnimation(.spring(response: 0.72, dampingFraction: 0.78)) {
+            showsIcon = true
         }
-    }
-
-    private func crabProgress(_ text: String, in arena: KingCrabArena) -> Double {
-        arena.crabs.first { $0.text == text && !$0.hasAnswered }?.progress ?? 0
-    }
-
-    private func hasReachedKing(_ text: String, in arena: KingCrabArena) -> Bool {
-        arena.crabs.contains { crab in
-            guard crab.text == text else { return false }
-            switch crab.phase {
-            case .delivering, .burrowing:
-                return true
-            default:
-                return false
-            }
+        enter(.icon)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
+            AppAudio.shared.playSessionComplete()
         }
     }
 }

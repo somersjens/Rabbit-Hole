@@ -384,6 +384,14 @@ final class RabbitHoleArena: ObservableObject {
     /// driving out. Kept separate from the motion's own finished flag.
     private var completionRevealNotified = false
 
+#if DEBUG
+    /// Trailer-only controls. They alter orchestration, never artwork or the
+    /// production motion curves used by the arena.
+    private var promoActionRate: Double = 1
+    private var promoPreparedFloor: (byPocket: [Int: String], isFinal: Bool)?
+    var promoDefersFinaleUntilScore = false
+#endif
+
     /// One source of truth for both the artwork on the floor and the terminal
     /// explosion. `floorIndex` is zero-based; `floorCount` is a count.
     private var isLastFloor: Bool {
@@ -881,44 +889,48 @@ final class RabbitHoleArena: ObservableObject {
 #endif
 
     private func tick(dt: Double) {
-        clock += dt
-        moveParticles(dt)
-        moveFlights(dt)
-        flash = max(0, flash - dt * 2.4)
+        var gameplayDT = dt
+#if DEBUG
+        gameplayDT *= promoActionRate
+#endif
+        clock += gameplayDT
+        moveParticles(gameplayDT)
+        moveFlights(gameplayDT)
+        flash = max(0, flash - gameplayDT * 2.4)
         if mode != .exploding {
-            blastPulse = max(0, blastPulse - CGFloat(dt) * 2.8)
-            shake = max(0, shake - CGFloat(dt) * 28)
+            blastPulse = max(0, blastPulse - CGFloat(gameplayDT) * 2.8)
+            shake = max(0, shake - CGFloat(gameplayDT) * 28)
         }
 
         switch mode {
         case .entering:
-            stepEntrance(dt)
+            stepEntrance(gameplayDT)
         case .swinging:
-            stepSwing(dt)
-            tickFuse(dt)
+            stepSwing(gameplayDT)
+            tickFuse(gameplayDT)
         case .dropping:
-            stepDrop(dt)
-            tickFuse(dt)
+            stepDrop(gameplayDT)
+            tickFuse(gameplayDT)
         case .wriggling:
-            stepWriggle(dt)
-            tickFuse(dt)
+            stepWriggle(gameplayDT)
+            tickFuse(gameplayDT)
         case .raisingCarry:
-            stepRaiseCarry(dt)
-            tickFuse(dt)
+            stepRaiseCarry(gameplayDT)
+            tickFuse(gameplayDT)
         case .raisingEmpty:
-            stepRaiseEmpty(dt)
-            tickFuse(dt)
+            stepRaiseEmpty(gameplayDT)
+            tickFuse(gameplayDT)
         case .tossingCorrect:
-            stepTossCorrect(dt)
+            stepTossCorrect(gameplayDT)
         case .tossingWrong:
-            stepTossWrong(dt)
-            tickFuse(dt)
+            stepTossWrong(gameplayDT)
+            tickFuse(gameplayDT)
         case .exploding:
-            stepExplode(dt)
+            stepExplode(gameplayDT)
         case .falling:
-            stepFall(dt)
+            stepFall(gameplayDT)
         case .celebrating:
-            stepCelebrate(dt)
+            stepCelebrate(gameplayDT)
         }
 
         objectWillChange.send()
@@ -1579,6 +1591,9 @@ final class RabbitHoleArena: ObservableObject {
         // On the winning floor the bomb may now detonate; the toss itself is
         // preserved independently until it reaches the score counter.
         if pendingCompletion {
+#if DEBUG
+            if promoDefersFinaleUntilScore { return }
+#endif
             beginExplosion(isFinaleLaunch: true)
         }
     }
@@ -1652,6 +1667,11 @@ final class RabbitHoleArena: ObservableObject {
 
     private func beginExplosion(isFinaleLaunch: Bool = false) {
         guard mode != .exploding, mode != .falling, mode != .celebrating else { return }
+#if DEBUG
+        // Only the three-answer lower-floor passage is fast-forwarded. Both
+        // bomb sequences and the complete upward finale keep production time.
+        promoActionRate = 1
+#endif
         let completesTutorialDynamite = tutorialPlan.step == .triggerDynamite
         let hasCarrots = items.contains {
             !$0.isDynamite && $0.isPresent && $0.flight == .none
@@ -1825,6 +1845,13 @@ final class RabbitHoleArena: ObservableObject {
     }
 
     private func spawnFloor() {
+#if DEBUG
+        if let prepared = promoPreparedFloor {
+            promoPreparedFloor = nil
+            installPromoFloor(byPocket: prepared.byPocket, isFinal: prepared.isFinal)
+            return
+        }
+#endif
         let lingering = items.filter {
             ($0.flight == .blast || $0.flight == .tossCorrect)
                 && $0.flightAge < $0.flightDuration
@@ -1888,6 +1915,141 @@ final class RabbitHoleArena: ObservableObject {
         items.append(contentsOf: lingering)
         publishFloorState()
     }
+
+#if DEBUG
+    // MARK: - Deterministic trailer controls
+
+    func promoConfigureTwoFloorRun() {
+        floorCount = 2
+        floorCarrotCounts = [7, 3]
+        promoDefersFinaleUntilScore = true
+    }
+
+    func promoPrepareFloor(byPocket: [Int: String], isFinal: Bool) {
+        promoPreparedFloor = (byPocket, isFinal)
+    }
+
+    func promoSetActionRate(_ rate: Double) {
+        promoActionRate = max(1, min(2.0, rate))
+    }
+
+    func promoKeepOnly(answer: String) {
+        let wanted = AnswerValue(answer)
+        items.removeAll { item in
+            !item.isDynamite && AnswerValue(item.text) != wanted
+        }
+        pocketRests = items.map(\.rest)
+        objectWillChange.send()
+    }
+
+    @discardableResult
+    func promoTapAnswer(_ answer: String) -> Bool {
+        guard mode == .swinging,
+              let item = items.first(where: {
+                  !$0.isDynamite && $0.isPresent && $0.flight == .none
+                      && AnswerValue($0.text) == AnswerValue(answer)
+              }),
+              promoBeginDrop(onto: item,
+                             catchAngle: GameConfig.rabbitHoleGrabAngle)
+        else { return false }
+        return true
+    }
+
+    @discardableResult
+    func promoTapDynamite() -> Bool {
+        guard mode == .swinging,
+              let item = items.first(where: {
+                  $0.isDynamite && $0.isPresent && $0.flight == .none
+              }),
+              promoBeginDrop(onto: item,
+                             catchAngle: GameConfig.rabbitHoleDynamiteGrabAngle)
+        else { return false }
+        return true
+    }
+
+    /// The trailer still waits for the ordinary swinging hook to enter the
+    /// target's authored lane. Once aligned, begin the exact same production
+    /// drop as `tap()`, while pinning the intended item so an adjacent lane
+    /// cannot steal a deterministic scripted pickup at the boundary.
+    private func promoBeginDrop(onto item: RabbitHoleItem,
+                                catchAngle: Double) -> Bool {
+        let grip = gripPoint(of: item)
+        let targetAngle = atan2(Double(grip.x - boomPoint.x),
+                                Double(grip.y - boomPoint.y))
+        let difference = abs(atan2(sin(targetAngle - swingAngle),
+                                   cos(targetAngle - swingAngle)))
+        guard difference < catchAngle * 0.72 else { return false }
+
+        dropStartAngle = swingAngle
+        dropTargetID = item.id
+        dropEndAngle = targetAngle
+        dropGrabLength = hypot(Double(grip.x - boomPoint.x),
+                               Double(grip.y - boomPoint.y))
+        dropAngle = dropStartAngle
+        mode = .dropping
+        actionProgress = 0
+        onExtensionStarted?()
+        objectWillChange.send()
+        return true
+    }
+
+    var promoHasOnlyAnswerAndDynamite: Bool {
+        let present = items.filter { $0.isPresent && $0.flight == .none }
+        return present.filter(\.isDynamite).count == 1
+            && present.filter { !$0.isDynamite }.count == 1
+    }
+
+    var promoItemSummary: String {
+        items
+            .filter { $0.isPresent && $0.flight == .none }
+            .sorted { $0.index < $1.index }
+            .map { $0.isDynamite ? "bomb@\($0.index)" : "\($0.text)@\($0.index)" }
+            .joined(separator: ",")
+    }
+
+    private func installPromoFloor(byPocket: [Int: String], isFinal: Bool) {
+        var layout = RabbitHolePlanner.makeLayout(
+            floorIndex: floorIndex,
+            field: field,
+            pivot: boomPoint,
+            itemRadius: GameConfig.rabbitHoleItemRadius(isPad: isPad),
+            carrotLength: GameConfig.rabbitHoleCarrotLength(isPad: isPad),
+            random: RandomSource(seed: 0x524142424954 + UInt64(floorIndex))
+        )
+        layout.dynamiteIndex = 4
+        pocketLayout = layout
+        pocketRests = layout.points(in: field)
+        dynamitePocketIndex = layout.dynamiteIndex
+        let random = RandomSource(seed: 0x484F4C45 + UInt64(floorIndex))
+        items = (0..<RabbitHoleLayout.pocketCount).compactMap { index in
+            let isBomb = index == layout.dynamiteIndex
+            guard isBomb || byPocket[index] != nil else { return nil }
+            let rest = layout.point(index: index, in: field)
+            return RabbitHoleItem(
+                id: UUID(),
+                kind: isBomb ? .dynamite : .carrot,
+                text: byPocket[index] ?? "",
+                index: index,
+                isFinalDynamite: isBomb && isFinal,
+                isPresent: true,
+                rest: rest,
+                position: rest,
+                scale: 1,
+                spin: isBomb ? random.double(in: -8..<8) : facingDegrees(at: rest),
+                opacity: 1,
+                flight: .none,
+                flightAge: 0,
+                flightDuration: 1,
+                flightFrom: rest,
+                flightTo: rest,
+                blastVelocity: .zero
+            )
+        }
+        dynamiteTime = GameConfig.rabbitHoleDynamiteSeconds
+        publishFloorState()
+        objectWillChange.send()
+    }
+#endif
 
     /// Publishes only stable campaign facts; positions, animation phases and
     /// generated question text are deliberately rebuilt on resume.

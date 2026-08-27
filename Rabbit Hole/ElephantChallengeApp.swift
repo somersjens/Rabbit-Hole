@@ -33,6 +33,11 @@ struct ElephantChallengeApp: App {
     @StateObject private var promotedPurchase = PromotedPurchaseCoordinator.shared
 
     init() {
+#if DEBUG
+        if PromoMode.isActive {
+            LanguageManager.shared.override = .english
+        }
+#endif
         // Bring stored progress up to the current version before anything can
         // read it: data written by Jumping Fox must never reach the new game.
         Progress.store.migrateIfNeeded()

@@ -335,7 +335,10 @@ struct GameView: View {
             // sum, which the arena keeps free for the whole run. It never takes
             // a touch: every crab stays tappable while a step is being read.
             if let message = tutorial.message, !showsFinale {
-                TutorialMessageCard(text: message, theme: character, isPad: isPad)
+                TutorialMessageCard(text: message,
+                                    theme: character,
+                                    isPad: isPad,
+                                    centersText: isPad)
                     .padding(.horizontal, max(isPad ? 28 : 14, screenInsets.leading + 12))
                     .padding(.top, tutorialMessageTop(topInset: topInset))
                     // Fades in place rather than sliding down: a card that

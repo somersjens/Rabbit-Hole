@@ -409,6 +409,10 @@ struct TutorialMessageCard: View {
     let text: String
     let theme: AnimalCharacter
     var isPad: Bool = AppLayout.isPad
+    /// Main-menu messages are centred on every device. The in-game caller
+    /// disables this only on iPhone, where the narrower two-line copy remains
+    /// easier to scan from its leading edge.
+    var centersText = true
 
     /// The tallest the strip is ever drawn, which is what the arena reserves.
     static func height(isPad: Bool) -> CGFloat { isPad ? 96 : 76 }
@@ -419,10 +423,11 @@ struct TutorialMessageCard: View {
         Text(verbatim: text)
             .font(.system(size: isPad ? 22 : 17, weight: .bold, design: .rounded))
             .foregroundStyle(theme.deepColor)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(centersText ? .center : .leading)
             .lineLimit(2)
             .minimumScaleFactor(0.72)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity,
+                   alignment: centersText ? .center : .leading)
             .padding(.horizontal, isPad ? 22 : 16)
             .padding(.vertical, isPad ? 8 : 6)
             .frame(maxWidth: .infinity)

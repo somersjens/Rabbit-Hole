@@ -32,6 +32,7 @@ struct RabbitHolePlayfield: View {
     let reduceMotion: Bool
     var tutorialPlan = RabbitHoleTutorialPlan()
     var reservesTutorialMessage = false
+    var showsPromoDynamiteArrow = false
     let topReserve: CGFloat
     let bottomReserve: CGFloat
     let scoreTarget: CGPoint?
@@ -55,6 +56,9 @@ struct RabbitHolePlayfield: View {
     var onSmashedGuard: (() -> Bool)? = nil
     var onBreach: (() -> Void)? = nil
     var onSweep: (() -> Void)? = nil
+#if DEBUG
+    var onPromoArenaReady: ((RabbitHoleArena) -> Void)? = nil
+#endif
 
     @StateObject private var arena = RabbitHoleArena()
     @ObservedObject private var language = LanguageManager.shared
@@ -290,6 +294,16 @@ struct RabbitHolePlayfield: View {
                         .allowsHitTesting(false)
                 }
 
+                if showsPromoDynamiteArrow,
+                   let bomb = arena.items.first(where: {
+                       $0.isDynamite && $0.isPresent && $0.flight == .none
+                   }) {
+                    PromoDynamiteArrow(target: bomb.position,
+                                       isPad: isPad,
+                                       clock: arena.clock)
+                        .allowsHitTesting(false)
+                }
+
                 CraneRig(character: character,
                          isPad: isPad,
                          surface: surface,
@@ -384,6 +398,9 @@ struct RabbitHolePlayfield: View {
                                            started: onLevelCompletionStarted,
                                            finished: onLevelCompletionFinished)
                 }
+#if DEBUG
+                onPromoArenaReady?(arena)
+#endif
             }
             .onChange(of: size) { newSize in
                 let grass = grassLine(in: newSize)
@@ -483,6 +500,30 @@ struct RabbitHolePlayfield: View {
         arena.onItemContact = onItemContact
         arena.onExplode = { AppAudio.shared.playExplosion() }
         arena.onTutorialEvent = onTutorialEvent
+    }
+}
+
+/// Rabbit Hole has no production warning arrow (the tutorial uses a shield and
+/// a dotted hook guide), so trailer mode adds this single unobtrusive pointer.
+/// It is drawn inside the playfield coordinate space and tracks the real bomb.
+private struct PromoDynamiteArrow: View {
+    let target: CGPoint
+    let isPad: Bool
+    let clock: Double
+
+    var body: some View {
+        let side: CGFloat = isPad ? 66 : 48
+        let bounce = CGFloat(sin(clock * 4.2)) * (isPad ? 7 : 5)
+        Image(systemName: "arrow.down")
+            .font(.system(size: isPad ? 34 : 25, weight: .black, design: .rounded))
+            .foregroundStyle(.white)
+            .frame(width: side, height: side)
+            .background(Circle().fill(Color(red: 0.86, green: 0.08, blue: 0.07)))
+            .overlay(Circle().stroke(.white.opacity(0.95), lineWidth: isPad ? 4 : 3))
+            .shadow(color: .black.opacity(0.28), radius: 8, y: 4)
+            .position(x: target.x,
+                      y: target.y - (isPad ? 118 : 80) + bounce)
+            .accessibilityHidden(true)
     }
 }
 
