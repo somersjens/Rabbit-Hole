@@ -1,0 +1,258 @@
+[
+  {
+    "t" : 0.0042130000074394047,
+    "key" : "phase:entrance"
+  },
+  {
+    "key" : "phase:firstApproach",
+    "t" : 0.9224241666670423
+  },
+  {
+    "t" : 1.5899817916506436,
+    "key" : "extensionMoveOut"
+  },
+  {
+    "t" : 1.5901322916615754,
+    "key" : "phase:waitScore15"
+  },
+  {
+    "key" : "itemContact",
+    "t" : 1.7571073333383538
+  },
+  {
+    "key" : "correct",
+    "t" : 1.7590303749893792
+  },
+  {
+    "t" : 2.2166235416661948,
+    "key" : "cardReveal"
+  },
+  {
+    "t" : 2.9404333333368413,
+    "key" : "cardTotal"
+  },
+  {
+    "key" : "phase:secondApproach",
+    "t" : 2.9554121249821037
+  },
+  {
+    "t" : 2.9554496666532941,
+    "key" : "items:18@0,13@1,52@2,56@3,bomb@4,48@5,12@6"
+  },
+  {
+    "t" : 3.205724666651804,
+    "key" : "extensionMoveOut"
+  },
+  {
+    "key" : "phase:waitWrong12",
+    "t" : 3.2058638333401177
+  },
+  {
+    "t" : 3.3737869999895338,
+    "key" : "itemContact"
+  },
+  {
+    "key" : "wrong",
+    "t" : 3.3739430416608229
+  },
+  {
+    "t" : 4.3057115416740999,
+    "key" : "characterUnlock"
+  },
+  {
+    "key" : "phase:octopusTransform",
+    "t" : 4.3057449999905657
+  },
+  {
+    "t" : 4.8558117916691117,
+    "key" : "phase:octopusApproach"
+  },
+  {
+    "t" : 5.8221740833250806,
+    "key" : "extensionMoveOut"
+  },
+  {
+    "t" : 5.8223167499818373,
+    "key" : "phase:waitScore18"
+  },
+  {
+    "t" : 5.9904274999862537,
+    "key" : "itemContact"
+  },
+  {
+    "t" : 5.9905645833350718,
+    "key" : "correct"
+  },
+  {
+    "key" : "cardReveal",
+    "t" : 6.4499132916680537
+  },
+  {
+    "t" : 7.1737425416649785,
+    "key" : "cardTotal"
+  },
+  {
+    "key" : "phase:frogTransform",
+    "t" : 7.1885894583247136
+  },
+  {
+    "t" : 7.7391959583328571,
+    "key" : "phase:frogApproach"
+  },
+  {
+    "key" : "extensionMoveOut",
+    "t" : 7.9900460833159741
+  },
+  {
+    "t" : 7.9902072083204985,
+    "key" : "phase:waitScore56"
+  },
+  {
+    "t" : 8.1571160833409522,
+    "key" : "itemContact"
+  },
+  {
+    "t" : 8.157275125005981,
+    "key" : "correct"
+  },
+  {
+    "key" : "cardReveal",
+    "t" : 8.6189451249956619
+  },
+  {
+    "t" : 9.3237642083258834,
+    "key" : "cardTotal"
+  },
+  {
+    "key" : "phase:penguinTransform",
+    "t" : 9.3383260416740086
+  },
+  {
+    "key" : "phase:warning",
+    "t" : 9.8900063750043046
+  },
+  {
+    "t" : 11.905857416655635,
+    "key" : "phase:dynamiteApproach"
+  },
+  {
+    "key" : "extensionMoveOut",
+    "t" : 12.372441916668322
+  },
+  {
+    "key" : "phase:falling",
+    "t" : 12.372636624990264
+  },
+  {
+    "t" : 12.507541375001892,
+    "key" : "explosion"
+  },
+  {
+    "t" : 13.321868791652378,
+    "key" : "phase:bunnyMidflight"
+  },
+  {
+    "t" : 14.306120541674318,
+    "key" : "phase:bunnyLanding"
+  },
+  {
+    "t" : 14.489961958315689,
+    "key" : "phase:rapid15"
+  },
+  {
+    "t" : 16.689272291667294,
+    "key" : "extensionMoveOut"
+  },
+  {
+    "key" : "phase:waitRapid15",
+    "t" : 16.689391791675007
+  },
+  {
+    "key" : "itemContact",
+    "t" : 16.790418624994345
+  },
+  {
+    "key" : "correct",
+    "t" : 16.790551916667027
+  },
+  {
+    "key" : "cardReveal",
+    "t" : 17.243013416649774
+  },
+  {
+    "t" : 17.507079458329827,
+    "key" : "cardTotal"
+  },
+  {
+    "key" : "phase:rapid18",
+    "t" : 17.522460208332632
+  },
+  {
+    "key" : "extensionMoveOut",
+    "t" : 19.022471083328128
+  },
+  {
+    "key" : "phase:waitRapid18",
+    "t" : 19.022638291673502
+  },
+  {
+    "key" : "itemContact",
+    "t" : 19.123777208325919
+  },
+  {
+    "t" : 19.123932708316715,
+    "key" : "correct"
+  },
+  {
+    "key" : "cardReveal",
+    "t" : 19.57619583333144
+  },
+  {
+    "t" : 19.840410166652873,
+    "key" : "cardTotal"
+  },
+  {
+    "t" : 19.855197791650426,
+    "key" : "phase:rapid13"
+  },
+  {
+    "key" : "extensionMoveOut",
+    "t" : 20.08839537500171
+  },
+  {
+    "key" : "phase:waitRapid13",
+    "t" : 20.088551166671095
+  },
+  {
+    "t" : 20.190410124982009,
+    "key" : "itemContact"
+  },
+  {
+    "key" : "correct",
+    "t" : 20.190521749987965
+  },
+  {
+    "key" : "explosion",
+    "t" : 20.540673458337551
+  },
+  {
+    "t" : 21.140437875001226,
+    "key" : "cardTotal"
+  },
+  {
+    "key" : "phase:finale",
+    "t" : 21.155751166661503
+  },
+  {
+    "key" : "phase:icon",
+    "t" : 22.326951583323535
+  },
+  {
+    "t" : 22.633144999999786,
+    "key" : "sessionComplete"
+  },
+  {
+    "key" : "phase:done",
+    "t" : 24.689956874994095
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "status" : "done",
+  "endedAtEpoch" : 1787807900.817745,
+  "height" : 1600,
+  "width" : 1200,
+  "muxed" : false,
+  "cues" : "rabbit-hole-promo-cues-ipad.json",
+  "language" : "en",
+  "elapsed" : 25.843347833346343,
+  "format" : "ipad"
+}
