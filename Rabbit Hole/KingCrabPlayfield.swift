@@ -366,21 +366,17 @@ struct KingCrabPlayfield: View {
                                                completion: onLevelCompletionFinished)
                 }
             }
-            .onChange(of: size) { newSize in
+            .onChange(of: size) { _, newSize in
                 arena.layout(size: newSize, arena: arenaRect(in: newSize), isPad: isPad)
             }
-            .onChange(of: arenaTop) { newTop in
+            .onChange(of: arenaTop) { _, newTop in
                 arena.layout(size: size, arena: arenaRect(in: size, top: newTop), isPad: isPad)
             }
         }
         // A new sum sends in a fresh wave. Smashing the guarded answer keeps the
         // same round, so this deliberately does not fire for it.
-        // Deliberately observes the round itself rather than its id: on iOS 16
-        // `onChange(of:perform:)` runs its closure against the view value from
-        // *before* the update, so reading `round` in here would still see the
-        // previous one — nil on the very first round, which left the arena
-        // without a wave and the sum blank. Only the value handed to the
-        // closure is current, so the new round has to be the value observed.
+        // Deliberately observes the round itself rather than its id so the new
+        // round is supplied directly to the action, including the first one.
         //
         // The gold flag rides along with the round rather than sitting in its
         // own `onChange`: a streak starts on the answer that also installs the
@@ -389,40 +385,40 @@ struct KingCrabPlayfield: View {
         // together, both values reach the arena in the same call. Only the
         // round drives the wave; `load` ignores a repeat of the sum it is
         // already showing, which is what a colour-only change looks like.
-        .onChange(of: WaveInput(round: round, isGolden: isStreakBoostActive)) { input in
+        .onChange(of: WaveInput(round: round, isGolden: isStreakBoostActive)) { _, input in
             arena.setGolden(input.isGolden)
             arena.load(round: input.round)
         }
-        .onChange(of: isLive) { live in
+        .onChange(of: isLive) { _, live in
             arena.setLive(live)
         }
-        .onChange(of: isRunning) { running in
+        .onChange(of: isRunning) { _, running in
             arena.setRunning(running)
         }
-        .onChange(of: hasBonusPower) { active in
+        .onChange(of: hasBonusPower) { _, active in
             arena.setBonusAura(active)
         }
-        .onChange(of: isLifeCrabAvailable) { available in
+        .onChange(of: isLifeCrabAvailable) { _, available in
             arena.setLifeCrabAvailable(available)
         }
-        .onChange(of: isStreakBoostActive) { active in
+        .onChange(of: isStreakBoostActive) { _, active in
             // Rabbit Hole has no speed boost: gold is colour only.
             if active, !reduceMotion { arena.beginStreakCelebration() }
         }
-        .onChange(of: scoreTarget) { target in
+        .onChange(of: scoreTarget) { _, target in
             arena.setScoreTarget(target)
         }
-        .onChange(of: tutorialPlan) { plan in
+        .onChange(of: tutorialPlan) { _, plan in
             withAnimation(.easeInOut(duration: 0.25)) {
                 arena.applyTutorial(plan)
             }
         }
-        .onChange(of: playsKingEntrance) { shouldPlay in
+        .onChange(of: playsKingEntrance) { _, shouldPlay in
             if shouldPlay {
                 arena.beginKingEntrance(completion: onKingEntranceComplete)
             }
         }
-        .onChange(of: playsLevelCompletion) { shouldPlay in
+        .onChange(of: playsLevelCompletion) { _, shouldPlay in
             if shouldPlay {
                 arena.beginLevelCompletion(reduceMotion: reduceMotion,
                                            started: onLevelCompletionStarted,
@@ -431,7 +427,7 @@ struct KingCrabPlayfield: View {
                 arena.endLevelCompletion()
             }
         }
-        .onChange(of: character) { newCharacter in
+        .onChange(of: character) { _, newCharacter in
             arena.setClawTip(newCharacter.rig?.clawReach ?? ArenaConfig.clawTip)
         }
         .onDisappear {
@@ -480,11 +476,9 @@ private struct QuestionBanner: View {
             .onAppear { shownPrompt = prompt }
             // The round's id and its sum are observed together: the id is what
             // says a new question has come up (two rounds running may ask the
-            // same sum), while the prompt has to travel with it because on
-            // iOS 16 `onChange(of:perform:)` sees the view as it was *before*
-            // the update — reading `prompt` in the closure would still give the
-            // previous sum, and the empty one on the very first round.
-            .onChange(of: Question(id: roundID, prompt: prompt)) { question in
+            // same sum), while the prompt travels with it so the action always
+            // receives the matching, current prompt.
+            .onChange(of: Question(id: roundID, prompt: prompt)) { _, question in
                 revealNewQuestion(question.prompt)
             }
             .accessibilityIdentifier("question-card")

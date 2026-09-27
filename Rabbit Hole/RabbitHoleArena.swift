@@ -390,6 +390,8 @@ final class RabbitHoleArena: ObservableObject {
     private var promoActionRate: Double = 1
     private var promoPreparedFloor: (byPocket: [Int: String], isFinal: Bool)?
     private var promoSwingsDuringScoreFlight = false
+    private var promoInitialSwingRampAge: Double?
+    private var promoFinalExplosionDelayRemaining: Double?
     var promoDefersFinaleUntilScore = false
 #endif
 
@@ -740,6 +742,10 @@ final class RabbitHoleArena: ObservableObject {
         dropGrabLength = 0
         hookWiggle = 0
         swingAngle = 0
+        swingClock = 0
+#if DEBUG
+        promoFinalExplosionDelayRemaining = nil
+#endif
         dropAngle = 0
         restockFloorIfNeeded()
         objectWillChange.send()
@@ -949,6 +955,11 @@ final class RabbitHoleArena: ObservableObject {
         if actionProgress >= 1 {
             excavatorEntrance = 1
             excavatorSquash = 1
+#if DEBUG
+            if promoSwingsDuringScoreFlight {
+                promoInitialSwingRampAge = 0
+            }
+#endif
             mode = .swinging
         }
     }
@@ -957,10 +968,38 @@ final class RabbitHoleArena: ObservableObject {
         if !tutorialPlan.shapesArena,
            items.contains(where: { $0.isDynamite && $0.isPresent && $0.flight == .none }),
            !items.contains(where: { !$0.isDynamite && $0.isPresent && $0.flight == .none }) {
+#if DEBUG
+            if promoDefersFinaleUntilScore {
+                let remaining = promoFinalExplosionDelayRemaining ?? 0.50
+                promoFinalExplosionDelayRemaining = max(0, remaining - dt)
+                if remaining <= 0 {
+                    beginExplosion()
+                    return
+                }
+            } else {
+                beginExplosion()
+                return
+            }
+#else
             beginExplosion()
             return
+#endif
         }
-        swingClock += dt * speedMultiplier
+        var swingAdvance = dt * speedMultiplier
+#if DEBUG
+        // The trailer opens on the exact frame the rig finishes driving in.
+        // Ease only that first swing out of centre so the top assembly does
+        // not appear to skip its first few pixels at capture frame rate.
+        if let rampAge = promoInitialSwingRampAge {
+            let duration = 0.18
+            let nextAge = min(duration, rampAge + dt)
+            let t = nextAge / duration
+            let eased = t * t * (3 - 2 * t)
+            swingAdvance *= max(0.06, eased)
+            promoInitialSwingRampAge = nextAge >= duration ? nil : nextAge
+        }
+#endif
+        swingClock += swingAdvance
         let period = GameConfig.rabbitHoleSwingPeriod / speedMultiplier
         let phase = (swingClock / period) * .pi * 2
         swingAngle = GameConfig.rabbitHoleSwingAmplitude * sin(phase)
@@ -2181,7 +2220,17 @@ final class RabbitHoleArena: ObservableObject {
                         onShellArrived?()
 #if DEBUG
                         if promoSwingsDuringScoreFlight, mode == .swinging {
-                            continueOrClearFloor()
+                            // `launchCorrect` already resumed this swing when
+                            // the carrot left the claw. Re-entering through
+                            // `resumeSwing` here reconstructed the phase from
+                            // the old grab angle and visibly snapped the hook
+                            // backwards on every score arrival.
+                            let hasCarrots = items.contains {
+                                !$0.isDynamite && $0.isPresent && $0.flight == .none
+                            }
+                            if !hasCarrots, !tutorialPlan.shapesArena {
+                                beginExplosion()
+                            }
                         }
 #endif
                     }

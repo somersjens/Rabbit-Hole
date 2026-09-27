@@ -103,6 +103,7 @@ struct OnboardingView: View {
                 .padding(.top, isPad ? 20 : 8)
                 .padding(.trailing, isPad ? 28 : 16)
         }
+        .modifier(PadMenuZoom(isPad: isPad))
     }
 
     private var backButton: some View {

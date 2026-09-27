@@ -32,6 +32,9 @@ struct PromoTrailerView: View {
     @State private var sampledTop: CGFloat = 0
     @State private var sampledBottom: CGFloat = 0
     @State private var transformGlow: Double = 0
+    @State private var lastCharacterID = "bunny"
+    @State private var transitionFromCharacterID: String?
+    @State private var characterTransitionProgress: CGFloat = 1
 
     init(format: PromoFormat) {
         self.format = format
@@ -54,6 +57,14 @@ struct PromoTrailerView: View {
             LinearGradient(colors: [character.skyColor, character.tintColor],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
+
+            if let previousCharacter = transitionFromCharacter {
+                LinearGradient(colors: [previousCharacter.skyColor,
+                                        previousCharacter.tintColor],
+                               startPoint: .top, endPoint: .bottom)
+                    .opacity(1 - characterTransitionProgress)
+                    .ignoresSafeArea()
+            }
 
             playfield
                 .blur(radius: director.blursPlayfield ? 7 : 0)
@@ -91,16 +102,42 @@ struct PromoTrailerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .currencyIcon(for: character)
         .statusBarHidden(true)
-        .onChange(of: model.isGameOver) { isOver in
+        .onChange(of: model.isGameOver) { _, isOver in
             if isOver, model.result.reason == .roundsCompleted {
                 playsLevelCompletion = true
             }
         }
-        .onChange(of: director.transformationToken) { _ in
+        .onChange(of: director.transformationToken) {
             transformGlow = 0.9
             withAnimation(.easeOut(duration: 0.22)) { transformGlow = 0 }
         }
-        .onChange(of: director.showsIcon) { showing in
+        .onChange(of: director.characterID) { _, newID in
+            let oldID = lastCharacterID
+            lastCharacterID = newID
+            guard oldID == "penguin", newID == "bunny" else {
+                transitionFromCharacterID = nil
+                characterTransitionProgress = 1
+                return
+            }
+
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                transitionFromCharacterID = oldID
+                characterTransitionProgress = 0
+            }
+            DispatchQueue.main.async {
+                withAnimation(.easeOut(duration: 0.18)) {
+                    characterTransitionProgress = 1
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+                    if director.characterID == newID {
+                        transitionFromCharacterID = nil
+                    }
+                }
+            }
+        }
+        .onChange(of: director.showsIcon) { _, showing in
             if showing {
                 withAnimation(.spring(response: 0.76, dampingFraction: 0.82)) {
                     iconRotation = 0
@@ -108,7 +145,7 @@ struct PromoTrailerView: View {
                 }
             }
         }
-        .onChange(of: director.isFinished) { finished in
+        .onChange(of: director.isFinished) { _, finished in
             if finished {
                 Task { await PromoCaptureController.shared.finish() }
             }
@@ -123,8 +160,8 @@ struct PromoTrailerView: View {
                         sampledTop = proxy.safeAreaInsets.top
                         sampledBottom = proxy.safeAreaInsets.bottom
                     }
-                    .onChange(of: proxy.safeAreaInsets.top) { sampledTop = $0 }
-                    .onChange(of: proxy.safeAreaInsets.bottom) { sampledBottom = $0 }
+                    .onChange(of: proxy.safeAreaInsets.top) { _, top in sampledTop = top }
+                    .onChange(of: proxy.safeAreaInsets.bottom) { _, bottom in sampledBottom = bottom }
             }
         }
         .persistentSystemOverlays(.hidden)
@@ -138,6 +175,8 @@ struct PromoTrailerView: View {
                             missedSum: nil,
                             maximumRounds: model.maximumRounds,
                             character: character,
+                            transitionFromCharacter: transitionFromCharacter,
+                            characterTransitionProgress: characterTransitionProgress,
                             isPad: isPad,
                             isLive: model.acceptsInput,
                             isRunning: true,
@@ -167,6 +206,10 @@ struct PromoTrailerView: View {
                                 beginCaptureWhenReady()
                             })
             .ignoresSafeArea()
+    }
+
+    private var transitionFromCharacter: AnimalCharacter? {
+        transitionFromCharacterID.map { CharacterCatalog.character(id: $0) }
     }
 
     private var hud: some View {

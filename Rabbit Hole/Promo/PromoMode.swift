@@ -99,20 +99,25 @@ enum PromoScript {
     /// The first production floor uses all eight normal swing pockets. Its
     /// answers are arranged so each target is reached by the ordinary hook.
     static let firstFloorByPocket: [Int: String] = [
-        0: "18",
-        1: "13",
+        0: "48",
+        1: "18",
         2: "52",
         3: "56",
         // pocket 4 is dynamite
-        5: "48",
+        // The first four scripted actions follow adjacent natural swing lanes:
+        // 15 → wrong 12 → Octopus 18, then back toward Frog 56.
+        5: "13",
         6: "12",
         7: "15"
     ]
 
     static let lowerFloorByPocket: [Int: String] = [
+        // At the landing the ordinary swing is crossing centre toward the
+        // left. Place the montage along that real direction so the claw owns
+        // each next lane naturally while the previous score flies upward.
+        0: "18",
         1: "13",
-        3: "18",
-        6: "15"
+        3: "15"
         // pocket 4 is the final dynamite
     ]
 

@@ -98,8 +98,8 @@ struct GameView: View {
     /// Whether pressing Start will run the walkthrough. Armed from the menu for
     /// a brand-new player, and toggled by the cap button on the start card.
     @State private var isTutorialArmed: Bool
-    /// The "only at the start of a game" note, raised by the cap button on a
-    /// run that is already under way.
+    /// Raised by the cap button once points have been earned, because a scored
+    /// run cannot be rewound into a lesson.
     @State private var showsTutorialNotice = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -203,7 +203,7 @@ struct GameView: View {
             }
         }
 #endif
-        .onChange(of: model.isGameOver) { isOver in
+        .onChange(of: model.isGameOver) { _, isOver in
             // There is nothing left to teach on a finished board.
             if isOver { tutorial.finish() }
             guard isOver else {
@@ -234,7 +234,13 @@ struct GameView: View {
 
     private func startSession() {
         showsIntro = false
-        if showsPauseCard, model.state != .intro {
+        if isTutorialArmed, model.state != .intro {
+            // A zero-point pause is not progress: rewind it so the lesson can
+            // shape the arena from the first round, then walk on as usual.
+            model.rewindUnscoredRun()
+            showsPauseCard = false
+            playsKingEntrance = true
+        } else if showsPauseCard, model.state != .intro {
             showsPauseCard = false
             model.resume()
         } else {
@@ -259,13 +265,15 @@ struct GameView: View {
         }
     }
 
-    /// The cap on the start card. A run that is already under way cannot be
-    /// rewound into a lesson, so there the button explains itself instead.
+    /// The cap on the start card. The lesson may still be added until the first
+    /// point has been earned; after that the button explains itself instead.
     private func toggleTutorial() {
         AppAudio.shared.playMenuTap()
-        guard model.state == .intro,
-              PausedSessionStore.shared.session(request.board) == nil,
-              !showsPauseCard else {
+        let savedPoints = PausedSessionStore.shared.session(request.board)?.cards ?? 0
+        guard tutorial.step == nil,
+              !model.isGameOver,
+              model.cards == 0,
+              savedPoints == 0 else {
             withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
                 showsTutorialNotice = true
             }

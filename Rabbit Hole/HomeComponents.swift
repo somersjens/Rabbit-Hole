@@ -537,13 +537,9 @@ struct LevelCardView: View {
         .buttonStyle(.plain)
         .disabled(isLocked)
         .onAppear { animateIfCelebrating(startedAt: celebrationStartedAt) }
-        // `onChange(of:perform:)` (needed for the iOS 16.4 floor) runs its
-        // closure against the view value from *before* the update, so
-        // reading `celebrationStartedAt` in here would still see the old
-        // value — nil on the transition that starts the celebration, which
-        // skipped the score pulse entirely. Only the value handed to the
-        // closure is current.
-        .onChange(of: celebrationStartedAt) { newValue in animateIfCelebrating(startedAt: newValue) }
+        // Use the new value supplied by `onChange` so the score pulse starts
+        // in the same render that banks a card after returning from play.
+        .onChange(of: celebrationStartedAt) { _, newValue in animateIfCelebrating(startedAt: newValue) }
         .accessibilityIdentifier("level-\(level.index)")
         .accessibilityLabel(Text(L("home.levelAccessibility \(level.index)")))
         .accessibilityValue(Text(verbatim: pausedCards.map {

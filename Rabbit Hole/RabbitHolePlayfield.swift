@@ -21,6 +21,8 @@ struct RabbitHolePlayfield: View {
     var missedSum: MissedSum?
     let maximumRounds: Int
     let character: AnimalCharacter
+    var transitionFromCharacter: AnimalCharacter? = nil
+    var characterTransitionProgress: CGFloat = 1
     let isPad: Bool
     let isLive: Bool
     let isRunning: Bool
@@ -305,27 +307,19 @@ struct RabbitHolePlayfield: View {
                         .allowsHitTesting(false)
                 }
 
-                CraneRig(character: character,
-                         isPad: isPad,
+                let transitionProgress = min(1, max(0, characterTransitionProgress))
+                if let previous = transitionFromCharacter, transitionProgress < 0.999 {
+                    craneRig(character: previous,
+                             surface: surface,
+                             size: size)
+                        // Bunny is already fully present behind this outgoing
+                        // Penguin. Only fade the old rig; that overlap makes an
+                        // empty-cab frame structurally impossible.
+                        .opacity(1 - transitionProgress)
+                }
+                craneRig(character: character,
                          surface: surface,
-                         fieldSize: size,
-                         floorIndex: arena.floorIndex,
-                         groundContact: arena.mode == .exploding
-                            ? 1
-                            : (arena.floorDropped
-                                ? 0
-                                : max(0, 1 - arena.fallShift
-                                    / (RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.72))),
-                         boom: arena.boomPoint,
-                         hook: arena.hookPoint,
-                         entrance: arena.excavatorEntrance,
-                         reach: arena.poke,
-                         squash: arena.excavatorSquash,
-                         hop: arena.celebrateHop,
-                         travelX: arena.finaleTravelX,
-                         tilt: arena.excavatorTilt,
-                         flip: arena.finaleFlip,
-                         hookWiggle: arena.hookWiggle)
+                         size: size)
 
                 // A pickup attached to the claw belongs in front of the cab
                 // and character. Static pickups remain buried behind the rig.
@@ -417,7 +411,7 @@ struct RabbitHolePlayfield: View {
                 onPromoArenaReady?(arena)
 #endif
             }
-            .onChange(of: size) { newSize in
+            .onChange(of: size) { _, newSize in
                 let grass = grassLine(in: newSize)
                 arena.layout(size: newSize,
                              field: CGRect(x: 0, y: grass, width: newSize.width,
@@ -426,34 +420,34 @@ struct RabbitHolePlayfield: View {
                                              height: max(90, grass - surfaceTop)),
                              isPad: isPad)
             }
-            .onChange(of: scoreTarget) { target in
+            .onChange(of: scoreTarget) { _, target in
                 arena.setScoreTarget(localScoreTarget(target, in: proxy))
             }
-            .onChange(of: character.id) { _ in
+            .onChange(of: character.id) {
                 arena.setCharacterID(character.id)
                 arena.setPickupStyle(pickupStyle)
             }
-            .onChange(of: isRightToLeft) { _ in
+            .onChange(of: isRightToLeft) {
                 arena.setScoreTarget(localScoreTarget(scoreTarget, in: proxy))
             }
         }
         .onChange(of: HoleSession(remaining: remainingQuestions,
                                   round: round,
-                                  mistakes: mistakeCount)) { session in
+                                  mistakes: mistakeCount)) { _, session in
             arena.setRemainingQuestions(session.remaining,
                                         maximum: maximumRounds,
                                         mistakes: session.mistakes)
             arena.setRound(session.round)
         }
-        .onChange(of: isLive) { live in arena.setLive(live) }
-        .onChange(of: isRunning) { running in arena.setRunning(running) }
-        .onChange(of: tutorialPlan) { plan in
+        .onChange(of: isLive) { _, live in arena.setLive(live) }
+        .onChange(of: isRunning) { _, running in arena.setRunning(running) }
+        .onChange(of: tutorialPlan) { _, plan in
             arena.applyTutorial(plan)
         }
-        .onChange(of: playsKingEntrance) { shouldPlay in
+        .onChange(of: playsKingEntrance) { _, shouldPlay in
             if shouldPlay { arena.beginEntrance(completion: onKingEntranceComplete) }
         }
-        .onChange(of: playsLevelCompletion) { shouldPlay in
+        .onChange(of: playsLevelCompletion) { _, shouldPlay in
             if shouldPlay {
                 arena.beginCelebration(reduceMotion: reduceMotion,
                                        started: onLevelCompletionStarted,
@@ -464,6 +458,32 @@ struct RabbitHolePlayfield: View {
         }
         .onDisappear { arena.stop() }
         .accessibilityElement(children: .contain)
+    }
+
+    private func craneRig(character: AnimalCharacter,
+                          surface: CGRect,
+                          size: CGSize) -> some View {
+        CraneRig(character: character,
+                 isPad: isPad,
+                 surface: surface,
+                 fieldSize: size,
+                 floorIndex: arena.floorIndex,
+                 groundContact: arena.mode == .exploding
+                    ? 1
+                    : (arena.floorDropped
+                        ? 0
+                        : max(0, 1 - arena.fallShift
+                            / (RabbitHoleCraneLayout.mainHeight(isPad: isPad) * 0.72))),
+                 boom: arena.boomPoint,
+                 hook: arena.hookPoint,
+                 entrance: arena.excavatorEntrance,
+                 reach: arena.poke,
+                 squash: arena.excavatorSquash,
+                 hop: arena.celebrateHop,
+                 travelX: arena.finaleTravelX,
+                 tilt: arena.excavatorTilt,
+                 flip: arena.finaleFlip,
+                 hookWiggle: arena.hookWiggle)
     }
 
     private func localScoreTarget(_ global: CGPoint?, in proxy: GeometryProxy) -> CGPoint? {
@@ -3584,7 +3604,7 @@ struct RabbitHoleQuestionBanner: View {
             .opacity(isVisible ? 1 : 0)
             .scaleEffect(isVisible ? 1 : 0.96)
             .onAppear { shownPrompt = prompt }
-            .onChange(of: Question(id: roundID, prompt: prompt)) { question in
+            .onChange(of: Question(id: roundID, prompt: prompt)) { _, question in
                 reveal(question.prompt)
             }
             .accessibilityIdentifier("question-card")

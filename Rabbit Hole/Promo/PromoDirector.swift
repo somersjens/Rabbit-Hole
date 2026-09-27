@@ -170,10 +170,12 @@ final class PromoDirector: ObservableObject {
             }
 
         case .octopusTransform:
-            if phaseElapsed >= 0.55 { enter(.octopusApproach) }
+            // The one-off unlock flash lasts 0.22 s. Continue immediately
+            // afterwards; the next carrot now sits in the natural next lane.
+            if phaseElapsed >= 0.22 { enter(.octopusApproach) }
 
         case .octopusApproach:
-            if phaseElapsed >= 0.25, arena.promoTapAnswer("18") {
+            if arena.promoTapAnswer("18") {
                 enter(.waitScore18)
             }
 
@@ -203,11 +205,16 @@ final class PromoDirector: ObservableObject {
             }
 
         case .warning:
-            if phaseElapsed >= 2.0 {
+            // Keep the warning visible until the continuously swinging claw
+            // naturally reaches the bomb. On this authored route that happens
+            // at about 1.6 seconds; hiding the callout first left several
+            // seconds of unmotivated empty swinging.
+            if phaseElapsed >= 1.50, arena.promoTapDynamite() {
                 showsDynamiteArrow = false
                 arena.promoPrepareFloor(byPocket: PromoScript.lowerFloorByPocket,
                                         isFinal: true)
-                enter(.dynamiteApproach)
+                headline = nil
+                enter(.falling)
             }
 
         case .dynamiteApproach:
@@ -217,7 +224,7 @@ final class PromoDirector: ObservableObject {
             }
 
         case .falling:
-            if arena.mode == .falling, arena.actionProgress >= 0.18 {
+            if arena.mode == .falling, arena.actionProgress >= 0.48 {
                 switchCharacter(to: "bunny", next: .bunnyMidflight)
             }
 
@@ -227,13 +234,11 @@ final class PromoDirector: ObservableObject {
             }
 
         case .bunnyLanding:
-            if phaseElapsed >= 0.18 {
-                arena.promoSetActionRate(1.65)
-                enter(.rapid15)
-            }
+            arena.promoSetActionRate(1.65)
+            enter(.rapid15)
 
         case .rapid15:
-            if phaseElapsed >= 0.18, arena.promoTapAnswer("15") {
+            if arena.promoTapAnswer("15") {
                 enter(.waitRapid15)
             }
 
@@ -243,7 +248,7 @@ final class PromoDirector: ObservableObject {
             }
 
         case .rapid18:
-            if phaseElapsed >= 0.10, arena.promoTapAnswer("18") {
+            if arena.promoTapAnswer("18") {
                 enter(.waitRapid18)
             }
 
@@ -253,7 +258,7 @@ final class PromoDirector: ObservableObject {
             }
 
         case .rapid13:
-            if phaseElapsed >= 0.10, arena.promoTapAnswer("13") {
+            if arena.promoTapAnswer("13") {
                 enter(.waitRapid13)
             }
 

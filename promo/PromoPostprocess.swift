@@ -20,7 +20,7 @@ private let soundSpecs: [String: SoundSpec] = [
     "extensionMoveOut": .init(file: "sfx_extension_move_out", ext: "caf", volume: 0.28),
     "itemContact": .init(file: "sfx_item_contact", ext: "caf", volume: 0.36),
     "cardReveal": .init(file: "sfx_card_reveal", ext: "caf", volume: 0.19),
-    "sessionComplete": .init(file: "sfx_level_complete", ext: "caf", volume: 0.10),
+    "sessionComplete": .init(file: "sfx_level_complete", ext: "caf", volume: 0.22),
     "characterUnlock": .init(file: "sfx_character_unlock", ext: "caf", volume: 0.20),
     "cardTotal": .init(file: "score_increase_in_game", ext: "caf", volume: 0.65),
     "sessionStart": .init(file: "sfx_session_start", ext: "caf", volume: 0.16)
@@ -149,13 +149,21 @@ struct EffectLane {
 }
 
 var effectLanes: [EffectLane] = []
+let finalCarrotContact = cues.last(where: { $0.key == "itemContact" })?.t
 for cue in cues.sorted(by: { $0.t < $1.t }) {
-    guard cue.t >= 0, cue.t < durationSeconds,
+    // The last accelerated pickup reads visually one frame after its callback.
+    // Move only its contact/correct transients two frames later; the winch cue
+    // remains locked to the actual start of the extension.
+    let delaysFinalCarrotSound = finalCarrotContact.map {
+        abs(cue.t - $0) < 0.08 && (cue.key == "itemContact" || cue.key == "correct")
+    } ?? false
+    let cueTime = cue.t + (delaysFinalCarrotSound ? 0.07 : 0)
+    guard cueTime >= 0, cueTime < durationSeconds,
           let spec = soundSpecs[cue.key] else { continue }
     let url = assetDirectory.appendingPathComponent("\(spec.file).\(spec.ext)")
     let asset = AVURLAsset(url: url)
     guard let source = asset.tracks(withMediaType: .audio).first else { continue }
-    let start = CMTime(seconds: cue.t, preferredTimescale: 600)
+    let start = CMTime(seconds: cueTime, preferredTimescale: 600)
     let slice = CMTimeMinimum(asset.duration, CMTimeSubtract(outputDuration, start))
     guard slice.seconds > 0 else { continue }
     let laneIndex: Int

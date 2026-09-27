@@ -1,11 +1,11 @@
 {
-  "status" : "done",
-  "endedAtEpoch" : 1787807900.817745,
+  "endedAtEpoch" : 1787850810.3410821,
+  "format" : "ipad",
+  "elapsed" : 23.726364625006681,
   "height" : 1600,
-  "width" : 1200,
-  "muxed" : false,
-  "cues" : "rabbit-hole-promo-cues-ipad.json",
   "language" : "en",
-  "elapsed" : 25.843347833346343,
-  "format" : "ipad"
+  "cues" : "rabbit-hole-promo-cues-ipad.json",
+  "status" : "done",
+  "muxed" : false,
+  "width" : 1200
 }
